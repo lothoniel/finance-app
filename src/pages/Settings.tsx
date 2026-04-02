@@ -31,6 +31,7 @@ export default function Settings() {
   const [newCard, setNewCard] = useState('')
   const [newTransferCat, setNewTransferCat] = useState('')
   const [confirmClear, setConfirmClear] = useState(false)
+  const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(null)
   const [editCat, setEditCat] = useState<Category | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -111,8 +112,11 @@ export default function Settings() {
       try {
         const data = JSON.parse(ev.target?.result as string)
         importData(data)
+        setImportStatus('success')
+        setTimeout(() => setImportStatus(null), 3000)
       } catch {
-        alert('Invalid JSON file')
+        setImportStatus('error')
+        setTimeout(() => setImportStatus(null), 3000)
       }
     }
     reader.readAsText(file)
@@ -127,6 +131,7 @@ export default function Settings() {
         manualTaxes: [],
         transfers: [],
         debtPayments: [],
+        portfolios: [],
         investmentMovements: [],
         settlements: [],
       })
@@ -384,6 +389,16 @@ export default function Settings() {
               onChange={importFile}
               className="hidden"
             />
+            {importStatus === 'success' && (
+              <span className="flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400">
+                ✓ Data imported successfully
+              </span>
+            )}
+            {importStatus === 'error' && (
+              <span className="flex items-center gap-1.5 text-sm font-medium text-red-500">
+                ✕ Invalid JSON file
+              </span>
+            )}
             <button
               onClick={clearData}
               className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${

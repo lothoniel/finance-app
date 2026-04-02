@@ -16,6 +16,7 @@ function today() {
 export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFormProps) {
   const addPortfolio = useStore((s) => s.addPortfolio)
   const updatePortfolio = useStore((s) => s.updatePortfolio)
+  const addInvestmentMovement = useStore((s) => s.addInvestmentMovement)
 
   const [form, setForm] = useState({
     name: '',
@@ -54,6 +55,17 @@ export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFor
     }
     if (portfolio) {
       updatePortfolio(portfolio.id, data)
+      const diff = data.balance - portfolio.balance
+      if (diff !== 0) {
+        addInvestmentMovement({
+          id: crypto.randomUUID(),
+          date: data.updatedDate,
+          portfolioId: portfolio.id,
+          description: 'Balance update',
+          type: diff > 0 ? 'GAIN' : 'WITHDRAWAL',
+          amount: Math.abs(diff),
+        })
+      }
     } else {
       addPortfolio(data)
     }

@@ -55,15 +55,6 @@ export default function DebtPaymentPage() {
           </select>
         </div>
 
-        <div className="ml-auto">
-          <KpiCard
-            title="Total Paid"
-            value={formatMXNCompact(totalPaid)}
-            icon={<CreditCard className="w-5 h-5" />}
-            accent="#F59E0B"
-          />
-        </div>
-
         <button
           onClick={() => { setEditDebt(undefined); setModalOpen(true) }}
           className="flex items-center gap-2 bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors"
@@ -73,9 +64,15 @@ export default function DebtPaymentPage() {
         </button>
       </div>
 
-      {/* Per-card summary */}
-      {creditCards.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-3 gap-3 items-start">
+        <KpiCard
+          title="Total Paid"
+          value={formatMXNCompact(totalPaid)}
+          subtitle={formatMXN(totalPaid)}
+          icon={<CreditCard className="w-5 h-5" />}
+          accent="#F59E0B"
+        />
+        <div className="col-span-2 grid grid-cols-2 gap-3">
           {creditCards.map((card, idx) => {
             const color = cardColors[idx % cardColors.length]
             const total = filterByPeriod(debtPayments, periodMode, periodValue)
@@ -95,7 +92,7 @@ export default function DebtPaymentPage() {
             )
           })}
         </div>
-      )}
+      </div>
 
       {/* Payment list */}
       <div className="space-y-3">

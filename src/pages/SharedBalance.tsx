@@ -18,9 +18,18 @@ export default function SharedBalance() {
   const user2Name = useStore((s) => s.settings.user2Name)
   const addSettlement = useStore((s) => s.addSettlement)
 
-  const settlement = calculateSettlement(expenses, settlements)
+  const lastSettlement = settlements.length > 0
+    ? settlements.reduce((latest, s) => s.date > latest.date ? s : latest)
+    : null
+  const lastSettlementDate = lastSettlement?.date ?? null
 
-  const sharedExpenses = expenses.filter((e) => e.shared)
+  const expensesSinceLastSettlement = lastSettlementDate
+    ? expenses.filter((e) => e.date > lastSettlementDate)
+    : expenses
+
+  const settlement = calculateSettlement(expensesSinceLastSettlement, settlements)
+
+  const sharedExpenses = expensesSinceLastSettlement.filter((e) => e.shared)
   const user1Recent = sharedExpenses
     .filter((e) => e.paidBy === 'user1')
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -51,7 +60,7 @@ export default function SharedBalance() {
         <KpiCard
           title="Total Shared"
           value={formatMXNCompact(settlement.totalShared)}
-          subtitle="All shared expenses"
+          subtitle={lastSettlementDate ? `Since ${formatDate(lastSettlementDate)}` : 'All time'}
           icon={<Users className="w-5 h-5" />}
           accent="#3B82F6"
         />

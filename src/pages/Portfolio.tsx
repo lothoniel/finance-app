@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, TrendingUp, ArrowUpCircle, BarChart2, Calendar, RefreshCw } from 'lucide-react'
+import { Plus, TrendingUp, ArrowUpCircle, BarChart2, Calendar, RefreshCw, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import KpiCard from '../components/ui/KpiCard'
 import PeriodSelector from '../components/ui/PeriodSelector'
@@ -9,7 +9,7 @@ import PortfolioForm from '../components/forms/PortfolioForm'
 import InvestmentMovementForm from '../components/forms/InvestmentMovementForm'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
-import type { Portfolio } from '../store/types'
+import type { Portfolio, InvestmentMovement } from '../store/types'
 
 function now(): PeriodValue {
   const d = new Date()
@@ -24,9 +24,11 @@ export default function PortfolioPage() {
   const [portfolioModal, setPortfolioModal] = useState(false)
   const [movementModal, setMovementModal] = useState(false)
   const [editPortfolio, setEditPortfolio] = useState<Portfolio | undefined>()
+  const [editMovement, setEditMovement] = useState<InvestmentMovement | undefined>()
 
   const portfolios = useStore((s) => s.portfolios)
   const investmentMovements = useStore((s) => s.investmentMovements)
+  const deleteInvestmentMovement = useStore((s) => s.deleteInvestmentMovement)
 
   const filteredMovements = filterByPeriod(investmentMovements, periodMode, periodValue)
   const totalGains = filteredMovements.filter((m) => m.type === 'GAIN').reduce((s, m) => s + m.amount, 0)
@@ -59,7 +61,7 @@ export default function PortfolioPage() {
         <PeriodSelector mode={periodMode} value={periodValue} onChange={(m, v) => { setPeriodMode(m); setPeriodValue(v) }} />
         <div className="flex gap-2">
           <button
-            onClick={() => setMovementModal(true)}
+            onClick={() => { setEditMovement(undefined); setMovementModal(true) }}
             className="flex items-center gap-2 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <TrendingUp className="w-4 h-4" />
@@ -176,11 +178,12 @@ export default function PortfolioPage() {
                 <th className="text-left px-5 py-3 font-medium">Description</th>
                 <th className="text-left px-5 py-3 font-medium">Type</th>
                 <th className="text-right px-5 py-3 font-medium">Amount</th>
+                <th className="px-5 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-[#2D3448]">
               {filteredMovements.length === 0 && (
-                <tr><td colSpan={5} className="text-center py-8 text-gray-400 text-sm">No movements in this period</td></tr>
+                <tr><td colSpan={6} className="text-center py-8 text-gray-400 text-sm">No movements in this period</td></tr>
               )}
               {filteredMovements.sort((a, b) => b.date.localeCompare(a.date)).map((m) => {
                 const portfolio = portfolios.find((p) => p.id === m.portfolioId)
@@ -190,8 +193,24 @@ export default function PortfolioPage() {
                     <td className="px-5 py-3 text-gray-900 dark:text-white">{portfolio?.name ?? m.portfolioId}</td>
                     <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{m.description}</td>
                     <td className="px-5 py-3"><Badge type={m.type.toLowerCase()} /></td>
-                    <td className="px-5 py-3 text-right font-semibold" style={{ color: m.type === 'GAIN' ? '#F59E0B' : '#22C55E' }}>
-                      +{formatMXN(m.amount)}
+                    <td className="px-5 py-3 text-right font-semibold" style={{ color: m.type === 'GAIN' ? '#F59E0B' : m.type === 'WITHDRAWAL' ? '#EF4444' : '#22C55E' }}>
+                      {m.type === 'WITHDRAWAL' ? '-' : '+'}{formatMXN(m.amount)}
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => { setEditMovement(m); setMovementModal(true) }}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#6B3FA0] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deleteInvestmentMovement(m.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -202,7 +221,7 @@ export default function PortfolioPage() {
       </div>
 
       <PortfolioForm open={portfolioModal} onClose={() => setPortfolioModal(false)} portfolio={editPortfolio} />
-      <InvestmentMovementForm open={movementModal} onClose={() => setMovementModal(false)} />
+      <InvestmentMovementForm open={movementModal} onClose={() => setMovementModal(false)} movement={editMovement} />
     </div>
   )
 }

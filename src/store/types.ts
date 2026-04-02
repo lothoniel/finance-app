@@ -63,7 +63,7 @@ export interface InvestmentMovement {
   date: string
   portfolioId: string
   description: string
-  type: 'DEPOSIT' | 'GAIN'
+  type: 'DEPOSIT' | 'GAIN' | 'WITHDRAWAL'
   amount: number
 }
 

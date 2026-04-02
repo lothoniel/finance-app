@@ -43,6 +43,7 @@ interface AppState {
   updatePortfolio: (id: string, p: Partial<Portfolio>) => void
   deletePortfolio: (id: string) => void
   addInvestmentMovement: (m: InvestmentMovement) => void
+  updateInvestmentMovement: (id: string, m: Partial<InvestmentMovement>) => void
   deleteInvestmentMovement: (id: string) => void
   addSettlement: (s: Settlement) => void
   importData: (data: Partial<AppState>) => void
@@ -120,6 +121,11 @@ export const useStore = create<AppState>()(
 
       addInvestmentMovement: (m) =>
         set((state) => ({ investmentMovements: [...state.investmentMovements, m] })),
+
+      updateInvestmentMovement: (id, m) =>
+        set((state) => ({
+          investmentMovements: state.investmentMovements.map((x) => (x.id === id ? { ...x, ...m } : x)),
+        })),
 
       deleteInvestmentMovement: (id) =>
         set((state) => ({

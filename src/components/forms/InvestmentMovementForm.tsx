@@ -16,12 +16,14 @@ function today() {
 export default function InvestmentMovementForm({ open, onClose, movement }: InvestmentMovementFormProps) {
   const portfolios = useStore((s) => s.portfolios)
   const addInvestmentMovement = useStore((s) => s.addInvestmentMovement)
+  const updateInvestmentMovement = useStore((s) => s.updateInvestmentMovement)
+  const updatePortfolio = useStore((s) => s.updatePortfolio)
 
   const [form, setForm] = useState({
     date: today(),
     portfolioId: portfolios[0]?.id ?? '',
     description: '',
-    type: 'DEPOSIT' as 'DEPOSIT' | 'GAIN',
+    type: 'DEPOSIT' as 'DEPOSIT' | 'GAIN' | 'WITHDRAWAL',
     amount: '',
   })
 
@@ -31,7 +33,7 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
         date: movement.date,
         portfolioId: movement.portfolioId,
         description: movement.description,
-        type: movement.type,
+        type: movement.type as 'DEPOSIT' | 'GAIN' | 'WITHDRAWAL',
         amount: String(movement.amount),
       })
     } else {
@@ -47,14 +49,41 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    addInvestmentMovement({
+    const data = {
       id: movement?.id ?? crypto.randomUUID(),
       date: form.date,
       portfolioId: form.portfolioId,
       description: form.description,
       type: form.type,
       amount: parseFloat(form.amount) || 0,
-    })
+    }
+    if (movement) {
+      updateInvestmentMovement(movement.id, data)
+
+      const effective = (type: string, amount: number) => type === 'WITHDRAWAL' ? -amount : amount
+      const oldEffect = effective(movement.type, movement.amount)
+      const newEffect = effective(data.type, data.amount)
+
+      if (movement.portfolioId === data.portfolioId) {
+        const delta = newEffect - oldEffect
+        if (delta !== 0) {
+          const portfolio = portfolios.find((p) => p.id === data.portfolioId)
+          if (portfolio) updatePortfolio(portfolio.id, { balance: portfolio.balance + delta })
+        }
+      } else {
+        const oldPortfolio = portfolios.find((p) => p.id === movement.portfolioId)
+        const newPortfolio = portfolios.find((p) => p.id === data.portfolioId)
+        if (oldPortfolio) updatePortfolio(oldPortfolio.id, { balance: oldPortfolio.balance - oldEffect })
+        if (newPortfolio) updatePortfolio(newPortfolio.id, { balance: newPortfolio.balance + newEffect })
+      }
+    } else {
+      addInvestmentMovement(data)
+      const portfolio = portfolios.find((p) => p.id === data.portfolioId)
+      if (portfolio) {
+        const delta = data.type === 'WITHDRAWAL' ? -data.amount : data.amount
+        updatePortfolio(portfolio.id, { balance: portfolio.balance + delta })
+      }
+    }
     onClose()
   }
 
@@ -63,7 +92,7 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
   const labelClass = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
 
   return (
-    <Modal open={open} onClose={onClose} title="Add Investment Movement">
+    <Modal open={open} onClose={onClose} title={movement ? 'Edit Investment Movement' : 'Add Investment Movement'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className={labelClass}>Date</label>
@@ -109,6 +138,7 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
           >
             <option value="DEPOSIT">Deposit</option>
             <option value="GAIN">Gain</option>
+            <option value="WITHDRAWAL">Withdrawal</option>
           </select>
         </div>
         <div>
@@ -136,7 +166,7 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
             type="submit"
             className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#5a3490] transition-colors"
           >
-            Add Movement
+            {movement ? 'Save Changes' : 'Add Movement'}
           </button>
         </div>
       </form>
