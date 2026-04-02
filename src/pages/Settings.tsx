@@ -1,3 +1,4 @@
+import { generateId } from '../lib/id'
 import { useState, useRef } from 'react'
 import { Trash2, Plus, Sun, Moon, RotateCcw, Download, Upload, AlertTriangle } from 'lucide-react'
 import { useStore } from '../store'
@@ -42,7 +43,7 @@ export default function Settings() {
   function addCategory() {
     if (!newCatName.trim()) return
     const cat: Category = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       name: newCatName.trim(),
       icon: newCatIcon,
       color: newCatColor,

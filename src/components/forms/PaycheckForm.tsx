@@ -1,3 +1,4 @@
+import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
@@ -55,7 +56,7 @@ export default function PaycheckForm({ open, onClose, paycheck }: PaycheckFormPr
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const data: Paycheck = {
-      id: paycheck?.id ?? crypto.randomUUID(),
+      id: paycheck?.id ?? generateId(),
       date: form.date,
       usdAmount: form.usdAmount ? parseFloat(form.usdAmount) : null,
       exchangeRate: form.exchangeRate ? parseFloat(form.exchangeRate) : null,

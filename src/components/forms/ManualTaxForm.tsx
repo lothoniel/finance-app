@@ -1,3 +1,4 @@
+import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
@@ -29,7 +30,7 @@ export default function ManualTaxForm({ open, onClose, tax }: ManualTaxFormProps
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     addManualTax({
-      id: tax?.id ?? crypto.randomUUID(),
+      id: tax?.id ?? generateId(),
       date: form.date,
       description: form.description,
       amount: parseFloat(form.amount) || 0,

@@ -1,3 +1,4 @@
+import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
@@ -50,7 +51,7 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const data = {
-      id: movement?.id ?? crypto.randomUUID(),
+      id: movement?.id ?? generateId(),
       date: form.date,
       portfolioId: form.portfolioId,
       description: form.description,

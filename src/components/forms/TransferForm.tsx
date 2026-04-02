@@ -1,3 +1,4 @@
+import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
@@ -46,7 +47,7 @@ export default function TransferForm({ open, onClose, transfer }: TransferFormPr
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const data: Transfer = {
-      id: transfer?.id ?? crypto.randomUUID(),
+      id: transfer?.id ?? generateId(),
       date: form.date,
       category: form.category,
       description: form.description,

@@ -1,3 +1,4 @@
+import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
@@ -41,7 +42,7 @@ export default function DebtPaymentForm({ open, onClose, debtPayment }: DebtPaym
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const data: DebtPayment = {
-      id: debtPayment?.id ?? crypto.randomUUID(),
+      id: debtPayment?.id ?? generateId(),
       date: form.date,
       card: form.card,
       description: form.description,

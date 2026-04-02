@@ -1,3 +1,4 @@
+import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
@@ -54,7 +55,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const data: Expense = {
-      id: expense?.id ?? crypto.randomUUID(),
+      id: expense?.id ?? generateId(),
       date: form.date,
       description: form.description,
       amount: parseFloat(form.amount) || 0,

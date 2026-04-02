@@ -1,3 +1,4 @@
+import { generateId } from '../lib/id'
 import { useState } from 'react'
 import { Users, Plus } from 'lucide-react'
 import { useStore } from '../store'
@@ -42,7 +43,7 @@ export default function SharedBalance() {
   function handleSettle(e: React.FormEvent) {
     e.preventDefault()
     addSettlement({
-      id: crypto.randomUUID(),
+      id: generateId(),
       date: new Date().toISOString().slice(0, 10),
       amount: parseFloat(settleAmount) || 0,
       paidBy: settlePaidBy,

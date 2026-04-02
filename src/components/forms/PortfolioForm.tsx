@@ -1,3 +1,4 @@
+import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
@@ -45,7 +46,7 @@ export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFor
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const data: Portfolio = {
-      id: portfolio?.id ?? crypto.randomUUID(),
+      id: portfolio?.id ?? generateId(),
       name: form.name,
       type: form.type,
       apy: parseFloat(form.apy) || 0,
@@ -58,7 +59,7 @@ export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFor
       const diff = data.balance - portfolio.balance
       if (diff !== 0) {
         addInvestmentMovement({
-          id: crypto.randomUUID(),
+          id: generateId(),
           date: data.updatedDate,
           portfolioId: portfolio.id,
           description: 'Balance update',

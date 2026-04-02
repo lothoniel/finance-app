@@ -1,3 +1,4 @@
+import { generateId } from '../lib/id'
 import { useState, useMemo } from 'react'
 import {
   TrendingUp,
@@ -175,7 +176,7 @@ export default function Dashboard() {
   function handleSettle(e: React.FormEvent) {
     e.preventDefault()
     addSettlement({
-      id: crypto.randomUUID(),
+      id: generateId(),
       date: new Date().toISOString().slice(0, 10),
       amount: parseFloat(settleAmount) || 0,
       paidBy: settlePaidBy,
