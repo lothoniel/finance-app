@@ -1,0 +1,85 @@
+export interface Category {
+  id: string
+  name: string
+  icon: string // lucide icon name
+  color: string
+}
+
+export interface Expense {
+  id: string
+  date: string // YYYY-MM-DD
+  description: string
+  amount: number
+  category: string
+  paidBy: 'user1' | 'user2'
+  shared: boolean
+  subCategory?: string
+}
+
+export interface Paycheck {
+  id: string
+  date: string
+  usdAmount: number | null
+  exchangeRate: number | null
+  mxnAmount: number
+  grossAmount?: number
+}
+
+export interface ManualTax {
+  id: string
+  date: string
+  description: string
+  amount: number
+}
+
+export interface Transfer {
+  id: string
+  date: string
+  category: string // 'Household' | 'Rental' | 'Others' or custom
+  description: string
+  amount: number
+}
+
+export interface DebtPayment {
+  id: string
+  date: string
+  card: string
+  description: string
+  amount: number
+}
+
+export interface Portfolio {
+  id: string
+  name: string
+  type: string
+  apy: number
+  balance: number
+  updatedDate: string
+  renewsDate: string
+}
+
+export interface InvestmentMovement {
+  id: string
+  date: string
+  portfolioId: string
+  description: string
+  type: 'DEPOSIT' | 'GAIN'
+  amount: number
+}
+
+export interface Settlement {
+  id: string
+  date: string
+  amount: number
+  paidBy: 'user1' | 'user2'
+  description: string
+}
+
+export interface AppSettings {
+  user1Name: string
+  user2Name: string
+  theme: 'light' | 'dark'
+  expenseCategories: Category[]
+  creditCards: string[]
+  transferCategories: string[]
+}
