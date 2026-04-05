@@ -21,9 +21,7 @@ export default function PaycheckForm({ open, onClose, paycheck }: PaycheckFormPr
   const [form, setForm] = useState({
     date: today(),
     usdAmount: '',
-    exchangeRate: '',
     mxnAmount: '',
-    grossAmount: '',
   })
 
   useEffect(() => {
@@ -31,27 +29,21 @@ export default function PaycheckForm({ open, onClose, paycheck }: PaycheckFormPr
       setForm({
         date: paycheck.date,
         usdAmount: paycheck.usdAmount != null ? String(paycheck.usdAmount) : '',
-        exchangeRate: paycheck.exchangeRate != null ? String(paycheck.exchangeRate) : '',
         mxnAmount: String(paycheck.mxnAmount),
-        grossAmount: paycheck.grossAmount != null ? String(paycheck.grossAmount) : '',
       })
     } else {
-      setForm({ date: today(), usdAmount: '', exchangeRate: '', mxnAmount: '', grossAmount: '' })
+      setForm({ date: today(), usdAmount: '', mxnAmount: '' })
     }
   }, [paycheck, open])
 
-  function handleChange(field: string, value: string) {
-    const updated = { ...form, [field]: value }
-    // Auto-calculate MXN when both USD and rate are filled
-    if (field === 'usdAmount' || field === 'exchangeRate') {
-      const usd = parseFloat(field === 'usdAmount' ? value : updated.usdAmount)
-      const rate = parseFloat(field === 'exchangeRate' ? value : updated.exchangeRate)
-      if (!isNaN(usd) && !isNaN(rate)) {
-        updated.mxnAmount = (usd * rate).toFixed(2)
-      }
+  const calculatedRate = (() => {
+    const usd = parseFloat(form.usdAmount)
+    const mxn = parseFloat(form.mxnAmount)
+    if (!isNaN(usd) && usd > 0 && !isNaN(mxn) && mxn > 0) {
+      return (mxn / usd).toFixed(4)
     }
-    setForm(updated)
-  }
+    return null
+  })()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -59,9 +51,8 @@ export default function PaycheckForm({ open, onClose, paycheck }: PaycheckFormPr
       id: paycheck?.id ?? generateId(),
       date: form.date,
       usdAmount: form.usdAmount ? parseFloat(form.usdAmount) : null,
-      exchangeRate: form.exchangeRate ? parseFloat(form.exchangeRate) : null,
+      exchangeRate: calculatedRate ? parseFloat(calculatedRate) : null,
       mxnAmount: parseFloat(form.mxnAmount) || 0,
-      grossAmount: form.grossAmount ? parseFloat(form.grossAmount) : undefined,
     }
     if (paycheck) {
       updatePaycheck(paycheck.id, data)
@@ -83,7 +74,7 @@ export default function PaycheckForm({ open, onClose, paycheck }: PaycheckFormPr
           <input
             type="date"
             value={form.date}
-            onChange={(e) => handleChange('date', e.target.value)}
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
             required
             className={inputClass}
           />
@@ -97,56 +88,31 @@ export default function PaycheckForm({ open, onClose, paycheck }: PaycheckFormPr
               min="0"
               step="0.01"
               value={form.usdAmount}
-              onChange={(e) => handleChange('usdAmount', e.target.value)}
+              onChange={(e) => setForm({ ...form, usdAmount: e.target.value })}
               placeholder="0.00"
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Exchange Rate (optional)</label>
+            <label className={labelClass}>MXN Amount *</label>
             <input
               type="number"
               min="0"
-              step="0.0001"
-              value={form.exchangeRate}
-              onChange={(e) => handleChange('exchangeRate', e.target.value)}
-              placeholder="17.50"
+              step="0.01"
+              value={form.mxnAmount}
+              onChange={(e) => setForm({ ...form, mxnAmount: e.target.value })}
+              required
+              placeholder="0.00"
               className={inputClass}
             />
           </div>
         </div>
 
-        <div>
-          <label className={labelClass}>MXN Amount *</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.mxnAmount}
-            onChange={(e) => handleChange('mxnAmount', e.target.value)}
-            required
-            placeholder="0.00"
-            className={inputClass}
-          />
-          {form.usdAmount && form.exchangeRate && (
-            <p className="text-xs text-gray-400 mt-1">
-              Auto-calculated: {form.usdAmount} × {form.exchangeRate}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className={labelClass}>Gross Amount (optional)</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.grossAmount}
-            onChange={(e) => handleChange('grossAmount', e.target.value)}
-            placeholder="0.00"
-            className={inputClass}
-          />
-        </div>
+        {calculatedRate && (
+          <p className="text-xs text-[#6B3FA0] font-medium">
+            Exchange rate: 1 USD = {calculatedRate} MXN
+          </p>
+        )}
 
         <div className="flex gap-3 pt-2">
           <button

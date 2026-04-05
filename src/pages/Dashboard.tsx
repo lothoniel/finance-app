@@ -17,7 +17,7 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import BarChart from '../components/charts/BarChart'
 import AreaChart from '../components/charts/AreaChart'
 import Modal from '../components/ui/Modal'
-import { filterByPeriod, getMonthsInRange, type PeriodMode, type PeriodValue } from '../lib/filters'
+import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMXN, formatMXNCompact, formatDate, formatShortMonth } from '../lib/formatters'
 import { calculateSettlement } from '../lib/settlement'
 import type { Settlement } from '../store/types'
@@ -99,12 +99,9 @@ export default function Dashboard() {
     })
   }, [last6Months, paychecks, transfers, expenses])
 
-  // Income vs Debt bar chart for period
+  // Income vs Debt bar chart for last 6 months
   const barData = useMemo(() => {
-    const start = `${periodValue.year ?? 2025}-01-01`
-    const end = `${periodValue.year ?? 2026}-12-31`
-    const allMonths = getMonthsInRange('2025-11-01', '2026-03-31')
-    return allMonths.slice(-6).map((month) => {
+    return last6Months.map((month) => {
       const [y, m] = month.split('-').map(Number)
       const val: PeriodValue = { year: y, month: m }
       const inc = filterByPeriod(paychecks, 'month', val).reduce((s, p) => s + p.mxnAmount, 0) +
@@ -113,9 +110,7 @@ export default function Dashboard() {
       const label = new Date(y, m - 1).toLocaleString('en-US', { month: 'short' })
       return { month: label, Income: inc, Debt: debt }
     })
-    void start
-    void end
-  }, [paychecks, transfers, debtPayments, periodValue.year])
+  }, [last6Months, paychecks, transfers, debtPayments])
 
   // Settlement
   const settlement = calculateSettlement(expenses, settlements)

@@ -17,8 +17,12 @@ function now() {
 export default function CashFlow() {
   const [periodMode, setPeriodMode] = useState<PeriodMode>('month')
   const [periodValue, setPeriodValue] = useState<PeriodValue>(now())
-  const [compA, setCompA] = useState<PeriodValue>({ year: 2026, month: 2 })
-  const [compB, setCompB] = useState<PeriodValue>({ year: 2026, month: 3 })
+  const [compA, setCompA] = useState<PeriodValue>(() => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - 1)
+    return { year: d.getFullYear(), month: d.getMonth() + 1 }
+  })
+  const [compB, setCompB] = useState<PeriodValue>(now())
 
   const expenses = useStore((s) => s.expenses)
   const paychecks = useStore((s) => s.paychecks)
@@ -200,7 +204,7 @@ export default function CashFlow() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-[#2D3448]">
-              {tableData.map((row) => (
+              {[...tableData].reverse().map((row) => (
                 <tr key={row.label}>
                   <td className="py-2 text-gray-700 dark:text-gray-300 font-medium">{row.label}</td>
                   <td className="py-2 text-right text-green-600">{formatMXNCompact(row.inc)}</td>

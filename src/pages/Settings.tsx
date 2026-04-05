@@ -4,6 +4,7 @@ import { Trash2, Plus, Sun, Moon, RotateCcw, Download, Upload, AlertTriangle } f
 import { useStore } from '../store'
 import type { Category } from '../store/types'
 import Modal from '../components/ui/Modal'
+import { exportToExcel, exportToXML } from '../lib/exporters'
 
 const ICON_OPTIONS = [
   'Zap', 'Droplets', 'Wifi', 'Car', 'ShoppingCart', 'Play', 'Utensils', 'Heart',
@@ -32,7 +33,12 @@ export default function Settings() {
   const [newCard, setNewCard] = useState('')
   const [newTransferCat, setNewTransferCat] = useState('')
   const [confirmClear, setConfirmClear] = useState(false)
-  const [importStatus, setImportStatus] = useState<'success' | 'error' | null>(null)
+  const [actionStatus, setActionStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  function showStatus(type: 'success' | 'error', message: string) {
+    setActionStatus({ type, message })
+    setTimeout(() => setActionStatus(null), 3000)
+  }
   const [editCat, setEditCat] = useState<Category | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -84,9 +90,8 @@ export default function Settings() {
     updateSettings({ transferCategories: settings.transferCategories.filter((c) => c !== cat) })
   }
 
-  function exportData() {
-    const data = {
-      settings: store.settings,
+  function getExportData() {
+    return {
       expenses: store.expenses,
       paychecks: store.paychecks,
       manualTaxes: store.manualTaxes,
@@ -96,6 +101,10 @@ export default function Settings() {
       investmentMovements: store.investmentMovements,
       settlements: store.settlements,
     }
+  }
+
+  function exportData() {
+    const data = { settings: store.settings, ...getExportData() }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -103,6 +112,7 @@ export default function Settings() {
     a.download = `finance-app-backup-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
+    showStatus('success', 'JSON exported successfully')
   }
 
   function importFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -113,11 +123,9 @@ export default function Settings() {
       try {
         const data = JSON.parse(ev.target?.result as string)
         importData(data)
-        setImportStatus('success')
-        setTimeout(() => setImportStatus(null), 3000)
+        showStatus('success', 'Data imported successfully')
       } catch {
-        setImportStatus('error')
-        setTimeout(() => setImportStatus(null), 3000)
+        showStatus('error', 'Invalid JSON file')
       }
     }
     reader.readAsText(file)
@@ -377,6 +385,20 @@ export default function Settings() {
               Export JSON
             </button>
             <button
+              onClick={() => { exportToExcel(getExportData()); showStatus('success', 'Excel exported successfully') }}
+              className="flex items-center gap-2 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export Excel
+            </button>
+            <button
+              onClick={() => { exportToXML(getExportData()); showStatus('success', 'XML exported successfully') }}
+              className="flex items-center gap-2 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export XML
+            </button>
+            <button
               onClick={() => fileRef.current?.click()}
               className="flex items-center gap-2 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
@@ -390,14 +412,9 @@ export default function Settings() {
               onChange={importFile}
               className="hidden"
             />
-            {importStatus === 'success' && (
-              <span className="flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400">
-                ✓ Data imported successfully
-              </span>
-            )}
-            {importStatus === 'error' && (
-              <span className="flex items-center gap-1.5 text-sm font-medium text-red-500">
-                ✕ Invalid JSON file
+            {actionStatus && (
+              <span className={`flex items-center gap-1.5 text-sm font-medium ${actionStatus.type === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                {actionStatus.type === 'success' ? '✓' : '✕'} {actionStatus.message}
               </span>
             )}
             <button
