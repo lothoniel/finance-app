@@ -41,6 +41,17 @@ export default function PortfolioPage() {
     color: portfolioColors[i % portfolioColors.length],
   }))
 
+  // Return % per portfolio (all-time gains / all-time deposits)
+  const returnPct = useMemo(() => {
+    const result: Record<string, string> = {}
+    for (const p of portfolios) {
+      const gains = investmentMovements.filter((m) => m.portfolioId === p.id && m.type === 'GAIN').reduce((s, m) => s + m.amount, 0)
+      const deposits = investmentMovements.filter((m) => m.portfolioId === p.id && m.type === 'DEPOSIT').reduce((s, m) => s + m.amount, 0)
+      result[p.id] = deposits > 0 ? (gains / deposits * 100).toFixed(2) + '%' : '—'
+    }
+    return result
+  }, [portfolios, investmentMovements])
+
   // Last gain per portfolio
   const lastGain = useMemo(() => {
     const result: Record<string, number> = {}
@@ -134,9 +145,15 @@ export default function PortfolioPage() {
                       {p.type}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">APY</p>
-                    <p className="text-sm font-bold" style={{ color }}>{p.apy}%</p>
+                  <div className="flex gap-4">
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">APY</p>
+                      <p className="text-sm font-bold" style={{ color }}>{p.apy}%</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">Return</p>
+                      <p className="text-sm font-bold text-green-500">{returnPct[p.id]}</p>
+                    </div>
                   </div>
                 </div>
 

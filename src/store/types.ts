@@ -3,6 +3,7 @@ export interface Category {
   name: string
   icon: string // lucide icon name
   color: string
+  budget?: number
 }
 
 export interface Expense {

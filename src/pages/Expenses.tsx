@@ -1,6 +1,6 @@
 import { generateId } from '../lib/id'
 import { useState, useMemo } from 'react'
-import { Plus, Search, Download, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import KpiCard from '../components/ui/KpiCard'
 import PeriodSelector from '../components/ui/PeriodSelector'
@@ -87,23 +87,6 @@ export default function Expenses() {
 
   const settlement = calculateSettlement(filtered, settlements)
 
-  function downloadCSV() {
-    const rows = [
-      ['Date', 'Description', 'Category', 'Amount', 'Paid By', 'Shared'],
-      ...displayed.map((e) => {
-        const cat = categories.find((c) => c.id === e.category)?.name ?? e.category
-        return [e.date, e.description, cat, e.amount.toString(), e.paidBy === 'user1' ? user1Name : user2Name, e.shared ? 'Yes' : 'No']
-      }),
-    ]
-    const csv = rows.map((r) => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `expenses-${periodValue.year ?? 'all'}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
 
   function handleSettle(e: React.FormEvent) {
     e.preventDefault()
@@ -158,13 +141,6 @@ export default function Expenses() {
               <Plus className="w-4 h-4" />
               Add Expense
             </button>
-            <button
-              onClick={downloadCSV}
-              className="flex items-center gap-2 border border-gray-200 dark:border-[#2D3448] text-gray-600 dark:text-gray-300 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              CSV
-            </button>
           </>
         )}
       </div>
@@ -182,6 +158,46 @@ export default function Expenses() {
 
       {tab === 'overview' && (
         <>
+          {/* Category Budgets */}
+          {(() => {
+            const catTotals: Record<string, number> = {}
+            filtered.forEach((e) => { catTotals[e.category] = (catTotals[e.category] ?? 0) + e.amount })
+            const budgetCats = categories.filter((c) => c.budget && c.budget > 0 && (catTotals[c.id] ?? 0) > 0)
+            if (budgetCats.length === 0) return null
+            return (
+              <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Category Budgets</p>
+                <div className="space-y-3">
+                  {budgetCats.map((c) => {
+                    const actual = catTotals[c.id] ?? 0
+                    const budget = c.budget!
+                    const pct = Math.min(actual / budget * 100, 100)
+                    const over = actual > budget
+                    return (
+                      <div key={c.id}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{c.name}</span>
+                          </div>
+                          <span className={`text-xs font-semibold ${over ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {formatMXN(actual)} / {formatMXN(budget)}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-gray-100 dark:bg-gray-700">
+                          <div
+                            className="h-2 rounded-full transition-all"
+                            style={{ width: `${pct}%`, backgroundColor: over ? '#EF4444' : c.color }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Search + filter */}
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
@@ -371,7 +387,7 @@ export default function Expenses() {
                   <p className="text-sm font-bold text-red-500">{formatMXN(monthTotal)}</p>
                 </div>
                 <div className="divide-y divide-gray-100 dark:divide-[#2D3448]">
-                  {items.map((e) => {
+                  {[...items].sort((a, b) => b.date.localeCompare(a.date)).map((e) => {
                     const cat = categories.find((c) => c.id === e.category)
                     return (
                       <div key={e.id} className="flex items-center gap-3 px-5 py-3">

@@ -248,6 +248,18 @@ export default function Settings() {
               <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
               <span className="text-sm text-gray-900 dark:text-white flex-1">{cat.name}</span>
               <span className="text-xs text-gray-400">{cat.icon}</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={cat.budget ?? ''}
+                placeholder="Budget"
+                onChange={(e) => {
+                  const budget = e.target.value ? parseFloat(e.target.value) : undefined
+                  updateSettings({ expenseCategories: settings.expenseCategories.map((c) => c.id === cat.id ? { ...c, budget } : c) })
+                }}
+                className="w-24 border border-gray-200 dark:border-[#2D3448] rounded-lg px-2 py-1 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#6B3FA0]"
+              />
               <button
                 onClick={() => setEditCat({ ...cat })}
                 className="p-1.5 text-gray-400 hover:text-[#6B3FA0] transition-colors"
@@ -475,6 +487,18 @@ export default function Settings() {
                   />
                 ))}
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monthly Budget (optional)</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={editCat.budget ?? ''}
+                onChange={(e) => setEditCat({ ...editCat, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
+                placeholder="0"
+                className={`${inputClass} w-full`}
+              />
             </div>
             <div className="flex gap-3 pt-2">
               <button onClick={() => setEditCat(null)}

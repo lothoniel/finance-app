@@ -10,6 +10,7 @@ import {
   ArrowDownRight,
   DollarSign,
   ArrowRightLeft,
+  Percent,
 } from 'lucide-react'
 import { useStore } from '../store'
 import KpiCard from '../components/ui/KpiCard'
@@ -63,6 +64,7 @@ export default function Dashboard() {
   const monthlyDebt = monthDebt.reduce((s, d) => s + d.amount, 0)
   const totalPortfolioBalance = portfolios.reduce((s, p) => s + p.balance, 0)
   const monthlyGains = monthGains.reduce((s, m) => s + m.amount, 0)
+  const debtToIncome = monthlyInflow > 0 ? (monthlyDebt / monthlyInflow * 100).toFixed(1) + '%' : '—'
 
   // Period-filtered data for snapshot
   const filteredPaychecks = filterByPeriod(paychecks, periodMode, periodValue)
@@ -185,7 +187,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <KpiCard
           title="Monthly Inflow"
           value={formatMXNCompact(monthlyInflow)}
@@ -213,6 +215,13 @@ export default function Dashboard() {
           subtitle={`Includes +${formatMXNCompact(monthlyGains)} gains this month`}
           icon={<BarChart2 className="w-5 h-5" />}
           accent="#6B3FA0"
+        />
+        <KpiCard
+          title="Debt-to-Income"
+          value={debtToIncome}
+          subtitle="Monthly debt ÷ income"
+          icon={<Percent className="w-5 h-5" />}
+          accent="#3B82F6"
         />
       </div>
 

@@ -6,6 +6,7 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import Tabs from '../components/ui/Tabs'
 import Badge from '../components/ui/Badge'
 import BarChart from '../components/charts/BarChart'
+import LineChart from '../components/charts/LineChart'
 import PaycheckForm from '../components/forms/PaycheckForm'
 import ManualTaxForm from '../components/forms/ManualTaxForm'
 import TransferForm from '../components/forms/TransferForm'
@@ -72,6 +73,13 @@ export default function Income() {
       }))
   }, [filteredPaychecks, filteredTaxes])
 
+  const rateChartData = useMemo(() => {
+    return paychecks
+      .filter((p) => p.exchangeRate != null)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((p) => ({ month: formatShortMonth(p.date), Rate: p.exchangeRate as number }))
+  }, [paychecks])
+
   const displayedTransfers = filteredTransfers.filter((t) => {
     const matchSearch = t.description.toLowerCase().includes(searchTransfer.toLowerCase())
     const matchCat = filterCat === 'all' || t.category === filterCat
@@ -128,7 +136,7 @@ export default function Income() {
                   {filteredPaychecks.length === 0 && (
                     <tr><td colSpan={5} className="text-center py-8 text-gray-400 text-sm">No paychecks in this period</td></tr>
                   )}
-                  {filteredPaychecks.map((p) => (
+                  {[...filteredPaychecks].sort((a, b) => b.date.localeCompare(a.date)).map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
                       <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{formatDate(p.date)}</td>
                       <td className="px-5 py-3 text-right text-gray-600 dark:text-gray-400">
@@ -163,6 +171,19 @@ export default function Income() {
             </div>
           </div>
 
+          {/* Exchange Rate Trend */}
+          {rateChartData.length >= 2 && (
+            <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">USD/MXN Exchange Rate Trend</p>
+              <LineChart
+                data={rateChartData}
+                lines={[{ key: 'Rate', color: '#6B3FA0', name: 'USD/MXN Rate' }]}
+                xKey="month"
+                height={200}
+              />
+            </div>
+          )}
+
           {/* Manual Taxes */}
           <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2D3448] flex items-center justify-between">
@@ -189,7 +210,7 @@ export default function Income() {
                   {filteredTaxes.length === 0 && (
                     <tr><td colSpan={4} className="text-center py-8 text-gray-400 text-sm">No tax records in this period</td></tr>
                   )}
-                  {filteredTaxes.map((t) => (
+                  {[...filteredTaxes].sort((a, b) => b.date.localeCompare(a.date)).map((t) => (
                     <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
                       <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{formatDate(t.date)}</td>
                       <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{t.description}</td>
@@ -287,7 +308,7 @@ export default function Income() {
                   {displayedTransfers.length === 0 && (
                     <tr><td colSpan={5} className="text-center py-8 text-gray-400 text-sm">No transfers found</td></tr>
                   )}
-                  {displayedTransfers.map((t) => (
+                  {[...displayedTransfers].sort((a, b) => b.date.localeCompare(a.date)).map((t) => (
                     <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
                       <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{formatDate(t.date)}</td>
                       <td className="px-5 py-3">
