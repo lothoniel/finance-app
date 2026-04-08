@@ -11,6 +11,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useStore } from '../../store'
+import { formatDate } from '../../lib/formatters'
 
 interface SidebarProps {
   open: boolean
@@ -31,6 +32,7 @@ const navItems = [
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const user1Name = useStore((s) => s.settings.user1Name)
   const user2Name = useStore((s) => s.settings.user2Name)
+  const importedBackupDate = useStore((s) => s.importedBackupDate)
 
   return (
     <>
@@ -100,6 +102,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               <p className="text-xs text-gray-400 truncate">{user2Name}</p>
             </div>
           </div>
+          {importedBackupDate && (
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[#2D3448]">
+              <p className="text-[10px] text-gray-400 dark:text-gray-500">Working on backup</p>
+              <p className="text-[10px] font-medium text-[#6B3FA0] truncate">
+                {formatDate(importedBackupDate.slice(0, 10))}
+              </p>
+            </div>
+          )}
         </div>
       </aside>
     </>

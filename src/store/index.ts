@@ -23,6 +23,7 @@ interface AppState {
   portfolios: Portfolio[]
   investmentMovements: InvestmentMovement[]
   settlements: Settlement[]
+  importedBackupDate: string | null
   // Actions
   updateSettings: (s: Partial<AppSettings>) => void
   addExpense: (e: Expense) => void
@@ -54,6 +55,7 @@ export const useStore = create<AppState>()(
   persist(
     (set) => ({
       ...seedData,
+      importedBackupDate: null,
 
       updateSettings: (s) =>
         set((state) => ({ settings: { ...state.settings, ...s } })),
@@ -136,7 +138,11 @@ export const useStore = create<AppState>()(
         set((state) => ({ settlements: [...state.settlements, s] })),
 
       importData: (data) =>
-        set((state) => ({ ...state, ...data })),
+        set((state) => ({
+          ...state,
+          ...data,
+          importedBackupDate: (data as Record<string, unknown>).exportedAt as string ?? null,
+        })),
 
       resetToDefaults: () =>
         set((state) => ({

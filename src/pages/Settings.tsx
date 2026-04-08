@@ -104,7 +104,9 @@ export default function Settings() {
   }
 
   function exportData() {
-    const data = { settings: store.settings, ...getExportData() }
+    const now = new Date()
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const data = { exportedAt: localDate, settings: store.settings, ...getExportData() }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -122,6 +124,18 @@ export default function Settings() {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string)
+        let backupDate: string = data.exportedAt ?? ''
+        if (!backupDate) {
+          const match = file.name.match(/(\d{4}-\d{2}-\d{2})/)
+          if (match) {
+            backupDate = match[1]
+          } else {
+            const now = new Date()
+            backupDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+          }
+        }
+        localStorage.setItem('finance-app-backup-date', backupDate)
+        window.dispatchEvent(new Event('financeAppBackupImported'))
         importData(data)
         showStatus('success', 'Data imported successfully')
       } catch {
