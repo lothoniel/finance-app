@@ -3,15 +3,12 @@ import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { Expense } from '../../store/types'
+import { today } from '../../lib/formatters'
 
 interface ExpenseFormProps {
   open: boolean
   onClose: () => void
   expense?: Expense
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps) {

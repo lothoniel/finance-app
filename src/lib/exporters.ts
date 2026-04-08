@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { formatDate } from './formatters'
+import { formatDate, today } from './formatters'
 import type {
   Expense,
   Paycheck,
@@ -9,6 +9,8 @@ import type {
   Portfolio,
   InvestmentMovement,
   Settlement,
+  MortgageConfig,
+  MortgagePayment,
 } from '../store/types'
 
 interface ExportData {
@@ -20,10 +22,8 @@ interface ExportData {
   portfolios: Portfolio[]
   investmentMovements: InvestmentMovement[]
   settlements: Settlement[]
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
+  mortgageConfig?: MortgageConfig
+  mortgagePayments?: MortgagePayment[]
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -101,6 +101,14 @@ export function exportToExcel(data: ExportData) {
     Description: s.description,
   }))
 
+  const mortgagePayments = (data.mortgagePayments ?? []).map((p) => ({
+    Date: formatDate(p.date),
+    'Total Paid': p.totalPaid,
+    'Extra Capital': p.extraCapital,
+    'Balance After': p.balanceAfter,
+    Note: p.note ?? '',
+  }))
+
   const sheets: [string, object[]][] = [
     ['Expenses', expenses],
     ['Paychecks', paychecks],
@@ -110,10 +118,15 @@ export function exportToExcel(data: ExportData) {
     ['Portfolios', portfolios],
     ['Investment Movements', movements],
     ['Settlements', settlements],
+    ['Mortgage Payments', mortgagePayments],
   ]
 
+  const MORTGAGE_HEADERS = ['Date', 'Total Paid', 'Extra Capital', 'Balance After', 'Note']
   for (const [name, rows] of sheets) {
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), name)
+    const ws = (name === 'Mortgage Payments' && rows.length === 0)
+      ? XLSX.utils.aoa_to_sheet([MORTGAGE_HEADERS])
+      : XLSX.utils.json_to_sheet(rows)
+    XLSX.utils.book_append_sheet(wb, ws, name)
   }
 
   const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
@@ -182,6 +195,16 @@ export function exportToXML(data: ExportData) {
       `    <settlement date="${s.date}" amount="${s.amount}" paidBy="${s.paidBy}">${escapeXml(s.description)}</settlement>`
     ),
     '  </settlements>',
+
+    ...(data.mortgageConfig ? [
+      `  <mortgageConfig principal="${data.mortgageConfig.principal}" interestRate="${data.mortgageConfig.interestRate}" termMonths="${data.mortgageConfig.termMonths}" startDate="${data.mortgageConfig.startDate}" minimumPayment="${data.mortgageConfig.minimumPayment}"/>`,
+    ] : []),
+
+    '  <mortgagePayments>',
+    ...(data.mortgagePayments ?? []).map((p) =>
+      `    <mortgagePayment date="${p.date}" totalPaid="${p.totalPaid}" extraCapital="${p.extraCapital}" balanceAfter="${p.balanceAfter}" note="${escapeXml(p.note ?? '')}"/>`
+    ),
+    '  </mortgagePayments>',
 
     '</financeApp>',
   ]

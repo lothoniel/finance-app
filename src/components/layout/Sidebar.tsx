@@ -9,6 +9,7 @@ import {
   Users,
   Settings,
   Wallet,
+  Home,
 } from 'lucide-react'
 import { useStore } from '../../store'
 import { formatDate } from '../../lib/formatters'
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/income', label: 'Income', icon: DollarSign },
   { to: '/expenses', label: 'Expenses', icon: CreditCard },
   { to: '/debt', label: 'Debt', icon: BadgeAlert },
+  { to: '/mortgage', label: 'Mortgage', icon: Home },
   { to: '/portfolio', label: 'Portfolio', icon: BarChart2 },
   { to: '/shared-balance', label: 'Shared Balance', icon: Users },
   { to: '/settings', label: 'Settings', icon: Settings },

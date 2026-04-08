@@ -1,6 +1,7 @@
 import {
   BarChart as ReBarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -17,6 +18,7 @@ interface BarChartProps {
   xKey: string
   height?: number
   horizontal?: boolean
+  colorKey?: string
 }
 
 export default function BarChart({
@@ -25,6 +27,7 @@ export default function BarChart({
   xKey,
   height = 300,
   horizontal = false,
+  colorKey,
 }: BarChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -88,7 +91,11 @@ export default function BarChart({
             fill={bar.color}
             radius={[4, 4, 0, 0]}
             maxBarSize={40}
-          />
+          >
+            {colorKey && data.map((entry, idx) => (
+              <Cell key={idx} fill={String(entry[colorKey] ?? bar.color)} />
+            ))}
+          </Bar>
         ))}
       </ReBarChart>
     </ResponsiveContainer>

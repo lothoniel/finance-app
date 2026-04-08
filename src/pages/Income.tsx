@@ -287,7 +287,7 @@ export default function Income() {
             >
               <option value="all">All Categories</option>
               {transferCategories.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c.name} value={c.name}>{c.name}</option>
               ))}
             </select>
           </div>

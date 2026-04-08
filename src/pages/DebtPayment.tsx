@@ -31,8 +31,6 @@ export default function DebtPaymentPage() {
 
   const totalPaid = filtered.reduce((s, d) => s + d.amount, 0)
 
-  const cardColors = ['#6B3FA0', '#3B82F6', '#22C55E', '#F59E0B', '#EF4444']
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -50,7 +48,7 @@ export default function DebtPaymentPage() {
           >
             <option value="all">All Cards</option>
             {creditCards.map((card) => (
-              <option key={card} value={card}>{card}</option>
+              <option key={card.name} value={card.name}>{card.name}</option>
             ))}
           </select>
         </div>
@@ -73,19 +71,19 @@ export default function DebtPaymentPage() {
           accent="#F59E0B"
         />
         <div className="col-span-2 grid grid-cols-2 gap-3">
-          {creditCards.map((card, idx) => {
-            const color = cardColors[idx % cardColors.length]
+          {creditCards.map((card) => {
+            const color = card.color
             const total = filterByPeriod(debtPayments, periodMode, periodValue)
-              .filter((d) => d.card === card)
+              .filter((d) => d.card === card.name)
               .reduce((s, d) => s + d.amount, 0)
             return (
               <div
-                key={card}
+                key={card.name}
                 className="bg-white dark:bg-[#1A1F2E] rounded-xl p-3 border border-gray-200 dark:border-[#2D3448] shadow-sm flex items-center gap-2"
               >
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                 <div className="min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{card}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{card.name}</p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{formatMXNCompact(total)}</p>
                 </div>
               </div>
@@ -102,9 +100,8 @@ export default function DebtPaymentPage() {
             <p className="text-gray-400 text-sm">No debt payments in this period</p>
           </div>
         )}
-        {filtered.sort((a, b) => b.date.localeCompare(a.date)).map((d, i) => {
-          const colorIdx = creditCards.indexOf(d.card)
-          const color = cardColors[colorIdx % cardColors.length] ?? '#6B3FA0'
+        {filtered.sort((a, b) => b.date.localeCompare(a.date)).map((d) => {
+          const color = creditCards.find((c) => c.name === d.card)?.color ?? '#6B3FA0'
           return (
             <div
               key={d.id}

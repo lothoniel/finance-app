@@ -6,7 +6,7 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import LineChart from '../components/charts/LineChart'
 import BarChart from '../components/charts/BarChart'
 import DonutChart from '../components/charts/DonutChart'
-import { filterByPeriod, getMonthsInRange, type PeriodMode, type PeriodValue } from '../lib/filters'
+import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMXN, formatMXNCompact } from '../lib/formatters'
 
 function now() {

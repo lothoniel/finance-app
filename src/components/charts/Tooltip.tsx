@@ -1,7 +1,12 @@
-import type { TooltipProps } from 'recharts'
 import { formatMXN } from '../../lib/formatters'
 
-export default function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: Array<{ name?: string; value?: number; color?: string }>
+  label?: string
+}
+
+export default function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (!active || !payload || payload.length === 0) return null
 
   return (

@@ -3,15 +3,12 @@ import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { Portfolio } from '../../store/types'
+import { today } from '../../lib/formatters'
 
 interface PortfolioFormProps {
   open: boolean
   onClose: () => void
   portfolio?: Portfolio
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFormProps) {

@@ -8,6 +8,8 @@ import type {
   Portfolio,
   InvestmentMovement,
   Settlement,
+  MortgageConfig,
+  MortgagePayment,
 } from '../store/types'
 
 export const defaultSettings: AppSettings = {
@@ -31,13 +33,17 @@ export const defaultSettings: AppSettings = {
     { id: '149a', name: '149A', icon: 'Building2', color: '#14B8A6' },
   ],
   creditCards: [
-    'Banorte Platinum',
-    'Banamex Costco',
-    'Banamex Oro',
-    'Banamex Roja',
-    'Cash',
+    { name: 'Banorte Platinum', icon: 'CreditCard', color: '#6B3FA0' },
+    { name: 'Banamex Costco', icon: 'CreditCard', color: '#3B82F6' },
+    { name: 'Banamex Oro', icon: 'CreditCard', color: '#F59E0B' },
+    { name: 'Banamex Roja', icon: 'CreditCard', color: '#EF4444' },
+    { name: 'Cash', icon: 'Wallet', color: '#22C55E' },
   ],
-  transferCategories: ['Household', 'Rental', 'Others'],
+  transferCategories: [
+    { name: 'Household', icon: 'Home', color: '#6366F1' },
+    { name: 'Rental', icon: 'Building2', color: '#14B8A6' },
+    { name: 'Others', icon: 'Tag', color: '#64748B' },
+  ],
 }
 
 export const seedExpenses: Expense[] = [
@@ -542,6 +548,23 @@ export const seedInvestmentMovements: InvestmentMovement[] = [
 
 export const seedSettlements: Settlement[] = []
 
+export const mortgageConfig: MortgageConfig = {
+  principal: 1500000,
+  interestRate: 10.5,
+  termMonths: 180,
+  startDate: '2024-01-01',
+  minimumPayment: 16500,
+}
+
+export const seedMortgagePayments: MortgagePayment[] = [
+  { id: 'mort-001', date: '2024-02-01', totalPaid: 16500, extraCapital: 0, balanceAfter: 1496843.75 },
+  { id: 'mort-002', date: '2024-03-01', totalPaid: 16500, extraCapital: 0, balanceAfter: 1493659.66 },
+  { id: 'mort-003', date: '2024-04-01', totalPaid: 26500, extraCapital: 10000, balanceAfter: 1480133.78, note: 'Extra from savings' },
+  { id: 'mort-004', date: '2024-05-01', totalPaid: 16500, extraCapital: 0, balanceAfter: 1476816.40 },
+  { id: 'mort-005', date: '2024-06-01', totalPaid: 16500, extraCapital: 0, balanceAfter: 1473470.34 },
+  { id: 'mort-006', date: '2024-07-01', totalPaid: 36500, extraCapital: 20000, balanceAfter: 1450476.23, note: 'Annual bonus' },
+]
+
 export const seedData = {
   settings: defaultSettings,
   expenses: seedExpenses,
@@ -552,4 +575,6 @@ export const seedData = {
   portfolios: seedPortfolios,
   investmentMovements: seedInvestmentMovements,
   settlements: seedSettlements,
+  mortgageConfig,
+  mortgagePayments: seedMortgagePayments,
 }

@@ -3,15 +3,12 @@ import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { DebtPayment } from '../../store/types'
+import { today } from '../../lib/formatters'
 
 interface DebtPaymentFormProps {
   open: boolean
   onClose: () => void
   debtPayment?: DebtPayment
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export default function DebtPaymentForm({ open, onClose, debtPayment }: DebtPaymentFormProps) {
@@ -21,7 +18,7 @@ export default function DebtPaymentForm({ open, onClose, debtPayment }: DebtPaym
 
   const [form, setForm] = useState({
     date: today(),
-    card: creditCards[0] ?? '',
+    card: creditCards[0]?.name ?? '',
     description: '',
     amount: '',
   })
@@ -35,7 +32,7 @@ export default function DebtPaymentForm({ open, onClose, debtPayment }: DebtPaym
         amount: String(debtPayment.amount),
       })
     } else {
-      setForm({ date: today(), card: creditCards[0] ?? '', description: '', amount: '' })
+      setForm({ date: today(), card: creditCards[0]?.name ?? '', description: '', amount: '' })
     }
   }, [debtPayment, open, creditCards])
 
@@ -85,8 +82,8 @@ export default function DebtPaymentForm({ open, onClose, debtPayment }: DebtPaym
             className={inputClass}
           >
             {creditCards.map((card) => (
-              <option key={card} value={card}>
-                {card}
+              <option key={card.name} value={card.name}>
+                {card.name}
               </option>
             ))}
           </select>

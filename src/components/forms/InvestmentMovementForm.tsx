@@ -3,15 +3,12 @@ import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { InvestmentMovement } from '../../store/types'
+import { today } from '../../lib/formatters'
 
 interface InvestmentMovementFormProps {
   open: boolean
   onClose: () => void
   movement?: InvestmentMovement
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export default function InvestmentMovementForm({ open, onClose, movement }: InvestmentMovementFormProps) {

@@ -1,16 +1,12 @@
 import { generateId } from '../lib/id'
 import { useState, useRef } from 'react'
-import { Trash2, Plus, Sun, Moon, RotateCcw, Download, Upload, AlertTriangle } from 'lucide-react'
+import { Trash2, Plus, Sun, Moon, RotateCcw, Download, Upload, AlertTriangle, Pencil } from 'lucide-react'
 import { useStore } from '../store'
-import type { Category } from '../store/types'
+import type { Category, CreditCard, TransferCategory } from '../store/types'
 import Modal from '../components/ui/Modal'
 import { exportToExcel, exportToXML } from '../lib/exporters'
-
-const ICON_OPTIONS = [
-  'Zap', 'Droplets', 'Wifi', 'Car', 'ShoppingCart', 'Play', 'Utensils', 'Heart',
-  'Home', 'Plane', 'User', 'Phone', 'Fuel', 'Building2', 'Tag', 'Star',
-  'Coffee', 'Music', 'Book', 'Dumbbell',
-]
+import { renderIcon } from '../lib/iconRenderer'
+import IconPicker from '../components/ui/IconPicker'
 
 const COLOR_OPTIONS = [
   '#F59E0B', '#3B82F6', '#6366F1', '#64748B', '#10B981', '#8B5CF6',
@@ -31,15 +27,23 @@ export default function Settings() {
   const [newCatIcon, setNewCatIcon] = useState('Tag')
   const [newCatColor, setNewCatColor] = useState('#6B3FA0')
   const [newCard, setNewCard] = useState('')
+  const [newCardIcon, setNewCardIcon] = useState('CreditCard')
+  const [newCardColor, setNewCardColor] = useState('#6B3FA0')
   const [newTransferCat, setNewTransferCat] = useState('')
+  const [newTransferCatIcon, setNewTransferCatIcon] = useState('Tag')
+  const [newTransferCatColor, setNewTransferCatColor] = useState('#6366F1')
   const [confirmClear, setConfirmClear] = useState(false)
   const [actionStatus, setActionStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [editCat, setEditCat] = useState<Category | null>(null)
+  const [editCard, setEditCard] = useState<CreditCard | null>(null)
+  const [editCardOriginalName, setEditCardOriginalName] = useState<string>('')
+  const [editTransferCat, setEditTransferCat] = useState<TransferCategory | null>(null)
+  const [editTransferCatOriginalName, setEditTransferCatOriginalName] = useState<string>('')
 
   function showStatus(type: 'success' | 'error', message: string) {
     setActionStatus({ type, message })
     setTimeout(() => setActionStatus(null), 3000)
   }
-  const [editCat, setEditCat] = useState<Category | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   function saveNames() {
@@ -72,22 +76,34 @@ export default function Settings() {
 
   function addCard() {
     if (!newCard.trim()) return
-    updateSettings({ creditCards: [...settings.creditCards, newCard.trim()] })
+    updateSettings({ creditCards: [...settings.creditCards, { name: newCard.trim(), icon: newCardIcon, color: newCardColor }] })
     setNewCard('')
   }
 
-  function deleteCard(card: string) {
-    updateSettings({ creditCards: settings.creditCards.filter((c) => c !== card) })
+  function deleteCard(name: string) {
+    updateSettings({ creditCards: settings.creditCards.filter((c) => c.name !== name) })
+  }
+
+  function saveEditCard() {
+    if (!editCard) return
+    updateSettings({ creditCards: settings.creditCards.map((c) => c.name === editCardOriginalName ? editCard : c) })
+    setEditCard(null)
   }
 
   function addTransferCat() {
     if (!newTransferCat.trim()) return
-    updateSettings({ transferCategories: [...settings.transferCategories, newTransferCat.trim()] })
+    updateSettings({ transferCategories: [...settings.transferCategories, { name: newTransferCat.trim(), icon: newTransferCatIcon, color: newTransferCatColor }] })
     setNewTransferCat('')
   }
 
-  function deleteTransferCat(cat: string) {
-    updateSettings({ transferCategories: settings.transferCategories.filter((c) => c !== cat) })
+  function deleteTransferCat(name: string) {
+    updateSettings({ transferCategories: settings.transferCategories.filter((c) => c.name !== name) })
+  }
+
+  function saveEditTransferCat() {
+    if (!editTransferCat) return
+    updateSettings({ transferCategories: settings.transferCategories.map((c) => c.name === editTransferCatOriginalName ? editTransferCat : c) })
+    setEditTransferCat(null)
   }
 
   function getExportData() {
@@ -100,6 +116,8 @@ export default function Settings() {
       portfolios: store.portfolios,
       investmentMovements: store.investmentMovements,
       settlements: store.settlements,
+      mortgageConfig: store.mortgageConfig,
+      mortgagePayments: store.mortgagePayments,
     }
   }
 
@@ -124,16 +142,32 @@ export default function Settings() {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string)
-        let backupDate: string = data.exportedAt ?? ''
-        if (!backupDate) {
-          const match = file.name.match(/(\d{4}-\d{2}-\d{2})/)
-          if (match) {
-            backupDate = match[1]
-          } else {
-            const now = new Date()
-            backupDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-          }
+        // Normalize creditCards: string[] → { name, icon, color }[]
+        if (data.settings?.creditCards && Array.isArray(data.settings.creditCards)) {
+          data.settings.creditCards = data.settings.creditCards.map((c: unknown) =>
+            typeof c === 'string' ? { name: c, icon: 'CreditCard', color: '#6B3FA0' } : { color: '#6B3FA0', ...(c as object) }
+          )
         }
+        // Normalize transferCategories: string[] → { name, icon, color }[]
+        if (data.settings?.transferCategories && Array.isArray(data.settings.transferCategories)) {
+          const iconMap: Record<string, string> = { Household: 'Home', Rental: 'Building2', Others: 'Tag' }
+          const colorMap: Record<string, string> = { Household: '#6366F1', Rental: '#14B8A6', Others: '#64748B' }
+          data.settings.transferCategories = data.settings.transferCategories.map((c: unknown) =>
+            typeof c === 'string'
+              ? { name: c, icon: iconMap[c] ?? 'Tag', color: colorMap[c] ?? '#6B3FA0' }
+              : { color: colorMap[(c as { name: string }).name] ?? '#6B3FA0', ...(c as object) }
+          )
+        }
+        const filenameMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/)
+        let backupDate: string = filenameMatch ? filenameMatch[1] : (data.exportedAt ?? '')
+        if (!backupDate) {
+          const now = new Date()
+          backupDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+        }
+        // If the backup predates mortgage support, preserve current mortgage data
+        const currentStore = useStore.getState()
+        if (!data.mortgageConfig) data.mortgageConfig = currentStore.mortgageConfig
+        if (!data.mortgagePayments) data.mortgagePayments = currentStore.mortgagePayments
         localStorage.setItem('finance-app-backup-date', backupDate)
         window.dispatchEvent(new Event('financeAppBackupImported'))
         importData(data)
@@ -164,12 +198,14 @@ export default function Settings() {
     }
   }
 
-  const sectionClass = 'bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden'
-  const sectionHeader = 'px-5 py-4 border-b border-gray-100 dark:border-[#2D3448] bg-gray-50 dark:bg-gray-800/50'
+  const sectionClass = 'bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm'
+  const sectionHeader = 'px-5 py-4 border-b border-gray-100 dark:border-[#2D3448] bg-gray-50 dark:bg-gray-800/50 rounded-t-2xl'
   const inputClass = 'border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]'
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl">
+      {/* User Names + Theme side by side */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
       {/* User Names */}
       <div className={sectionClass}>
         <div className={sectionHeader}>
@@ -243,6 +279,7 @@ export default function Settings() {
           </button>
         </div>
       </div>
+      </div>{/* end grid: User Names + Theme */}
 
       {/* Expense Categories */}
       <div className={sectionClass}>
@@ -257,11 +294,12 @@ export default function Settings() {
           </button>
         </div>
         <div className="p-5 space-y-3">
-          {settings.expenseCategories.map((cat) => (
+          {[...settings.expenseCategories].sort((a, b) => a.name.localeCompare(b.name)).map((cat) => (
             <div key={cat.id} className="flex items-center gap-3">
-              <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${cat.color}20` }}>
+                {renderIcon(cat.icon, 'w-4 h-4', cat.color)}
+              </span>
               <span className="text-sm text-gray-900 dark:text-white flex-1">{cat.name}</span>
-              <span className="text-xs text-gray-400">{cat.icon}</span>
               <input
                 type="number"
                 min="0"
@@ -291,31 +329,30 @@ export default function Settings() {
             </div>
           ))}
 
-          <div className="border-t border-gray-100 dark:border-[#2D3448] pt-3 space-y-2">
-            <div className="flex items-center gap-2">
+          <div className="border-t border-gray-100 dark:border-[#2D3448] pt-3">
+            <div className="flex items-center gap-2 flex-wrap">
               <input
                 type="text"
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 placeholder="Category name"
-                className={`${inputClass} flex-1`}
+                onKeyDown={(e) => e.key === 'Enter' && addCategory()}
+                className={`${inputClass} flex-1 min-w-[120px]`}
               />
-              <select value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} className={inputClass}>
-                {ICON_OPTIONS.map((icon) => <option key={icon} value={icon}>{icon}</option>)}
-              </select>
-              <div className="flex items-center gap-1">
-                {COLOR_OPTIONS.slice(0, 8).map((c) => (
+              <IconPicker value={newCatIcon} onChange={setNewCatIcon} color={newCatColor} />
+              <div className="flex flex-wrap gap-1">
+                {COLOR_OPTIONS.map((c) => (
                   <button
                     key={c}
                     onClick={() => setNewCatColor(c)}
-                    className={`w-5 h-5 rounded-full ${newCatColor === c ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                    className={`w-5 h-5 rounded-full transition-transform hover:scale-110 ${newCatColor === c ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
                     style={{ backgroundColor: c }}
                   />
                 ))}
               </div>
               <button
                 onClick={addCategory}
-                className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors"
+                className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -324,38 +361,62 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Credit Cards + Transfer Categories side by side */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
       {/* Credit Cards */}
       <div className={sectionClass}>
         <div className={sectionHeader}>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Credit Cards</h3>
         </div>
         <div className="p-5 space-y-3">
-          {settings.creditCards.map((card) => (
-            <div key={card} className="flex items-center justify-between">
-              <span className="text-sm text-gray-900 dark:text-white">{card}</span>
+          {[...settings.creditCards].sort((a, b) => a.name.localeCompare(b.name)).map((card) => (
+            <div key={card.name} className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${card.color}20` }}>
+                {renderIcon(card.icon, 'w-4 h-4', card.color)}
+              </span>
+              <span className="text-sm text-gray-900 dark:text-white flex-1">{card.name}</span>
               <button
-                onClick={() => deleteCard(card)}
+                onClick={() => { setEditCard({ ...card }); setEditCardOriginalName(card.name) }}
+                className="p-1.5 text-gray-400 hover:text-[#6B3FA0] transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => deleteCard(card.name)}
                 className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
-          <div className="flex gap-2 border-t border-gray-100 dark:border-[#2D3448] pt-3">
-            <input
-              type="text"
-              value={newCard}
-              onChange={(e) => setNewCard(e.target.value)}
-              placeholder="Card name"
-              onKeyDown={(e) => e.key === 'Enter' && addCard()}
-              className={`${inputClass} flex-1`}
-            />
-            <button
-              onClick={addCard}
-              className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+          <div className="border-t border-gray-100 dark:border-[#2D3448] pt-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="text"
+                value={newCard}
+                onChange={(e) => setNewCard(e.target.value)}
+                placeholder="Card name"
+                onKeyDown={(e) => e.key === 'Enter' && addCard()}
+                className={`${inputClass} flex-1 min-w-[120px]`}
+              />
+              <IconPicker value={newCardIcon} onChange={setNewCardIcon} color={newCardColor} />
+              <div className="flex flex-wrap gap-1">
+                {COLOR_OPTIONS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setNewCardColor(c)}
+                    className={`w-5 h-5 rounded-full transition-transform hover:scale-110 ${newCardColor === c ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={addCard}
+                className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors flex-shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -366,35 +427,58 @@ export default function Settings() {
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Transfer Categories</h3>
         </div>
         <div className="p-5 space-y-3">
-          {settings.transferCategories.map((cat) => (
-            <div key={cat} className="flex items-center justify-between">
-              <span className="text-sm text-gray-900 dark:text-white">{cat}</span>
+          {[...settings.transferCategories].sort((a, b) => a.name.localeCompare(b.name)).map((cat) => (
+            <div key={cat.name} className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${cat.color}20` }}>
+                {renderIcon(cat.icon, 'w-4 h-4', cat.color)}
+              </span>
+              <span className="text-sm text-gray-900 dark:text-white flex-1">{cat.name}</span>
               <button
-                onClick={() => deleteTransferCat(cat)}
+                onClick={() => { setEditTransferCat({ ...cat }); setEditTransferCatOriginalName(cat.name) }}
+                className="p-1.5 text-gray-400 hover:text-[#6B3FA0] transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => deleteTransferCat(cat.name)}
                 className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
-          <div className="flex gap-2 border-t border-gray-100 dark:border-[#2D3448] pt-3">
-            <input
-              type="text"
-              value={newTransferCat}
-              onChange={(e) => setNewTransferCat(e.target.value)}
-              placeholder="Category name"
-              onKeyDown={(e) => e.key === 'Enter' && addTransferCat()}
-              className={`${inputClass} flex-1`}
-            />
-            <button
-              onClick={addTransferCat}
-              className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+          <div className="border-t border-gray-100 dark:border-[#2D3448] pt-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="text"
+                value={newTransferCat}
+                onChange={(e) => setNewTransferCat(e.target.value)}
+                placeholder="Category name"
+                onKeyDown={(e) => e.key === 'Enter' && addTransferCat()}
+                className={`${inputClass} flex-1 min-w-[120px]`}
+              />
+              <IconPicker value={newTransferCatIcon} onChange={setNewTransferCatIcon} color={newTransferCatColor} />
+              <div className="flex flex-wrap gap-1">
+                {COLOR_OPTIONS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setNewTransferCatColor(c)}
+                    className={`w-5 h-5 rounded-full transition-transform hover:scale-110 ${newTransferCatColor === c ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={addTransferCat}
+                className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors flex-shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      </div>{/* end grid: Credit Cards + Transfer Categories */}
 
       {/* Data Management */}
       <div className={sectionClass}>
@@ -481,13 +565,7 @@ export default function Settings() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon</label>
-              <select
-                value={editCat.icon}
-                onChange={(e) => setEditCat({ ...editCat, icon: e.target.value })}
-                className={`${inputClass} w-full`}
-              >
-                {ICON_OPTIONS.map((icon) => <option key={icon} value={icon}>{icon}</option>)}
-              </select>
+              <IconPicker value={editCat.icon} onChange={(icon) => setEditCat({ ...editCat, icon })} color={editCat.color} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
@@ -520,6 +598,94 @@ export default function Settings() {
                 Cancel
               </button>
               <button onClick={saveEditCat}
+                className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
+                Save
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Credit Card Modal */}
+      <Modal open={!!editCard} onClose={() => setEditCard(null)} title="Edit Credit Card">
+        {editCard && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+              <input
+                type="text"
+                value={editCard.name}
+                onChange={(e) => setEditCard({ ...editCard, name: e.target.value })}
+                className={`${inputClass} w-full`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icon</label>
+              <IconPicker value={editCard.icon} onChange={(icon) => setEditCard({ ...editCard, icon })} color={editCard.color} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
+              <div className="flex flex-wrap gap-2">
+                {COLOR_OPTIONS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setEditCard({ ...editCard, color: c })}
+                    className={`w-7 h-7 rounded-full transition-transform hover:scale-110 ${editCard.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setEditCard(null)}
+                className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium">
+                Cancel
+              </button>
+              <button onClick={saveEditCard}
+                className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
+                Save
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Transfer Category Modal */}
+      <Modal open={!!editTransferCat} onClose={() => setEditTransferCat(null)} title="Edit Transfer Category">
+        {editTransferCat && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+              <input
+                type="text"
+                value={editTransferCat.name}
+                onChange={(e) => setEditTransferCat({ ...editTransferCat, name: e.target.value })}
+                className={`${inputClass} w-full`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icon</label>
+              <IconPicker value={editTransferCat.icon} onChange={(icon) => setEditTransferCat({ ...editTransferCat, icon })} color={editTransferCat.color} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
+              <div className="flex flex-wrap gap-2">
+                {COLOR_OPTIONS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setEditTransferCat({ ...editTransferCat, color: c })}
+                    className={`w-7 h-7 rounded-full transition-transform hover:scale-110 ${editTransferCat.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setEditTransferCat(null)}
+                className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium">
+                Cancel
+              </button>
+              <button onClick={saveEditTransferCat}
                 className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
                 Save
               </button>

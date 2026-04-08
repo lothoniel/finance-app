@@ -5,6 +5,7 @@ import CashFlow from './pages/CashFlow'
 import Income from './pages/Income'
 import Expenses from './pages/Expenses'
 import DebtPayment from './pages/DebtPayment'
+import MortgagePage from './pages/Mortgage'
 import Portfolio from './pages/Portfolio'
 import SharedBalance from './pages/SharedBalance'
 import Settings from './pages/Settings'
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="income" element={<Income />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="debt" element={<DebtPayment />} />
+          <Route path="mortgage" element={<MortgagePage />} />
           <Route path="portfolio" element={<Portfolio />} />
           <Route path="shared-balance" element={<SharedBalance />} />
           <Route path="settings" element={<Settings />} />

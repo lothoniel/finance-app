@@ -3,15 +3,12 @@ import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { Paycheck } from '../../store/types'
+import { today } from '../../lib/formatters'
 
 interface PaycheckFormProps {
   open: boolean
   onClose: () => void
   paycheck?: Paycheck
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export default function PaycheckForm({ open, onClose, paycheck }: PaycheckFormProps) {

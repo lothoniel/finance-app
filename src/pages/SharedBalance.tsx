@@ -52,6 +52,7 @@ export default function SharedBalance() {
     setSettleOpen(false)
     setSettleAmount('')
     setSettleDesc('')
+    setSettlePaidBy('user2')
   }
 
   return (

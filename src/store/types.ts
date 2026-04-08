@@ -76,11 +76,40 @@ export interface Settlement {
   description: string
 }
 
+export interface CreditCard {
+  name: string
+  icon: string
+  color: string
+}
+
+export interface TransferCategory {
+  name: string
+  icon: string
+  color: string
+}
+
+export interface MortgageConfig {
+  principal: number
+  interestRate: number  // annual %
+  termMonths: number
+  startDate: string     // YYYY-MM-DD
+  minimumPayment: number
+}
+
+export interface MortgagePayment {
+  id: string
+  date: string          // YYYY-MM-DD
+  totalPaid: number
+  extraCapital: number
+  balanceAfter: number
+  note?: string
+}
+
 export interface AppSettings {
   user1Name: string
   user2Name: string
   theme: 'light' | 'dark'
   expenseCategories: Category[]
-  creditCards: string[]
-  transferCategories: string[]
+  creditCards: CreditCard[]
+  transferCategories: TransferCategory[]
 }

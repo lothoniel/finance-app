@@ -1,6 +1,7 @@
 import { generateId } from '../lib/id'
 import { useState, useMemo } from 'react'
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
+import { renderIcon } from '../lib/iconRenderer'
 import { useStore } from '../store'
 import KpiCard from '../components/ui/KpiCard'
 import PeriodSelector from '../components/ui/PeriodSelector'
@@ -100,6 +101,7 @@ export default function Expenses() {
     setSettleOpen(false)
     setSettleAmount('')
     setSettleDesc('')
+    setSettlePaidBy('user2')
   }
 
   const grouped = useMemo(() => groupByMonth(displayed), [displayed])
@@ -177,7 +179,9 @@ export default function Expenses() {
                       <div key={c.id}>
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                            <span className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${c.color}20` }}>
+                              {renderIcon(c.icon, 'w-3.5 h-3.5', c.color)}
+                            </span>
                             <span className="text-sm text-gray-700 dark:text-gray-300">{c.name}</span>
                           </div>
                           <span className={`text-xs font-semibold ${over ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
@@ -347,6 +351,7 @@ export default function Expenses() {
                 xKey="name"
                 height={Math.max(200, barData.length * 36)}
                 horizontal
+                colorKey="color"
               />
             </div>
           )}
@@ -392,7 +397,7 @@ export default function Expenses() {
                     return (
                       <div key={e.id} className="flex items-center gap-3 px-5 py-3">
                         <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${cat?.color}20` }}>
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat?.color }} />
+                          {cat ? renderIcon(cat.icon, 'w-4 h-4', cat.color) : null}
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-900 dark:text-white truncate">{e.description}</p>

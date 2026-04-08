@@ -6,8 +6,6 @@ import {
   CreditCard,
   BarChart2,
   Users,
-  ArrowUpRight,
-  ArrowDownRight,
   DollarSign,
   ArrowRightLeft,
   Percent,
@@ -19,9 +17,8 @@ import BarChart from '../components/charts/BarChart'
 import AreaChart from '../components/charts/AreaChart'
 import Modal from '../components/ui/Modal'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
-import { formatMXN, formatMXNCompact, formatDate, formatShortMonth } from '../lib/formatters'
+import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
 import { calculateSettlement } from '../lib/settlement'
-import type { Settlement } from '../store/types'
 
 function getCurrentMonthValue(): PeriodValue {
   const now = new Date()

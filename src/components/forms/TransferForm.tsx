@@ -3,15 +3,12 @@ import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { Transfer } from '../../store/types'
+import { today } from '../../lib/formatters'
 
 interface TransferFormProps {
   open: boolean
   onClose: () => void
   transfer?: Transfer
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export default function TransferForm({ open, onClose, transfer }: TransferFormProps) {
@@ -21,7 +18,7 @@ export default function TransferForm({ open, onClose, transfer }: TransferFormPr
 
   const [form, setForm] = useState({
     date: today(),
-    category: transferCategories[0] ?? 'Household',
+    category: transferCategories[0]?.name ?? 'Household',
     description: '',
     amount: '',
   })
@@ -37,7 +34,7 @@ export default function TransferForm({ open, onClose, transfer }: TransferFormPr
     } else {
       setForm({
         date: today(),
-        category: transferCategories[0] ?? 'Household',
+        category: transferCategories[0]?.name ?? 'Household',
         description: '',
         amount: '',
       })
@@ -90,8 +87,8 @@ export default function TransferForm({ open, onClose, transfer }: TransferFormPr
             className={inputClass}
           >
             {transferCategories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+              <option key={cat.name} value={cat.name}>
+                {cat.name}
               </option>
             ))}
           </select>
