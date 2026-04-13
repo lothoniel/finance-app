@@ -118,6 +118,7 @@ export default function Settings() {
       settlements: store.settlements,
       mortgageConfig: store.mortgageConfig,
       mortgagePayments: store.mortgagePayments,
+      mortgageContributions: store.mortgageContributions,
     }
   }
 
@@ -168,6 +169,7 @@ export default function Settings() {
         const currentStore = useStore.getState()
         if (!data.mortgageConfig) data.mortgageConfig = currentStore.mortgageConfig
         if (!data.mortgagePayments) data.mortgagePayments = currentStore.mortgagePayments
+        if (!data.mortgageContributions) data.mortgageContributions = currentStore.mortgageContributions
         localStorage.setItem('finance-app-backup-date', backupDate)
         window.dispatchEvent(new Event('financeAppBackupImported'))
         importData(data)

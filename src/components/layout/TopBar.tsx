@@ -14,6 +14,7 @@ const routeTitles: Record<string, string> = {
   '/debt': 'Debt Payments',
   '/portfolio': 'Portfolio',
   '/shared-balance': 'Shared Balance',
+  '/mortgage': 'Mortgage',
   '/settings': 'Settings',
 }
 

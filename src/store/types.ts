@@ -113,6 +113,14 @@ export interface MortgagePayment {
   note?: string
 }
 
+export interface MortgageContribution {
+  id: string
+  date: string        // YYYY-MM-DD
+  by: string          // free-text name, e.g. "Jorge", "Caro", "Papa"
+  description: string
+  amount: number
+}
+
 export interface AppSettings {
   user1Name: string
   user2Name: string

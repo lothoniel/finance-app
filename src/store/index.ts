@@ -14,6 +14,7 @@ import type {
   CashEntry,
   MortgageConfig,
   MortgagePayment,
+  MortgageContribution,
 } from './types'
 
 interface AppState {
@@ -29,6 +30,7 @@ interface AppState {
   cashEntries: CashEntry[]
   mortgageConfig: MortgageConfig
   mortgagePayments: MortgagePayment[]
+  mortgageContributions: MortgageContribution[]
   importedBackupDate: string | null
   // Actions
   updateSettings: (s: Partial<AppSettings>) => void
@@ -59,6 +61,9 @@ interface AppState {
   addMortgagePayment: (p: MortgagePayment) => void
   updateMortgagePayment: (id: string, p: Partial<MortgagePayment>) => void
   deleteMortgagePayment: (id: string) => void
+  addMortgageContribution: (c: MortgageContribution) => void
+  updateMortgageContribution: (id: string, c: Partial<MortgageContribution>) => void
+  deleteMortgageContribution: (id: string) => void
   importData: (data: Partial<AppState>) => void
   resetToDefaults: () => void
 }
@@ -68,6 +73,7 @@ export const useStore = create<AppState>()(
     (set) => ({
       ...seedData,
       cashEntries: [],
+      mortgageContributions: [],
       importedBackupDate: null,
 
       updateSettings: (s) =>
@@ -170,6 +176,17 @@ export const useStore = create<AppState>()(
       deleteMortgagePayment: (id) =>
         set((state) => ({ mortgagePayments: state.mortgagePayments.filter((x) => x.id !== id) })),
 
+      addMortgageContribution: (c) =>
+        set((state) => ({ mortgageContributions: [...state.mortgageContributions, c] })),
+
+      updateMortgageContribution: (id, c) =>
+        set((state) => ({
+          mortgageContributions: state.mortgageContributions.map((x) => (x.id === id ? { ...x, ...c } : x)),
+        })),
+
+      deleteMortgageContribution: (id) =>
+        set((state) => ({ mortgageContributions: state.mortgageContributions.filter((x) => x.id !== id) })),
+
       importData: (data) =>
         set((state) => ({
           ...state,
@@ -189,7 +206,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'finance-app-v1',
-      version: 5,
+      version: 9,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>
         const settings = (state.settings ?? {}) as Record<string, unknown>
@@ -236,6 +253,50 @@ export const useStore = create<AppState>()(
           if (!state.cashEntries) {
             state.cashEntries = []
           }
+        }
+        if (version < 6) {
+          if (!state.mortgageContributions) {
+            state.mortgageContributions = []
+          }
+        }
+        if (version < 9) {
+          state.mortgageContributions = [
+            { id: 'mc-001', date: '2025-05-01', by: 'Jorge', description: 'Carta promesa', amount: 150000 },
+            { id: 'mc-002', date: '2025-05-01', by: 'Caro',  description: 'Boleta Aviso', amount: 1419 },
+            { id: 'mc-003', date: '2025-05-15', by: 'Jorge', description: 'Enganche', amount: 80205.10 },
+            { id: 'mc-004', date: '2025-05-15', by: 'Caro',  description: 'Enganche', amount: 230205.10 },
+            { id: 'mc-005', date: '2025-05-24', by: 'Jorge', description: 'Mensualidad May 25', amount: 16000 },
+            { id: 'mc-006', date: '2025-05-24', by: 'Caro',  description: 'Mensualidad May 25', amount: 16000 },
+            { id: 'mc-007', date: '2025-06-04', by: 'Jorge', description: 'Anticipo Herrero', amount: 3350 },
+            { id: 'mc-008', date: '2025-06-04', by: 'Caro',  description: 'Anticipo Herrero', amount: 3350 },
+            { id: 'mc-009', date: '2025-06-30', by: 'Jorge', description: 'Mensualidad Junio 25', amount: 16000 },
+            { id: 'mc-010', date: '2025-06-30', by: 'Caro',  description: 'Mensualidad Junio 25', amount: 16000 },
+            { id: 'mc-011', date: '2025-07-30', by: 'Jorge', description: 'Mensualidad Julio 25', amount: 16000 },
+            { id: 'mc-012', date: '2025-07-30', by: 'Caro',  description: 'Mensualidad Julio 25', amount: 16000 },
+            { id: 'mc-013', date: '2025-08-28', by: 'Jorge', description: 'Mensualidad Agosto 25', amount: 16000 },
+            { id: 'mc-014', date: '2025-08-29', by: 'Caro',  description: 'Mensualidad Agosto 25', amount: 16000 },
+            { id: 'mc-015', date: '2025-09-30', by: 'Jorge', description: 'Mensualidad Sep 25', amount: 16000 },
+            { id: 'mc-016', date: '2025-09-30', by: 'Caro',  description: 'Mensualidad Sep 25', amount: 16000 },
+            { id: 'mc-017', date: '2025-09-30', by: 'Papa',  description: 'Mensualidad Sep 25', amount: 12000 },
+            { id: 'mc-018', date: '2025-10-30', by: 'Jorge', description: 'Mensualidad Oct 25', amount: 16000 },
+            { id: 'mc-019', date: '2025-10-30', by: 'Caro',  description: 'Mensualidad Oct 25', amount: 16000 },
+            { id: 'mc-020', date: '2025-10-30', by: 'Papa',  description: 'Mensualidad Oct 25', amount: 12300 },
+            { id: 'mc-021', date: '2025-11-12', by: 'Papa',  description: 'Abono Nov 25', amount: 55834 },
+            { id: 'mc-022', date: '2025-11-12', by: 'Caro',  description: 'Mensualidad Nov 25', amount: 16000 },
+            { id: 'mc-023', date: '2025-12-01', by: 'Jorge', description: 'Mensualidad Nov 25', amount: 16000 },
+            { id: 'mc-024', date: '2025-12-30', by: 'Caro',  description: 'Mensualidad Dic 25', amount: 16000 },
+            { id: 'mc-025', date: '2025-12-30', by: 'Jorge', description: 'Mensualidad Dic 25', amount: 16000 },
+            { id: 'mc-026', date: '2026-01-30', by: 'Caro',  description: 'Mensualidad Ene 26', amount: 16000 },
+            { id: 'mc-027', date: '2026-01-30', by: 'Jorge', description: 'Mensualidad Ene 26', amount: 16000 },
+            { id: 'mc-028', date: '2026-02-09', by: 'Renta', description: 'Abono a capital de la Renta Feb', amount: 16000 },
+            { id: 'mc-029', date: '2026-02-28', by: 'Jorge', description: 'Mensualidad Feb 26', amount: 16000 },
+            { id: 'mc-030', date: '2026-03-01', by: 'Caro',  description: 'Mensualidad Feb 26', amount: 16000 },
+            { id: 'mc-031', date: '2026-03-01', by: 'Renta', description: 'Abono a capital de la Renta Mar', amount: 16000 },
+            { id: 'mc-032', date: '2026-04-01', by: 'Jorge', description: 'Mensualidad Mar 26', amount: 16000 },
+            { id: 'mc-033', date: '2026-04-01', by: 'Caro',  description: 'Mensualidad Mar 26', amount: 16000 },
+            { id: 'mc-034', date: '2026-04-01', by: 'Renta', description: 'Abono a capital de la Renta Abr', amount: 16000 },
+            { id: 'mc-035', date: '2026-04-01', by: 'Papa',  description: 'Abono Mar 26', amount: 10666 },
+          ]
         }
         state.settings = settings
         return state

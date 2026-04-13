@@ -11,6 +11,7 @@ import type {
   Settlement,
   MortgageConfig,
   MortgagePayment,
+  MortgageContribution,
 } from '../store/types'
 
 interface ExportData {
@@ -24,6 +25,7 @@ interface ExportData {
   settlements: Settlement[]
   mortgageConfig?: MortgageConfig
   mortgagePayments?: MortgagePayment[]
+  mortgageContributions?: MortgageContribution[]
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -33,6 +35,10 @@ function triggerDownload(blob: Blob, filename: string) {
   a.download = filename
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function setColWidths(ws: XLSX.WorkSheet, widths: number[]) {
+  ws['!cols'] = widths.map((w) => ({ wch: w }))
 }
 
 export function exportToExcel(data: ExportData) {
@@ -109,23 +115,32 @@ export function exportToExcel(data: ExportData) {
     Note: p.note ?? '',
   }))
 
-  const sheets: [string, object[]][] = [
-    ['Expenses', expenses],
-    ['Paychecks', paychecks],
-    ['Manual Taxes', manualTaxes],
-    ['Transfers', transfers],
-    ['Debt Payments', debtPayments],
-    ['Portfolios', portfolios],
-    ['Investment Movements', movements],
-    ['Settlements', settlements],
-    ['Mortgage Payments', mortgagePayments],
+  const mortgageContributions = (data.mortgageContributions ?? []).map((c) => ({
+    Date: formatDate(c.date),
+    By: c.by,
+    Description: c.description,
+    Amount: c.amount,
+  }))
+
+  type SheetDef = { name: string; rows: object[]; widths: number[]; emptyHeaders?: string[] }
+  const sheets: SheetDef[] = [
+    { name: 'Expenses',             rows: expenses,             widths: [12, 30, 12, 18, 18, 10, 8] },
+    { name: 'Paychecks',            rows: paychecks,            widths: [12, 14, 12, 14, 14] },
+    { name: 'Manual Taxes',         rows: manualTaxes,          widths: [12, 30, 12] },
+    { name: 'Transfers',            rows: transfers,            widths: [12, 18, 30, 12] },
+    { name: 'Debt Payments',        rows: debtPayments,         widths: [12, 20, 30, 12] },
+    { name: 'Portfolios',           rows: portfolios,           widths: [20, 12, 8, 14, 14, 14] },
+    { name: 'Investment Movements', rows: movements,            widths: [12, 20, 30, 10, 12] },
+    { name: 'Settlements',          rows: settlements,          widths: [12, 12, 10, 30] },
+    { name: 'Mortgage Payments',    rows: mortgagePayments,     widths: [12, 14, 14, 14, 30], emptyHeaders: ['Date', 'Total Paid', 'Extra Capital', 'Balance After', 'Note'] },
+    { name: 'Mortgage Contributions', rows: mortgageContributions, widths: [12, 14, 30, 12], emptyHeaders: ['Date', 'By', 'Description', 'Amount'] },
   ]
 
-  const MORTGAGE_HEADERS = ['Date', 'Total Paid', 'Extra Capital', 'Balance After', 'Note']
-  for (const [name, rows] of sheets) {
-    const ws = (name === 'Mortgage Payments' && rows.length === 0)
-      ? XLSX.utils.aoa_to_sheet([MORTGAGE_HEADERS])
+  for (const { name, rows, widths, emptyHeaders } of sheets) {
+    const ws = (emptyHeaders && rows.length === 0)
+      ? XLSX.utils.aoa_to_sheet([emptyHeaders])
       : XLSX.utils.json_to_sheet(rows)
+    setColWidths(ws, widths)
     XLSX.utils.book_append_sheet(wb, ws, name)
   }
 
@@ -205,6 +220,12 @@ export function exportToXML(data: ExportData) {
       `    <mortgagePayment date="${p.date}" totalPaid="${p.totalPaid}" extraCapital="${p.extraCapital}" balanceAfter="${p.balanceAfter}" note="${escapeXml(p.note ?? '')}"/>`
     ),
     '  </mortgagePayments>',
+
+    '  <mortgageContributions>',
+    ...(data.mortgageContributions ?? []).map((c) =>
+      `    <contribution date="${c.date}" by="${escapeXml(c.by)}" amount="${c.amount}">${escapeXml(c.description)}</contribution>`
+    ),
+    '  </mortgageContributions>',
 
     '</financeApp>',
   ]
