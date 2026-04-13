@@ -11,6 +11,7 @@ import type {
   Portfolio,
   InvestmentMovement,
   Settlement,
+  CashEntry,
   MortgageConfig,
   MortgagePayment,
 } from './types'
@@ -25,6 +26,7 @@ interface AppState {
   portfolios: Portfolio[]
   investmentMovements: InvestmentMovement[]
   settlements: Settlement[]
+  cashEntries: CashEntry[]
   mortgageConfig: MortgageConfig
   mortgagePayments: MortgagePayment[]
   importedBackupDate: string | null
@@ -51,6 +53,8 @@ interface AppState {
   updateInvestmentMovement: (id: string, m: Partial<InvestmentMovement>) => void
   deleteInvestmentMovement: (id: string) => void
   addSettlement: (s: Settlement) => void
+  addCashEntry: (c: CashEntry) => void
+  deleteCashEntry: (id: string) => void
   updateMortgageConfig: (c: Partial<MortgageConfig>) => void
   addMortgagePayment: (p: MortgagePayment) => void
   updateMortgagePayment: (id: string, p: Partial<MortgagePayment>) => void
@@ -63,6 +67,7 @@ export const useStore = create<AppState>()(
   persist(
     (set) => ({
       ...seedData,
+      cashEntries: [],
       importedBackupDate: null,
 
       updateSettings: (s) =>
@@ -145,6 +150,12 @@ export const useStore = create<AppState>()(
       addSettlement: (s) =>
         set((state) => ({ settlements: [...state.settlements, s] })),
 
+      addCashEntry: (c) =>
+        set((state) => ({ cashEntries: [...state.cashEntries, c] })),
+
+      deleteCashEntry: (id) =>
+        set((state) => ({ cashEntries: state.cashEntries.filter((c) => c.id !== id) })),
+
       updateMortgageConfig: (c) =>
         set((state) => ({ mortgageConfig: { ...state.mortgageConfig, ...c } })),
 
@@ -178,7 +189,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'finance-app-v1',
-      version: 4,
+      version: 5,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>
         const settings = (state.settings ?? {}) as Record<string, unknown>
@@ -219,6 +230,11 @@ export const useStore = create<AppState>()(
           }
           if (!state.mortgagePayments) {
             state.mortgagePayments = []
+          }
+        }
+        if (version < 5) {
+          if (!state.cashEntries) {
+            state.cashEntries = []
           }
         }
         state.settings = settings

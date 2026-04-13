@@ -1,8 +1,6 @@
 import { Sun, Moon, Menu } from 'lucide-react'
 import { useStore } from '../../store'
 import { useLocation } from 'react-router-dom'
-import { formatDate } from '../../lib/formatters'
-import { useState, useEffect } from 'react'
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -23,13 +21,6 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
   const { pathname } = useLocation()
   const theme = useStore((s) => s.settings.theme)
   const updateSettings = useStore((s) => s.updateSettings)
-  const [backupDate, setBackupDate] = useState<string | null>(() => localStorage.getItem('finance-app-backup-date'))
-
-  useEffect(() => {
-    const onImport = () => setBackupDate(localStorage.getItem('finance-app-backup-date'))
-    window.addEventListener('financeAppBackupImported', onImport)
-    return () => window.removeEventListener('financeAppBackupImported', onImport)
-  }, [])
 
   const title = routeTitles[pathname] ?? 'Finance App'
 
@@ -56,12 +47,6 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
           {title}
         </h1>
       </div>
-
-      {backupDate && (
-        <span className="hidden sm:block text-xs text-gray-400 dark:text-gray-500">
-          Working on backup <span className="font-medium text-[#6B3FA0]">{formatDate(backupDate.slice(0, 10))}</span>
-        </span>
-      )}
 
       <button
         onClick={toggleTheme}

@@ -28,6 +28,7 @@ export default function Expenses() {
   const [typeFilter, setTypeFilter] = useState<'all' | 'shared' | 'personal'>('all')
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('all')
+  const [subCatFilter, setSubCatFilter] = useState('all')
   const [expenseModal, setExpenseModal] = useState(false)
   const [editExpense, setEditExpense] = useState<Expense | undefined>()
   const [settleOpen, setSettleOpen] = useState(false)
@@ -50,13 +51,21 @@ export default function Expenses() {
     return result
   }, [expenses, periodMode, periodValue, typeFilter])
 
+  const availableSubCats = useMemo(() => {
+    const subs = filtered
+      .filter((e) => catFilter === 'all' || e.category === catFilter)
+      .flatMap((e) => e.subCategory ? [e.subCategory] : [])
+    return [...new Set(subs)].sort()
+  }, [filtered, catFilter])
+
   const displayed = useMemo(() => {
     return filtered.filter((e) => {
       const matchSearch = e.description.toLowerCase().includes(search.toLowerCase())
       const matchCat = catFilter === 'all' || e.category === catFilter
-      return matchSearch && matchCat
+      const matchSubCat = subCatFilter === 'all' || e.subCategory === subCatFilter
+      return matchSearch && matchCat && matchSubCat
     })
-  }, [filtered, search, catFilter])
+  }, [filtered, search, catFilter, subCatFilter])
 
   const total = filtered.reduce((s, e) => s + e.amount, 0)
   const monthCount = useMemo(() => {
@@ -120,7 +129,7 @@ export default function Expenses() {
 
       {/* Shared controls */}
       <div className="flex items-center gap-3 flex-wrap">
-        <PeriodSelector mode={periodMode} value={periodValue} onChange={(m, v) => { setPeriodMode(m); setPeriodValue(v) }} />
+        <PeriodSelector mode={periodMode} value={periodValue} onChange={(m, v) => { setPeriodMode(m); setPeriodValue(v) }} modes={['month', 'quarter', 'year', 'all', 'range']} />
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 gap-1">
           {(['all', 'shared', 'personal'] as const).map((t) => (
             <button
@@ -216,7 +225,7 @@ export default function Expenses() {
             </div>
             <select
               value={catFilter}
-              onChange={(e) => setCatFilter(e.target.value)}
+              onChange={(e) => { setCatFilter(e.target.value); setSubCatFilter('all') }}
               className="border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             >
               <option value="all">All Categories</option>
@@ -224,6 +233,18 @@ export default function Expenses() {
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+            {availableSubCats.length > 0 && (
+              <select
+                value={subCatFilter}
+                onChange={(e) => setSubCatFilter(e.target.value)}
+                className="border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="all">All Sub-categories</option>
+                {availableSubCats.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden">
@@ -251,8 +272,13 @@ export default function Expenses() {
                         <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{formatDate(e.date)}</td>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat?.color }} />
-                            <span className="text-gray-700 dark:text-gray-300 text-xs">{cat?.name ?? e.category}</span>
+                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat?.color }} />
+                            <div>
+                              <span className="text-gray-700 dark:text-gray-300 text-xs">{cat?.name ?? e.category}</span>
+                              {e.subCategory && (
+                                <p className="text-xs text-gray-400">{e.subCategory}</p>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="px-5 py-3 text-gray-900 dark:text-white">{e.description}</td>
@@ -357,7 +383,7 @@ export default function Expenses() {
           )}
 
           {/* Date grouped list */}
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -370,7 +396,7 @@ export default function Expenses() {
             </div>
             <select
               value={catFilter}
-              onChange={(e) => setCatFilter(e.target.value)}
+              onChange={(e) => { setCatFilter(e.target.value); setSubCatFilter('all') }}
               className="border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             >
               <option value="all">All Categories</option>
@@ -378,6 +404,18 @@ export default function Expenses() {
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+            {availableSubCats.length > 0 && (
+              <select
+                value={subCatFilter}
+                onChange={(e) => setSubCatFilter(e.target.value)}
+                className="border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="all">All Sub-categories</option>
+                {availableSubCats.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {groupedKeys.map((month) => {
@@ -401,7 +439,10 @@ export default function Expenses() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-900 dark:text-white truncate">{e.description}</p>
-                          <p className="text-xs text-gray-400">{formatDate(e.date)} · {cat?.name}</p>
+                          <p className="text-xs text-gray-400">
+                            {formatDate(e.date)} · {cat?.name}
+                            {e.subCategory && <span className="text-gray-400"> · {e.subCategory}</span>}
+                          </p>
                         </div>
                         <span className="text-sm font-semibold text-red-500">{formatMXN(e.amount)}</span>
                       </div>

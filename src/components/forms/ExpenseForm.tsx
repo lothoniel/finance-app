@@ -1,5 +1,5 @@
 import { generateId } from '../../lib/id'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { Expense } from '../../store/types'
@@ -17,15 +17,24 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
   const user2Name = useStore((s) => s.settings.user2Name)
   const addExpense = useStore((s) => s.addExpense)
   const updateExpense = useStore((s) => s.updateExpense)
+  const allExpenses = useStore((s) => s.expenses)
 
   const [form, setForm] = useState({
     date: today(),
     description: '',
     amount: '',
     category: categories[0]?.id ?? '',
+    subCategory: '',
     paidBy: 'user1' as 'user1' | 'user2',
     shared: true,
   })
+
+  const subCategorySuggestions = useMemo(() => {
+    const subs = allExpenses
+      .filter((e) => e.category === form.category && e.subCategory)
+      .map((e) => e.subCategory as string)
+    return [...new Set(subs)].sort()
+  }, [allExpenses, form.category])
 
   useEffect(() => {
     if (expense) {
@@ -34,6 +43,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
         description: expense.description,
         amount: String(expense.amount),
         category: expense.category,
+        subCategory: expense.subCategory ?? '',
         paidBy: expense.paidBy,
         shared: expense.shared,
       })
@@ -43,6 +53,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
         description: '',
         amount: '',
         category: categories[0]?.id ?? '',
+        subCategory: '',
         paidBy: 'user1',
         shared: true,
       })
@@ -57,6 +68,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
       description: form.description,
       amount: parseFloat(form.amount) || 0,
       category: form.category,
+      subCategory: form.subCategory || undefined,
       paidBy: form.paidBy,
       shared: form.shared,
     }
@@ -123,12 +135,31 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
             onChange={(e) => setForm({ ...form, category: e.target.value })}
             className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
           >
-            {categories.map((cat) => (
+            {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Sub-category <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input
+            type="text"
+            list="subcategory-suggestions"
+            value={form.subCategory}
+            onChange={(e) => setForm({ ...form, subCategory: e.target.value })}
+            placeholder="e.g. Cancun Trip, Kitchen Project"
+            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+          />
+          <datalist id="subcategory-suggestions">
+            {subCategorySuggestions.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
 
         <div>

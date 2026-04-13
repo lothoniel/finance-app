@@ -75,6 +75,8 @@ export default function PeriodSelector({
       newValue = { year: now.getFullYear(), quarter: Math.ceil((now.getMonth() + 1) / 3) }
     } else if (newMode === 'year') {
       newValue = { year: now.getFullYear() }
+    } else if (newMode === 'range') {
+      newValue = { start: '', end: '' }
     }
     onChange(newMode, newValue)
   }
@@ -123,6 +125,24 @@ export default function PeriodSelector({
         <span className="text-sm font-medium text-gray-600 dark:text-gray-400 px-3 py-1.5 bg-white dark:bg-[#1A1F2E] border border-gray-200 dark:border-[#2D3448] rounded-full">
           All Time
         </span>
+      )}
+
+      {mode === 'range' && (
+        <div className="flex items-center gap-2 bg-white dark:bg-[#1A1F2E] border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-1.5">
+          <input
+            type="date"
+            value={value.start ?? ''}
+            onChange={(e) => onChange(mode, { ...value, start: e.target.value })}
+            className="text-sm text-gray-900 dark:text-white bg-transparent focus:outline-none"
+          />
+          <span className="text-gray-400 text-sm">–</span>
+          <input
+            type="date"
+            value={value.end ?? ''}
+            onChange={(e) => onChange(mode, { ...value, end: e.target.value })}
+            className="text-sm text-gray-900 dark:text-white bg-transparent focus:outline-none"
+          />
+        </div>
       )}
     </div>
   )

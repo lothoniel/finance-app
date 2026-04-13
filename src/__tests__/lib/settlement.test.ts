@@ -98,4 +98,55 @@ describe('calculateSettlement', () => {
     expect(result.user2Owes).toBe(800)
     expect(result.creditor).toBe('user1')
   })
+
+  it('cash given by user1 increases what user2 owes', () => {
+    const expenses = [
+      { amount: 2000, paidBy: 'user1' as const, shared: true },
+    ]
+    // user2 already owes 1000 from shared. user1 also gave 300 cash.
+    const cashEntries = [{ amount: 300, paidBy: 'user1' as const }]
+    const result = calculateSettlement(expenses, [], cashEntries)
+    expect(result.user2Owes).toBe(1300)
+    expect(result.user1Owes).toBe(0)
+    expect(result.creditor).toBe('user1')
+    expect(result.netSettlement).toBe(1300)
+  })
+
+  it('cash given by user2 reduces what user2 owes', () => {
+    const expenses = [
+      { amount: 2000, paidBy: 'user1' as const, shared: true },
+    ]
+    // user2 owes 1000 from shared. user2 gave 400 cash to user1.
+    const cashEntries = [{ amount: 400, paidBy: 'user2' as const }]
+    const result = calculateSettlement(expenses, [], cashEntries)
+    expect(result.user2Owes).toBe(600)
+    expect(result.user1Owes).toBe(0)
+    expect(result.creditor).toBe('user1')
+    expect(result.netSettlement).toBe(600)
+  })
+
+  it('cash can flip the creditor', () => {
+    // user2 owes 1000 from shared, but user2 gave 1500 cash to user1
+    const expenses = [
+      { amount: 2000, paidBy: 'user1' as const, shared: true },
+    ]
+    const cashEntries = [{ amount: 1500, paidBy: 'user2' as const }]
+    const result = calculateSettlement(expenses, [], cashEntries)
+    // sharedBalance = 1000 (user2 owes user1), cashBalance = -1500 (user2 gave user1 cash)
+    // totalBalance = 1000 - 1500 = -500 → user1 owes user2 500
+    expect(result.user1Owes).toBe(500)
+    expect(result.user2Owes).toBe(0)
+    expect(result.creditor).toBe('user2')
+    expect(result.netSettlement).toBe(500)
+  })
+
+  it('cash entries with no shared expenses', () => {
+    const cashEntries = [{ amount: 200, paidBy: 'user1' as const }]
+    const result = calculateSettlement([], [], cashEntries)
+    expect(result.totalShared).toBe(0)
+    expect(result.user2Owes).toBe(200)
+    expect(result.user1Owes).toBe(0)
+    expect(result.creditor).toBe('user1')
+    expect(result.netSettlement).toBe(200)
+  })
 })

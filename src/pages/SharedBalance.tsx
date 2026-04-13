@@ -1,11 +1,12 @@
 import { generateId } from '../lib/id'
 import { useState } from 'react'
-import { Users, Plus } from 'lucide-react'
+import { Users, Plus, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import KpiCard from '../components/ui/KpiCard'
 import Modal from '../components/ui/Modal'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
 import { calculateSettlement } from '../lib/settlement'
+import { today } from '../lib/formatters'
 
 export default function SharedBalance() {
   const [settleOpen, setSettleOpen] = useState(false)
@@ -13,11 +14,20 @@ export default function SharedBalance() {
   const [settleDesc, setSettleDesc] = useState('')
   const [settlePaidBy, setSettlePaidBy] = useState<'user1' | 'user2'>('user2')
 
+  const [cashOpen, setCashOpen] = useState(false)
+  const [cashAmount, setCashAmount] = useState('')
+  const [cashNote, setCashNote] = useState('')
+  const [cashPaidBy, setCashPaidBy] = useState<'user1' | 'user2'>('user1')
+  const [cashDate, setCashDate] = useState(today())
+
   const expenses = useStore((s) => s.expenses)
   const settlements = useStore((s) => s.settlements)
+  const cashEntries = useStore((s) => s.cashEntries)
   const user1Name = useStore((s) => s.settings.user1Name)
   const user2Name = useStore((s) => s.settings.user2Name)
   const addSettlement = useStore((s) => s.addSettlement)
+  const addCashEntry = useStore((s) => s.addCashEntry)
+  const deleteCashEntry = useStore((s) => s.deleteCashEntry)
 
   const lastSettlement = settlements.length > 0
     ? settlements.reduce((latest, s) => s.date > latest.date ? s : latest)
@@ -28,7 +38,15 @@ export default function SharedBalance() {
     ? expenses.filter((e) => e.date > lastSettlementDate)
     : expenses
 
-  const settlement = calculateSettlement(expensesSinceLastSettlement, settlements)
+  const cashEntriesSinceLastSettlement = lastSettlementDate
+    ? cashEntries.filter((c) => c.date > lastSettlementDate)
+    : cashEntries
+
+  const settlement = calculateSettlement(
+    expensesSinceLastSettlement,
+    settlements,
+    cashEntriesSinceLastSettlement
+  )
 
   const sharedExpenses = expensesSinceLastSettlement.filter((e) => e.shared)
   const user1Recent = sharedExpenses
@@ -54,6 +72,24 @@ export default function SharedBalance() {
     setSettleDesc('')
     setSettlePaidBy('user2')
   }
+
+  function handleAddCash(e: React.FormEvent) {
+    e.preventDefault()
+    addCashEntry({
+      id: generateId(),
+      date: cashDate,
+      amount: parseFloat(cashAmount) || 0,
+      paidBy: cashPaidBy,
+      note: cashNote,
+    })
+    setCashOpen(false)
+    setCashAmount('')
+    setCashNote('')
+    setCashPaidBy('user1')
+    setCashDate(today())
+  }
+
+  const inputClass = "w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
 
   return (
     <div className="space-y-6">
@@ -84,14 +120,21 @@ export default function SharedBalance() {
           }
           accent={settlement.creditor === 'even' ? '#22C55E' : '#F59E0B'}
         />
-        <div
-          className="bg-[#6B3FA0] rounded-2xl p-5 border border-[#6B3FA0] shadow-sm cursor-pointer hover:bg-[#5a3490] transition-colors flex flex-col items-center justify-center gap-2"
-          onClick={() => setSettleOpen(true)}
-        >
-          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-            <Plus className="w-5 h-5 text-white" />
+        <div className="flex flex-col gap-2">
+          <div
+            className="flex-1 bg-[#6B3FA0] rounded-2xl p-4 border border-[#6B3FA0] shadow-sm cursor-pointer hover:bg-[#5a3490] transition-colors flex items-center justify-center gap-2"
+            onClick={() => setSettleOpen(true)}
+          >
+            <Plus className="w-4 h-4 text-white" />
+            <p className="text-sm font-semibold text-white">Record Settlement</p>
           </div>
-          <p className="text-sm font-semibold text-white text-center">Record Settlement</p>
+          <div
+            className="flex-1 bg-white dark:bg-[#1A1F2E] rounded-2xl p-4 border border-gray-200 dark:border-[#2D3448] shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+            onClick={() => setCashOpen(true)}
+          >
+            <Plus className="w-4 h-4 text-[#6B3FA0]" />
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">+ Cash</p>
+          </div>
         </div>
       </div>
 
@@ -186,6 +229,36 @@ export default function SharedBalance() {
         </div>
       </div>
 
+      {/* Cash Entries */}
+      {cashEntriesSinceLastSettlement.length > 0 && (
+        <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2D3448]">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Cash Entries</h3>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-[#2D3448]">
+            {cashEntriesSinceLastSettlement.sort((a, b) => b.date.localeCompare(a.date)).map((c) => (
+              <div key={c.id} className="flex items-center justify-between px-5 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-gray-900 dark:text-white">{c.note || 'Cash'}</p>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(c.date)} · Paid by {c.paidBy === 'user1' ? user1Name : user2Name}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 ml-2 flex-shrink-0">
+                  <span className="text-sm font-semibold text-[#6B3FA0]">{formatMXN(c.amount)}</span>
+                  <button
+                    onClick={() => deleteCashEntry(c.id)}
+                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Settlement History */}
       <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2D3448]">
@@ -215,7 +288,7 @@ export default function SharedBalance() {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid By</label>
             <select value={settlePaidBy} onChange={(e) => setSettlePaidBy(e.target.value as 'user1' | 'user2')}
-              className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]">
+              className={inputClass}>
               <option value="user1">{user1Name}</option>
               <option value="user2">{user2Name}</option>
             </select>
@@ -224,13 +297,13 @@ export default function SharedBalance() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (MXN)</label>
             <input type="number" min="0" step="0.01" value={settleAmount} onChange={(e) => setSettleAmount(e.target.value)} required
               placeholder={formatMXN(settlement.netSettlement)}
-              className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]" />
+              className={inputClass} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <input type="text" value={settleDesc} onChange={(e) => setSettleDesc(e.target.value)}
               placeholder="e.g. Monthly settlement"
-              className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]" />
+              className={inputClass} />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => setSettleOpen(false)}
@@ -239,6 +312,46 @@ export default function SharedBalance() {
             </button>
             <button type="submit" className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
               Record Settlement
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Cash Entry Modal */}
+      <Modal open={cashOpen} onClose={() => setCashOpen(false)} title="Add Cash Entry">
+        <form onSubmit={handleAddCash} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+            <input type="date" value={cashDate} onChange={(e) => setCashDate(e.target.value)} required
+              className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid By</label>
+            <select value={cashPaidBy} onChange={(e) => setCashPaidBy(e.target.value as 'user1' | 'user2')}
+              className={inputClass}>
+              <option value="user1">{user1Name}</option>
+              <option value="user2">{user2Name}</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (MXN)</label>
+            <input type="number" min="0" step="0.01" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} required
+              placeholder="0.00"
+              className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note</label>
+            <input type="text" value={cashNote} onChange={(e) => setCashNote(e.target.value)}
+              placeholder="e.g. Cash for groceries"
+              className={inputClass} />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => setCashOpen(false)}
+              className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium">
+              Cancel
+            </button>
+            <button type="submit" className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
+              Add Cash Entry
             </button>
           </div>
         </form>

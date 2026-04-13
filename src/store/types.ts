@@ -76,6 +76,14 @@ export interface Settlement {
   description: string
 }
 
+export interface CashEntry {
+  id: string
+  date: string // YYYY-MM-DD
+  amount: number
+  paidBy: 'user1' | 'user2' // who gave the cash
+  note: string
+}
+
 export interface CreditCard {
   name: string
   icon: string
