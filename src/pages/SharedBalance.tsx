@@ -42,9 +42,13 @@ export default function SharedBalance() {
     ? cashEntries.filter((c) => c.date > lastSettlementDate)
     : cashEntries
 
+  const settlementsSinceLastSettlement = lastSettlementDate
+    ? settlements.filter((s) => s.date > lastSettlementDate)
+    : settlements
+
   const settlement = calculateSettlement(
     expensesSinceLastSettlement,
-    settlements,
+    settlementsSinceLastSettlement,
     cashEntriesSinceLastSettlement
   )
 

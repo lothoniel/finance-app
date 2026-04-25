@@ -1,6 +1,6 @@
 import { generateId } from '../lib/id'
 import { useState, useMemo } from 'react'
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Camera } from 'lucide-react'
 import { renderIcon } from '../lib/iconRenderer'
 import { useStore } from '../store'
 import KpiCard from '../components/ui/KpiCard'
@@ -10,6 +10,7 @@ import Badge from '../components/ui/Badge'
 import DonutChart from '../components/charts/DonutChart'
 import BarChart from '../components/charts/BarChart'
 import ExpenseForm from '../components/forms/ExpenseForm'
+import ScreenshotImportModal from '../components/forms/ScreenshotImportModal'
 import { filterByPeriod, groupByMonth, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
 import { calculateSettlement } from '../lib/settlement'
@@ -31,6 +32,7 @@ export default function Expenses() {
   const [subCatFilter, setSubCatFilter] = useState('all')
   const [expenseModal, setExpenseModal] = useState(false)
   const [editExpense, setEditExpense] = useState<Expense | undefined>()
+  const [importModal, setImportModal] = useState(false)
   const [settleOpen, setSettleOpen] = useState(false)
   const [settleAmount, setSettleAmount] = useState('')
   const [settleDesc, setSettleDesc] = useState('')
@@ -145,13 +147,22 @@ export default function Expenses() {
         </div>
         {tab === 'overview' && (
           <>
-            <button
-              onClick={() => { setEditExpense(undefined); setExpenseModal(true) }}
-              className="flex items-center gap-2 bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors ml-auto"
-            >
-              <Plus className="w-4 h-4" />
-              Add Expense
-            </button>
+            <div className="flex gap-2 ml-auto">
+              <button
+                onClick={() => setImportModal(true)}
+                className="flex items-center gap-2 border border-[#6B3FA0] text-[#6B3FA0] rounded-full px-4 py-2 text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+              >
+                <Camera className="w-4 h-4" />
+                Import
+              </button>
+              <button
+                onClick={() => { setEditExpense(undefined); setExpenseModal(true) }}
+                className="flex items-center gap-2 bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Expense
+              </button>
+            </div>
           </>
         )}
       </div>
@@ -456,6 +467,7 @@ export default function Expenses() {
       )}
 
       <ExpenseForm open={expenseModal} onClose={() => setExpenseModal(false)} expense={editExpense} />
+      <ScreenshotImportModal open={importModal} onClose={() => setImportModal(false)} />
 
       <Modal open={settleOpen} onClose={() => setSettleOpen(false)} title="Record Settlement">
         <form onSubmit={handleSettle} className="space-y-4">

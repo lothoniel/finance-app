@@ -128,4 +128,5 @@ export interface AppSettings {
   expenseCategories: Category[]
   creditCards: CreditCard[]
   transferCategories: TransferCategory[]
+  anthropicApiKey?: string
 }
