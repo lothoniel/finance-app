@@ -66,6 +66,14 @@ export function getMonthsInRange(start: string, end: string): string[] {
   return months
 }
 
+export function sortByDateDesc<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => b.date.localeCompare(a.date))
+}
+
+export function sortByDateAsc<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => a.date.localeCompare(b.date))
+}
+
 export function groupByMonth<T extends { date: string }>(
   items: T[]
 ): Record<string, T[]> {

@@ -37,8 +37,9 @@ export default function BarChart({
         margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
       >
         <CartesianGrid
-          strokeDasharray="3 3"
+          strokeDasharray="3 6"
           stroke="#E5E7EB"
+          strokeOpacity={0.5}
           className="dark:[stroke:#2D3448]"
           vertical={!horizontal}
           horizontal={horizontal}

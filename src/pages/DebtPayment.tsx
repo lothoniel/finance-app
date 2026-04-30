@@ -4,18 +4,11 @@ import { useStore } from '../store'
 import KpiCard from '../components/ui/KpiCard'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import DebtPaymentForm from '../components/forms/DebtPaymentForm'
-import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
+import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { DebtPayment } from '../store/types'
 
-function now(): PeriodValue {
-  const d = new Date()
-  return { year: d.getFullYear(), month: d.getMonth() + 1 }
-}
-
 export default function DebtPaymentPage() {
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('month')
-  const [periodValue, setPeriodValue] = useState<PeriodValue>(now())
   const [cardFilter, setCardFilter] = useState('all')
   const [modalOpen, setModalOpen] = useState(false)
   const [editDebt, setEditDebt] = useState<DebtPayment | undefined>()
@@ -23,11 +16,12 @@ export default function DebtPaymentPage() {
   const debtPayments = useStore((s) => s.debtPayments)
   const creditCards = useStore((s) => s.settings.creditCards)
 
+  const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: periodFiltered } = usePeriodFilter(debtPayments)
+
   const filtered = useMemo(() => {
-    const period = filterByPeriod(debtPayments, periodMode, periodValue)
-    if (cardFilter === 'all') return period
-    return period.filter((d) => d.card === cardFilter)
-  }, [debtPayments, periodMode, periodValue, cardFilter])
+    if (cardFilter === 'all') return periodFiltered
+    return periodFiltered.filter((d) => d.card === cardFilter)
+  }, [periodFiltered, cardFilter])
 
   const totalPaid = filtered.reduce((s, d) => s + d.amount, 0)
 
@@ -38,13 +32,13 @@ export default function DebtPaymentPage() {
           <PeriodSelector
             mode={periodMode}
             value={periodValue}
-            onChange={(m, v) => { setPeriodMode(m); setPeriodValue(v) }}
+            onChange={onPeriodChange}
             modes={['month', 'quarter', 'year', 'all']}
           />
           <select
             value={cardFilter}
             onChange={(e) => setCardFilter(e.target.value)}
-            className="rounded-lg px-3 py-1.5 text-sm border border-gray-200 dark:border-[#2D3448] bg-white dark:bg-[#1A1F2E] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+            className="rounded-lg px-3 py-1.5 text-sm border border-gray-200 dark:border-[#2D3448] bg-white dark:bg-[#1A1F2E] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
           >
             <option value="all">All Cards</option>
             {creditCards.map((card) => (
@@ -55,7 +49,7 @@ export default function DebtPaymentPage() {
 
         <button
           onClick={() => { setEditDebt(undefined); setModalOpen(true) }}
-          className="flex items-center gap-2 bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors"
+          className="flex items-center gap-2 bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
         >
           <Plus className="w-4 h-4" />
           Record Payment
@@ -73,7 +67,7 @@ export default function DebtPaymentPage() {
         <div className="col-span-2 grid grid-cols-2 gap-3">
           {creditCards.map((card) => {
             const color = card.color
-            const total = filterByPeriod(debtPayments, periodMode, periodValue)
+            const total = periodFiltered
               .filter((d) => d.card === card.name)
               .reduce((s, d) => s + d.amount, 0)
             return (
@@ -101,7 +95,7 @@ export default function DebtPaymentPage() {
           </div>
         )}
         {filtered.sort((a, b) => b.date.localeCompare(a.date)).map((d) => {
-          const color = creditCards.find((c) => c.name === d.card)?.color ?? '#6B3FA0'
+          const color = creditCards.find((c) => c.name === d.card)?.color ?? '#7C3AED'
           return (
             <div
               key={d.id}
@@ -129,7 +123,7 @@ export default function DebtPaymentPage() {
                 </span>
                 <button
                   onClick={() => { setEditDebt(d); setModalOpen(true) }}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-[#6B3FA0] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-[#7C3AED] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>

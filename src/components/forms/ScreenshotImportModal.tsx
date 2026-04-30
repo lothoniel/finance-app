@@ -34,7 +34,7 @@ interface ReviewRow {
 type Step = 'upload' | 'loading' | 'review' | 'done'
 
 const inputClass =
-  'w-full border border-gray-200 dark:border-[#2D3448] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#6B3FA0]'
+  'w-full border border-gray-200 dark:border-[#2D3448] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#7C3AED]'
 
 export default function ScreenshotImportModal({ open, onClose }: Props) {
   const categories = useStore((s) => s.settings.expenseCategories)
@@ -232,13 +232,13 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
             onClick={() => fileRef.current?.click()}
             className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
               dragging
-                ? 'border-[#6B3FA0] bg-purple-50 dark:bg-purple-900/10'
-                : 'border-gray-200 dark:border-[#2D3448] hover:border-[#6B3FA0] hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                ? 'border-[#7C3AED] bg-purple-50 dark:bg-purple-900/10'
+                : 'border-gray-200 dark:border-[#2D3448] hover:border-[#7C3AED] hover:bg-gray-50 dark:hover:bg-gray-800/50'
             }`}
           >
             <Camera className="w-8 h-8 text-gray-400" />
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-              <span className="font-medium text-[#6B3FA0]">Click to select</span> or drag and drop screenshots
+              <span className="font-medium text-[#7C3AED]">Click to select</span> or drag and drop screenshots
             </p>
             <p className="text-xs text-gray-400">PNG, JPG — multiple files supported</p>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
@@ -276,7 +276,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
               Cancel
             </button>
             <button onClick={extract} disabled={images.length === 0}
-              className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#5a3490] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#6d28d9] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
               <Upload className="w-4 h-4" />
               Extract Transactions
             </button>
@@ -287,7 +287,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
       {/* ── Loading ── */}
       {step === 'loading' && (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <Loader2 className="w-8 h-8 text-[#6B3FA0] animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#7C3AED] animate-spin" />
           <p className="text-sm text-gray-600 dark:text-gray-400">{progressMsg || 'Starting OCR…'}</p>
           <p className="text-xs text-gray-400">This may take a few seconds per image</p>
         </div>
@@ -312,7 +312,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                     key={i}
                     onClick={() => setActiveImage(i)}
                     className={`w-10 h-14 rounded-lg overflow-hidden border-2 transition-colors ${
-                      activeImage === i ? 'border-[#6B3FA0]' : 'border-transparent hover:border-gray-300'
+                      activeImage === i ? 'border-[#7C3AED]' : 'border-transparent hover:border-gray-300'
                     }`}
                   >
                     <img src={img.preview} alt="" className="w-full h-full object-cover" />
@@ -329,9 +329,9 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                 {rows.length} transaction{rows.length !== 1 ? 's' : ''} found
               </span>
               <div className="flex gap-2 text-xs text-gray-500">
-                <button onClick={() => toggleAll(true)} className="hover:text-[#6B3FA0]">Select all</button>
+                <button onClick={() => toggleAll(true)} className="hover:text-[#7C3AED]">Select all</button>
                 <span>·</span>
-                <button onClick={() => toggleAll(false)} className="hover:text-[#6B3FA0]">None</button>
+                <button onClick={() => toggleAll(false)} className="hover:text-[#7C3AED]">None</button>
               </div>
             </div>
 
@@ -341,12 +341,12 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                   key={row.key}
                   className={`rounded-xl border p-3 space-y-2 transition-colors ${
                     row.include
-                      ? 'border-[#6B3FA0]/30 bg-purple-50/50 dark:bg-purple-900/10'
+                      ? 'border-[#7C3AED]/30 bg-purple-50/50 dark:bg-purple-900/10'
                       : 'border-gray-200 dark:border-[#2D3448] opacity-50'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <button onClick={() => updateRow(row.key, { include: !row.include })} className="text-[#6B3FA0] shrink-0">
+                    <button onClick={() => updateRow(row.key, { include: !row.include })} className="text-[#7C3AED] shrink-0">
                       {row.include ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-gray-400" />}
                     </button>
                     <input
@@ -409,7 +409,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                         type="checkbox"
                         checked={row.shared}
                         onChange={(e) => updateRow(row.key, { shared: e.target.checked })}
-                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#6B3FA0] focus:ring-[#6B3FA0]"
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#7C3AED] focus:ring-[#7C3AED]"
                       />
                       Shared
                     </label>
@@ -420,7 +420,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
 
             <div className="flex gap-3 pt-1 border-t border-gray-100 dark:border-[#2D3448]">
               <button onClick={addEmptyRow}
-                className="flex items-center gap-1.5 border border-dashed border-gray-300 dark:border-[#2D3448] text-gray-500 dark:text-gray-400 rounded-full px-3 py-2 text-sm font-medium hover:border-[#6B3FA0] hover:text-[#6B3FA0] transition-colors shrink-0">
+                className="flex items-center gap-1.5 border border-dashed border-gray-300 dark:border-[#2D3448] text-gray-500 dark:text-gray-400 rounded-full px-3 py-2 text-sm font-medium hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors shrink-0">
                 <Plus className="w-3.5 h-3.5" />
                 Add row
               </button>
@@ -431,7 +431,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
               <button
                 onClick={handleAddSelected}
                 disabled={selectedCount === 0}
-                className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Add {selectedCount} selected
               </button>
@@ -460,7 +460,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
               Import More
             </button>
             <button onClick={handleClose}
-              className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#5a3490] transition-colors">
+              className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#6d28d9] transition-colors">
               Done
             </button>
           </div>

@@ -4,15 +4,13 @@ import { Users, Plus, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import KpiCard from '../components/ui/KpiCard'
 import Modal from '../components/ui/Modal'
-import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
+import SettlementModal from '../components/forms/SettlementModal'
+import { formatMXN, formatMXNCompact, formatDate, today } from '../lib/formatters'
 import { calculateSettlement } from '../lib/settlement'
-import { today } from '../lib/formatters'
+import { inputClass } from '../lib/styles'
 
 export default function SharedBalance() {
   const [settleOpen, setSettleOpen] = useState(false)
-  const [settleAmount, setSettleAmount] = useState('')
-  const [settleDesc, setSettleDesc] = useState('')
-  const [settlePaidBy, setSettlePaidBy] = useState<'user1' | 'user2'>('user2')
 
   const [cashOpen, setCashOpen] = useState(false)
   const [cashAmount, setCashAmount] = useState('')
@@ -25,7 +23,6 @@ export default function SharedBalance() {
   const cashEntries = useStore((s) => s.cashEntries)
   const user1Name = useStore((s) => s.settings.user1Name)
   const user2Name = useStore((s) => s.settings.user2Name)
-  const addSettlement = useStore((s) => s.addSettlement)
   const addCashEntry = useStore((s) => s.addCashEntry)
   const deleteCashEntry = useStore((s) => s.deleteCashEntry)
 
@@ -62,21 +59,6 @@ export default function SharedBalance() {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3)
 
-  function handleSettle(e: React.FormEvent) {
-    e.preventDefault()
-    addSettlement({
-      id: generateId(),
-      date: new Date().toISOString().slice(0, 10),
-      amount: parseFloat(settleAmount) || 0,
-      paidBy: settlePaidBy,
-      description: settleDesc,
-    })
-    setSettleOpen(false)
-    setSettleAmount('')
-    setSettleDesc('')
-    setSettlePaidBy('user2')
-  }
-
   function handleAddCash(e: React.FormEvent) {
     e.preventDefault()
     addCashEntry({
@@ -93,8 +75,6 @@ export default function SharedBalance() {
     setCashDate(today())
   }
 
-  const inputClass = "w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
-
   return (
     <div className="space-y-6">
       {/* KPI cards */}
@@ -110,7 +90,7 @@ export default function SharedBalance() {
           title="Per Person"
           value={formatMXNCompact(settlement.perPerson)}
           subtitle="50% split"
-          accent="#6B3FA0"
+          accent="#7C3AED"
         />
         <KpiCard
           title="Net Settlement"
@@ -126,7 +106,7 @@ export default function SharedBalance() {
         />
         <div className="flex flex-col gap-2">
           <div
-            className="flex-1 bg-[#6B3FA0] rounded-2xl p-4 border border-[#6B3FA0] shadow-sm cursor-pointer hover:bg-[#5a3490] transition-colors flex items-center justify-center gap-2"
+            className="flex-1 bg-[#7C3AED] rounded-2xl p-4 border border-[#7C3AED] shadow-sm cursor-pointer hover:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2"
             onClick={() => setSettleOpen(true)}
           >
             <Plus className="w-4 h-4 text-white" />
@@ -136,7 +116,7 @@ export default function SharedBalance() {
             className="flex-1 bg-white dark:bg-[#1A1F2E] rounded-2xl p-4 border border-gray-200 dark:border-[#2D3448] shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
             onClick={() => setCashOpen(true)}
           >
-            <Plus className="w-4 h-4 text-[#6B3FA0]" />
+            <Plus className="w-4 h-4 text-[#7C3AED]" />
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">+ Cash</p>
           </div>
         </div>
@@ -147,8 +127,8 @@ export default function SharedBalance() {
         {/* User 1 Ledger */}
         <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-[#6B3FA0]/20 flex items-center justify-center">
-              <span className="text-sm font-bold text-[#6B3FA0]">{user1Name.charAt(0)}</span>
+            <div className="w-10 h-10 rounded-full bg-[#7C3AED]/20 flex items-center justify-center">
+              <span className="text-sm font-bold text-[#7C3AED]">{user1Name.charAt(0)}</span>
             </div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{user1Name}'s Ledger</h3>
           </div>
@@ -249,7 +229,7 @@ export default function SharedBalance() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3 ml-2 flex-shrink-0">
-                  <span className="text-sm font-semibold text-[#6B3FA0]">{formatMXN(c.amount)}</span>
+                  <span className="text-sm font-semibold text-[#7C3AED]">{formatMXN(c.amount)}</span>
                   <button
                     onClick={() => deleteCashEntry(c.id)}
                     className="p-1 text-gray-400 hover:text-red-500 transition-colors"
@@ -286,40 +266,11 @@ export default function SharedBalance() {
         </div>
       </div>
 
-      {/* Settlement Modal */}
-      <Modal open={settleOpen} onClose={() => setSettleOpen(false)} title="Record Settlement">
-        <form onSubmit={handleSettle} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paid By</label>
-            <select value={settlePaidBy} onChange={(e) => setSettlePaidBy(e.target.value as 'user1' | 'user2')}
-              className={inputClass}>
-              <option value="user1">{user1Name}</option>
-              <option value="user2">{user2Name}</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (MXN)</label>
-            <input type="number" min="0" step="0.01" value={settleAmount} onChange={(e) => setSettleAmount(e.target.value)} required
-              placeholder={formatMXN(settlement.netSettlement)}
-              className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-            <input type="text" value={settleDesc} onChange={(e) => setSettleDesc(e.target.value)}
-              placeholder="e.g. Monthly settlement"
-              className={inputClass} />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setSettleOpen(false)}
-              className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium">
-              Cancel
-            </button>
-            <button type="submit" className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
-              Record Settlement
-            </button>
-          </div>
-        </form>
-      </Modal>
+      <SettlementModal
+        open={settleOpen}
+        onClose={() => setSettleOpen(false)}
+        netSettlement={settlement.netSettlement}
+      />
 
       {/* Cash Entry Modal */}
       <Modal open={cashOpen} onClose={() => setCashOpen(false)} title="Add Cash Entry">
@@ -354,7 +305,7 @@ export default function SharedBalance() {
               className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium">
               Cancel
             </button>
-            <button type="submit" className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
+            <button type="submit" className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium">
               Add Cash Entry
             </button>
           </div>

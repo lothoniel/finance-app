@@ -213,14 +213,14 @@ export const useStore = create<AppState>()(
         if (version < 2) {
           // Migrate creditCards from string[] to { name, icon, color }[]
           if (Array.isArray(settings.creditCards) && typeof settings.creditCards[0] === 'string') {
-            settings.creditCards = (settings.creditCards as string[]).map((name) => ({ name, icon: 'CreditCard', color: '#6B3FA0' }))
+            settings.creditCards = (settings.creditCards as string[]).map((name) => ({ name, icon: 'CreditCard', color: '#7C3AED' }))
           }
           // Migrate transferCategories from string[] to { name, icon, color }[]
           if (Array.isArray(settings.transferCategories) && typeof settings.transferCategories[0] === 'string') {
             const iconMap: Record<string, string> = { Household: 'Home', Rental: 'Building2', Others: 'Tag' }
             const colorMap: Record<string, string> = { Household: '#6366F1', Rental: '#14B8A6', Others: '#64748B' }
             settings.transferCategories = (settings.transferCategories as string[]).map((name) => ({
-              name, icon: iconMap[name] ?? 'Tag', color: colorMap[name] ?? '#6B3FA0',
+              name, icon: iconMap[name] ?? 'Tag', color: colorMap[name] ?? '#7C3AED',
             }))
           }
         }
@@ -228,13 +228,13 @@ export const useStore = create<AppState>()(
           // Add color field to existing { name, icon } objects missing color
           if (Array.isArray(settings.creditCards)) {
             settings.creditCards = (settings.creditCards as Record<string, string>[]).map((c) =>
-              typeof c === 'string' ? { name: c, icon: 'CreditCard', color: '#6B3FA0' } : { color: '#6B3FA0', ...c }
+              typeof c === 'string' ? { name: c, icon: 'CreditCard', color: '#7C3AED' } : { color: '#7C3AED', ...c }
             )
           }
           if (Array.isArray(settings.transferCategories)) {
             const colorMap: Record<string, string> = { Household: '#6366F1', Rental: '#14B8A6', Others: '#64748B' }
             settings.transferCategories = (settings.transferCategories as Record<string, string>[]).map((c) =>
-              typeof c === 'string' ? { name: c, icon: 'Tag', color: '#6B3FA0' } : { color: colorMap[c.name] ?? '#6B3FA0', ...c }
+              typeof c === 'string' ? { name: c, icon: 'Tag', color: '#7C3AED' } : { color: colorMap[c.name] ?? '#7C3AED', ...c }
             )
           }
         }

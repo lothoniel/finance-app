@@ -46,7 +46,7 @@ export default function IconPicker({ value, onChange, color }: Props) {
                 onClick={() => { onChange(icon); setOpen(false) }}
                 className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
                   value === icon
-                    ? 'bg-[#6B3FA0] text-white'
+                    ? 'bg-[#7C3AED] text-white'
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >

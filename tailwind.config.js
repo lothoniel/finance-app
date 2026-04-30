@@ -5,8 +5,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#6B3FA0',
-        'primary-light': '#8B5CC8',
+        primary: '#7C3AED',
+        'primary-light': '#9333EA',
         income: '#22C55E',
         expense: '#EF4444',
         transfer: '#3B82F6',

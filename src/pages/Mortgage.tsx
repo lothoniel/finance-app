@@ -8,14 +8,9 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import MortgagePaymentForm from '../components/forms/MortgagePaymentForm'
 import MortgageContributionForm from '../components/forms/MortgageContributionForm'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
-import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
+import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import { monthsRemaining, totalInterestRemaining, buildBalanceSeries } from '../lib/mortgage'
 import type { MortgagePayment, MortgageContribution } from '../store/types'
-
-function nowPeriod(): PeriodValue {
-  const d = new Date()
-  return { year: d.getFullYear(), month: d.getMonth() + 1 }
-}
 
 function addMonths(dateStr: string, months: number): string {
   const d = new Date(dateStr)
@@ -34,7 +29,7 @@ function formatDuration(months: number): string {
 }
 
 // Accent colors cycled per unique contributor
-const CONTRIBUTOR_COLORS = ['#6B3FA0', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
+const CONTRIBUTOR_COLORS = ['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
 
 export default function MortgagePage() {
   const config = useStore((s) => s.mortgageConfig)
@@ -93,8 +88,7 @@ export default function MortgagePage() {
   const [contribModalOpen, setContribModalOpen] = useState(false)
   const [editContrib, setEditContrib] = useState<MortgageContribution | undefined>()
   const [simAmount, setSimAmount] = useState('')
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('year')
-  const [periodValue, setPeriodValue] = useState<PeriodValue>(nowPeriod())
+  const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: filteredContribs } = usePeriodFilter(contributions, 'year')
 
   // ── Overview calculations ──────────────────────────────────────────────────
   const sorted = useMemo(
@@ -161,7 +155,6 @@ export default function MortgagePage() {
   }, [simAmount, currentBalance, config, actualMonthsLeft, origMonthsLeft, totalExtraCapital])
 
   // ── Contributions tab ──────────────────────────────────────────────────────
-  const filteredContribs = filterByPeriod(contributions, periodMode, periodValue)
   const sortedContribs = useMemo(
     () => [...filteredContribs].sort((a, b) => b.date.localeCompare(a.date)),
     [filteredContribs]
@@ -204,7 +197,7 @@ export default function MortgagePage() {
         {tab === 'overview' && (
           <button
             onClick={() => { setEditPayment(undefined); setModalOpen(true) }}
-            className="flex items-center gap-2 bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors"
+            className="flex items-center gap-2 bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Payment
@@ -213,7 +206,7 @@ export default function MortgagePage() {
         {tab === 'contributions' && (
           <button
             onClick={() => { setEditContrib(undefined); setContribModalOpen(true) }}
-            className="flex items-center gap-2 bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors"
+            className="flex items-center gap-2 bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Contribution
@@ -240,7 +233,7 @@ export default function MortgagePage() {
               value={formatMXNCompact(currentBalance)}
               subtitle={formatMXN(currentBalance)}
               icon={<Home className="w-5 h-5" />}
-              accent="#6B3FA0"
+              accent="#7C3AED"
             />
             <KpiCard
               title="Principal Reduced"
@@ -286,7 +279,7 @@ export default function MortgagePage() {
                 }))}
                 lines={[
                   { key: 'Original Schedule', color: '#CBD5E1', name: 'Original Schedule' },
-                  { key: 'Actual Balance', color: '#6B3FA0', name: 'Actual Balance' },
+                  { key: 'Actual Balance', color: '#7C3AED', name: 'Actual Balance' },
                 ]}
                 xKey="label"
                 height={280}
@@ -299,7 +292,7 @@ export default function MortgagePage() {
           {/* Simulator */}
           <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Calculator className="w-4 h-4 text-[#6B3FA0]" />
+              <Calculator className="w-4 h-4 text-[#7C3AED]" />
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Extra Deposit Simulator</p>
             </div>
             <div className="flex items-center gap-3 mb-4">
@@ -313,7 +306,7 @@ export default function MortgagePage() {
                   value={simAmount}
                   onChange={(e) => setSimAmount(e.target.value)}
                   placeholder="100,000"
-                  className="w-full pl-7 pr-3 py-2.5 border border-gray-200 dark:border-[#2D3448] rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+                  className="w-full pl-7 pr-3 py-2.5 border border-gray-200 dark:border-[#2D3448] rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
                 />
               </div>
               <span className="text-sm text-gray-600 dark:text-gray-400">today...</span>
@@ -385,7 +378,7 @@ export default function MortgagePage() {
                         <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">{formatMXN(p.totalPaid)}</td>
                         <td className="px-4 py-3 text-right">
                           {p.extraCapital > 0 ? (
-                            <span className="text-[#6B3FA0] font-semibold">{formatMXN(p.extraCapital)}</span>
+                            <span className="text-[#7C3AED] font-semibold">{formatMXN(p.extraCapital)}</span>
                           ) : (
                             <span className="text-gray-300 dark:text-gray-600">—</span>
                           )}
@@ -396,7 +389,7 @@ export default function MortgagePage() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => { setEditPayment(p); setModalOpen(true) }}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-[#6B3FA0] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-[#7C3AED] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
@@ -425,7 +418,7 @@ export default function MortgagePage() {
             <PeriodSelector
               mode={periodMode}
               value={periodValue}
-              onChange={(m, v) => { setPeriodMode(m); setPeriodValue(v) }}
+              onChange={onPeriodChange}
               modes={['month', 'quarter', 'year', 'all']}
             />
           </div>
@@ -437,7 +430,7 @@ export default function MortgagePage() {
               value={formatMXNCompact(totalContributed)}
               subtitle={`${filteredContribs.length} entries`}
               icon={<Users className="w-5 h-5" />}
-              accent="#6B3FA0"
+              accent="#7C3AED"
             />
             {byPerson.map(([name, total], i) => (
               <KpiCard
@@ -480,7 +473,7 @@ export default function MortgagePage() {
                         <td className="px-4 py-3">
                           <span
                             className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold text-white"
-                            style={{ backgroundColor: personColors[c.by] ?? '#6B3FA0' }}
+                            style={{ backgroundColor: personColors[c.by] ?? '#7C3AED' }}
                           >
                             {c.by}
                           </span>
@@ -491,7 +484,7 @@ export default function MortgagePage() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => { setEditContrib(c); setContribModalOpen(true) }}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-[#6B3FA0] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-[#7C3AED] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>

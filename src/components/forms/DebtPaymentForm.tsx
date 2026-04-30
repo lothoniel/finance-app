@@ -54,7 +54,7 @@ export default function DebtPaymentForm({ open, onClose, debtPayment }: DebtPaym
   }
 
   const inputClass =
-    'w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]'
+    'w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]'
 
   return (
     <Modal open={open} onClose={onClose} title={debtPayment ? 'Edit Debt Payment' : 'Record Payment'}>
@@ -129,7 +129,7 @@ export default function DebtPaymentForm({ open, onClose, debtPayment }: DebtPaym
           </button>
           <button
             type="submit"
-            className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#5a3490] transition-colors"
+            className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
           >
             {debtPayment ? 'Save Changes' : 'Record Payment'}
           </button>

@@ -7,20 +7,13 @@ import DonutChart from '../components/charts/DonutChart'
 import Badge from '../components/ui/Badge'
 import PortfolioForm from '../components/forms/PortfolioForm'
 import InvestmentMovementForm from '../components/forms/InvestmentMovementForm'
-import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
+import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { Portfolio, InvestmentMovement } from '../store/types'
 
-function now(): PeriodValue {
-  const d = new Date()
-  return { year: d.getFullYear(), month: d.getMonth() + 1 }
-}
-
-const portfolioColors = ['#6B3FA0', '#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#06B6D4']
+const portfolioColors = ['#7C3AED', '#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#06B6D4']
 
 export default function PortfolioPage() {
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('month')
-  const [periodValue, setPeriodValue] = useState<PeriodValue>(now())
   const [portfolioModal, setPortfolioModal] = useState(false)
   const [movementModal, setMovementModal] = useState(false)
   const [editPortfolio, setEditPortfolio] = useState<Portfolio | undefined>()
@@ -30,7 +23,7 @@ export default function PortfolioPage() {
   const investmentMovements = useStore((s) => s.investmentMovements)
   const deleteInvestmentMovement = useStore((s) => s.deleteInvestmentMovement)
 
-  const filteredMovements = filterByPeriod(investmentMovements, periodMode, periodValue)
+  const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: filteredMovements } = usePeriodFilter(investmentMovements)
   const totalGains = filteredMovements.filter((m) => m.type === 'GAIN').reduce((s, m) => s + m.amount, 0)
   const totalDeposits = filteredMovements.filter((m) => m.type === 'DEPOSIT').reduce((s, m) => s + m.amount, 0)
   const totalNetWorth = portfolios.reduce((s, p) => s + p.balance, 0)
@@ -69,7 +62,7 @@ export default function PortfolioPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <PeriodSelector mode={periodMode} value={periodValue} onChange={(m, v) => { setPeriodMode(m); setPeriodValue(v) }} />
+        <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} />
         <div className="flex gap-2">
           <button
             onClick={() => { setEditMovement(undefined); setMovementModal(true) }}
@@ -80,7 +73,7 @@ export default function PortfolioPage() {
           </button>
           <button
             onClick={() => { setEditPortfolio(undefined); setPortfolioModal(true) }}
-            className="flex items-center gap-2 bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors"
+            className="flex items-center gap-2 bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Portfolio
@@ -107,7 +100,7 @@ export default function PortfolioPage() {
           value={formatMXNCompact(totalNetWorth)}
           subtitle="Current portfolio balances"
           icon={<BarChart2 className="w-5 h-5" />}
-          accent="#6B3FA0"
+          accent="#7C3AED"
         />
       </div>
 
@@ -135,7 +128,7 @@ export default function PortfolioPage() {
             return (
               <div
                 key={p.id}
-                className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-4 border border-gray-200 dark:border-[#2D3448] shadow-sm cursor-pointer hover:border-[#6B3FA0] transition-colors"
+                className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-4 border border-gray-200 dark:border-[#2D3448] shadow-sm cursor-pointer hover:border-[#7C3AED] transition-colors"
                 onClick={() => { setEditPortfolio(p); setPortfolioModal(true) }}
               >
                 <div className="flex items-start justify-between mb-3">
@@ -217,7 +210,7 @@ export default function PortfolioPage() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => { setEditMovement(m); setMovementModal(true) }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#6B3FA0] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#7C3AED] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>

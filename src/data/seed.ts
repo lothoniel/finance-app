@@ -33,7 +33,7 @@ export const defaultSettings: AppSettings = {
     { id: '149a', name: '149A', icon: 'Building2', color: '#14B8A6' },
   ],
   creditCards: [
-    { name: 'Banorte Platinum', icon: 'CreditCard', color: '#6B3FA0' },
+    { name: 'Banorte Platinum', icon: 'CreditCard', color: '#7C3AED' },
     { name: 'Banamex Costco', icon: 'CreditCard', color: '#3B82F6' },
     { name: 'Banamex Oro', icon: 'CreditCard', color: '#F59E0B' },
     { name: 'Banamex Roja', icon: 'CreditCard', color: '#EF4444' },

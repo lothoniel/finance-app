@@ -1,9 +1,11 @@
-import { Sun, Moon, Menu } from 'lucide-react'
+import { Sun, Moon, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useStore } from '../../store'
 import { useLocation } from 'react-router-dom'
 
 interface TopBarProps {
   onMenuClick: () => void
+  onDesktopMenuClick: () => void
+  desktopSidebarOpen: boolean
 }
 
 const routeTitles: Record<string, string> = {
@@ -18,7 +20,7 @@ const routeTitles: Record<string, string> = {
   '/settings': 'Settings',
 }
 
-export default function TopBar({ onMenuClick }: TopBarProps) {
+export default function TopBar({ onMenuClick, onDesktopMenuClick, desktopSidebarOpen }: TopBarProps) {
   const { pathname } = useLocation()
   const theme = useStore((s) => s.settings.theme)
   const updateSettings = useStore((s) => s.updateSettings)
@@ -38,11 +40,23 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
   return (
     <header className="h-16 flex items-center justify-between px-6 bg-white dark:bg-[#1A1F2E] border-b border-gray-200 dark:border-[#2D3448] sticky top-0 z-10">
       <div className="flex items-center gap-4">
+        {/* Mobile hamburger */}
         <button
           onClick={onMenuClick}
           className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <Menu className="w-5 h-5" />
+        </button>
+        {/* Desktop sidebar toggle */}
+        <button
+          onClick={onDesktopMenuClick}
+          className="hidden lg:flex p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          aria-label="Toggle sidebar"
+        >
+          {desktopSidebarOpen
+            ? <PanelLeftClose className="w-5 h-5" />
+            : <PanelLeftOpen className="w-5 h-5" />
+          }
         </button>
         <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
           {title}

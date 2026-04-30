@@ -91,7 +91,7 @@ export default function PeriodSelector({
             onClick={() => handleModeChange(m)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
               mode === m
-                ? 'bg-[#6B3FA0] text-white shadow-sm'
+                ? 'bg-[#7C3AED] text-white shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >

@@ -6,23 +6,20 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import LineChart from '../components/charts/LineChart'
 import BarChart from '../components/charts/BarChart'
 import DonutChart from '../components/charts/DonutChart'
-import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
+import { filterByPeriod, type PeriodValue } from '../lib/filters'
 import { formatMXN, formatMXNCompact } from '../lib/formatters'
-
-function now() {
-  const d = new Date()
-  return { year: d.getFullYear(), month: d.getMonth() + 1 }
-}
+import { usePeriodFilter } from '../hooks/usePeriodFilter'
 
 export default function CashFlow() {
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('month')
-  const [periodValue, setPeriodValue] = useState<PeriodValue>(now())
   const [compA, setCompA] = useState<PeriodValue>(() => {
     const d = new Date()
     d.setMonth(d.getMonth() - 1)
     return { year: d.getFullYear(), month: d.getMonth() + 1 }
   })
-  const [compB, setCompB] = useState<PeriodValue>(now())
+  const [compB, setCompB] = useState<PeriodValue>(() => {
+    const d = new Date()
+    return { year: d.getFullYear(), month: d.getMonth() + 1 }
+  })
 
   const expenses = useStore((s) => s.expenses)
   const paychecks = useStore((s) => s.paychecks)
@@ -31,9 +28,9 @@ export default function CashFlow() {
   const investmentMovements = useStore((s) => s.investmentMovements)
   const categories = useStore((s) => s.settings.expenseCategories)
 
+  const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: filteredExpenses } = usePeriodFilter(expenses)
   const filteredPaychecks = filterByPeriod(paychecks, periodMode, periodValue)
   const filteredTransfers = filterByPeriod(transfers, periodMode, periodValue)
-  const filteredExpenses = filterByPeriod(expenses, periodMode, periodValue)
   const filteredMovements = filterByPeriod(investmentMovements, periodMode, periodValue)
 
   const totalIncome = filteredPaychecks.reduce((s, p) => s + p.mxnAmount, 0) +
@@ -128,7 +125,7 @@ export default function CashFlow() {
       {/* KPIs */}
       <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">Overview</h2>
-        <PeriodSelector mode={periodMode} value={periodValue} onChange={(m, v) => { setPeriodMode(m); setPeriodValue(v) }} />
+        <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard
@@ -148,7 +145,7 @@ export default function CashFlow() {
           value={formatMXNCompact(totalGains)}
           subtitle={`Deposits: ${formatMXNCompact(totalDeposits)}`}
           icon={<BarChart2 className="w-5 h-5" />}
-          accent="#6B3FA0"
+          accent="#7C3AED"
         />
       </div>
 
@@ -163,7 +160,7 @@ export default function CashFlow() {
             { key: 'Income', color: '#22C55E', name: 'Income' },
             { key: 'Expenses', color: '#EF4444', name: 'Expenses' },
             { key: 'Deposits', color: '#3B82F6', name: 'Deposits' },
-            { key: 'Gains', color: '#6B3FA0', name: 'Gains' },
+            { key: 'Gains', color: '#7C3AED', name: 'Gains' },
           ]}
           xKey="month"
           height={280}
@@ -220,7 +217,7 @@ export default function CashFlow() {
                 <td className="py-2 text-right text-green-600">{formatMXNCompact(tableData.reduce((s, r) => s + r.inc, 0))}</td>
                 <td className="py-2 text-right text-red-500">{formatMXNCompact(tableData.reduce((s, r) => s + r.exp, 0))}</td>
                 <td className="py-2 text-right text-amber-500">{formatMXNCompact(tableData.reduce((s, r) => s + r.debt, 0))}</td>
-                <td className="py-2 text-right text-[#6B3FA0]">{formatMXNCompact(tableData.reduce((s, r) => s + r.net, 0))}</td>
+                <td className="py-2 text-right text-[#7C3AED]">{formatMXNCompact(tableData.reduce((s, r) => s + r.net, 0))}</td>
               </tr>
             </tbody>
           </table>
@@ -284,7 +281,7 @@ export default function CashFlow() {
         </div>
 
         <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-          <p className="text-xs font-semibold text-[#6B3FA0] uppercase mb-1">Quick Insight</p>
+          <p className="text-xs font-semibold text-[#7C3AED] uppercase mb-1">Quick Insight</p>
           <p className="text-sm text-gray-700 dark:text-gray-300">{insight}</p>
         </div>
 
@@ -299,7 +296,7 @@ export default function CashFlow() {
               { metric: 'Net Flow',  A: metricsA['Net Flow'], B: metricsB['Net Flow'] },
             ]}
             bars={[
-              { key: 'A', color: '#6B3FA0', name: monthNames[(compA.month ?? 1) - 1] },
+              { key: 'A', color: '#7C3AED', name: monthNames[(compA.month ?? 1) - 1] },
               { key: 'B', color: '#94A3B8', name: monthNames[(compB.month ?? 1) - 1] },
             ]}
             xKey="metric"

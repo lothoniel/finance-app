@@ -21,7 +21,7 @@ export default function Tabs({ tabs, active, onChange }: TabsProps) {
           onClick={() => onChange(tab.id)}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             active === tab.id
-              ? 'bg-white dark:bg-[#1A1F2E] text-[#6B3FA0] shadow-sm'
+              ? 'bg-white dark:bg-[#1A1F2E] text-[#7C3AED] shadow-sm'
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >

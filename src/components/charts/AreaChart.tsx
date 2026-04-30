@@ -30,7 +30,7 @@ export default function AreaChart({ data, areas, xKey, height = 300 }: AreaChart
             </linearGradient>
           ))}
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+        <CartesianGrid strokeDasharray="3 6" stroke="#E5E7EB" strokeOpacity={0.5} vertical={false} />
         <XAxis
           dataKey={xKey}
           tick={{ fontSize: 11, fill: '#6B7280' }}

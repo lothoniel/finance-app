@@ -11,7 +11,7 @@ import IconPicker from '../components/ui/IconPicker'
 const COLOR_OPTIONS = [
   '#F59E0B', '#3B82F6', '#6366F1', '#64748B', '#10B981', '#8B5CF6',
   '#EC4899', '#EF4444', '#F97316', '#06B6D4', '#A78BFA', '#84CC16',
-  '#FBBF24', '#14B8A6', '#6B3FA0', '#22C55E',
+  '#FBBF24', '#14B8A6', '#7C3AED', '#22C55E',
 ]
 
 export default function Settings() {
@@ -25,10 +25,10 @@ export default function Settings() {
   const [user2, setUser2] = useState(settings.user2Name)
   const [newCatName, setNewCatName] = useState('')
   const [newCatIcon, setNewCatIcon] = useState('Tag')
-  const [newCatColor, setNewCatColor] = useState('#6B3FA0')
+  const [newCatColor, setNewCatColor] = useState('#7C3AED')
   const [newCard, setNewCard] = useState('')
   const [newCardIcon, setNewCardIcon] = useState('CreditCard')
-  const [newCardColor, setNewCardColor] = useState('#6B3FA0')
+  const [newCardColor, setNewCardColor] = useState('#7C3AED')
   const [newTransferCat, setNewTransferCat] = useState('')
   const [newTransferCatIcon, setNewTransferCatIcon] = useState('Tag')
   const [newTransferCatColor, setNewTransferCatColor] = useState('#6366F1')
@@ -116,16 +116,18 @@ export default function Settings() {
       portfolios: store.portfolios,
       investmentMovements: store.investmentMovements,
       settlements: store.settlements,
+      cashEntries: store.cashEntries,
       mortgageConfig: store.mortgageConfig,
       mortgagePayments: store.mortgagePayments,
       mortgageContributions: store.mortgageContributions,
+      settings: store.settings,
     }
   }
 
   function exportData() {
     const now = new Date()
     const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    const data = { exportedAt: localDate, settings: store.settings, ...getExportData() }
+    const data = { exportedAt: localDate, ...getExportData() }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -146,7 +148,7 @@ export default function Settings() {
         // Normalize creditCards: string[] → { name, icon, color }[]
         if (data.settings?.creditCards && Array.isArray(data.settings.creditCards)) {
           data.settings.creditCards = data.settings.creditCards.map((c: unknown) =>
-            typeof c === 'string' ? { name: c, icon: 'CreditCard', color: '#6B3FA0' } : { color: '#6B3FA0', ...(c as object) }
+            typeof c === 'string' ? { name: c, icon: 'CreditCard', color: '#7C3AED' } : { color: '#7C3AED', ...(c as object) }
           )
         }
         // Normalize transferCategories: string[] → { name, icon, color }[]
@@ -155,8 +157,8 @@ export default function Settings() {
           const colorMap: Record<string, string> = { Household: '#6366F1', Rental: '#14B8A6', Others: '#64748B' }
           data.settings.transferCategories = data.settings.transferCategories.map((c: unknown) =>
             typeof c === 'string'
-              ? { name: c, icon: iconMap[c] ?? 'Tag', color: colorMap[c] ?? '#6B3FA0' }
-              : { color: colorMap[(c as { name: string }).name] ?? '#6B3FA0', ...(c as object) }
+              ? { name: c, icon: iconMap[c] ?? 'Tag', color: colorMap[c] ?? '#7C3AED' }
+              : { color: colorMap[(c as { name: string }).name] ?? '#7C3AED', ...(c as object) }
           )
         }
         const filenameMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/)
@@ -202,7 +204,7 @@ export default function Settings() {
 
   const sectionClass = 'bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm'
   const sectionHeader = 'px-5 py-4 border-b border-gray-100 dark:border-[#2D3448] bg-gray-50 dark:bg-gray-800/50 rounded-t-2xl'
-  const inputClass = 'border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]'
+  const inputClass = 'border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]'
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -238,7 +240,7 @@ export default function Settings() {
           </div>
           <button
             onClick={saveNames}
-            className="bg-[#6B3FA0] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5a3490] transition-colors"
+            className="bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
           >
             Save Names
           </button>
@@ -258,7 +260,7 @@ export default function Settings() {
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
               settings.theme === 'light'
-                ? 'bg-[#6B3FA0] text-white border-[#6B3FA0]'
+                ? 'bg-[#7C3AED] text-white border-[#7C3AED]'
                 : 'border-gray-200 dark:border-[#2D3448] text-gray-600 dark:text-gray-300'
             }`}
           >
@@ -272,7 +274,7 @@ export default function Settings() {
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
               settings.theme === 'dark'
-                ? 'bg-[#6B3FA0] text-white border-[#6B3FA0]'
+                ? 'bg-[#7C3AED] text-white border-[#7C3AED]'
                 : 'border-gray-200 dark:border-[#2D3448] text-gray-600 dark:text-gray-300'
             }`}
           >
@@ -289,7 +291,7 @@ export default function Settings() {
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Transaction Categories</h3>
           <button
             onClick={resetToDefaults}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-[#6B3FA0] transition-colors"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-[#7C3AED] transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Reset to Defaults
@@ -312,11 +314,11 @@ export default function Settings() {
                   const budget = e.target.value ? parseFloat(e.target.value) : undefined
                   updateSettings({ expenseCategories: settings.expenseCategories.map((c) => c.id === cat.id ? { ...c, budget } : c) })
                 }}
-                className="w-24 border border-gray-200 dark:border-[#2D3448] rounded-lg px-2 py-1 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#6B3FA0]"
+                className="w-24 border border-gray-200 dark:border-[#2D3448] rounded-lg px-2 py-1 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#7C3AED]"
               />
               <button
                 onClick={() => setEditCat({ ...cat })}
-                className="p-1.5 text-gray-400 hover:text-[#6B3FA0] transition-colors"
+                className="p-1.5 text-gray-400 hover:text-[#7C3AED] transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -354,7 +356,7 @@ export default function Settings() {
               </div>
               <button
                 onClick={addCategory}
-                className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors flex-shrink-0"
+                className="p-2 bg-[#7C3AED] text-white rounded-xl hover:bg-[#6d28d9] transition-colors flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -379,7 +381,7 @@ export default function Settings() {
               <span className="text-sm text-gray-900 dark:text-white flex-1">{card.name}</span>
               <button
                 onClick={() => { setEditCard({ ...card }); setEditCardOriginalName(card.name) }}
-                className="p-1.5 text-gray-400 hover:text-[#6B3FA0] transition-colors"
+                className="p-1.5 text-gray-400 hover:text-[#7C3AED] transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
@@ -414,7 +416,7 @@ export default function Settings() {
               </div>
               <button
                 onClick={addCard}
-                className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors flex-shrink-0"
+                className="p-2 bg-[#7C3AED] text-white rounded-xl hover:bg-[#6d28d9] transition-colors flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -437,7 +439,7 @@ export default function Settings() {
               <span className="text-sm text-gray-900 dark:text-white flex-1">{cat.name}</span>
               <button
                 onClick={() => { setEditTransferCat({ ...cat }); setEditTransferCatOriginalName(cat.name) }}
-                className="p-1.5 text-gray-400 hover:text-[#6B3FA0] transition-colors"
+                className="p-1.5 text-gray-400 hover:text-[#7C3AED] transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
@@ -472,7 +474,7 @@ export default function Settings() {
               </div>
               <button
                 onClick={addTransferCat}
-                className="p-2 bg-[#6B3FA0] text-white rounded-xl hover:bg-[#5a3490] transition-colors flex-shrink-0"
+                className="p-2 bg-[#7C3AED] text-white rounded-xl hover:bg-[#6d28d9] transition-colors flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -497,7 +499,7 @@ export default function Settings() {
               Export JSON
             </button>
             <button
-              onClick={() => { exportToExcel(getExportData()); showStatus('success', 'Excel exported successfully') }}
+              onClick={() => exportToExcel(getExportData()).then(() => showStatus('success', 'Excel exported successfully'))}
               className="flex items-center gap-2 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <Download className="w-4 h-4" />
@@ -600,7 +602,7 @@ export default function Settings() {
                 Cancel
               </button>
               <button onClick={saveEditCat}
-                className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
+                className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium">
                 Save
               </button>
             </div>
@@ -644,7 +646,7 @@ export default function Settings() {
                 Cancel
               </button>
               <button onClick={saveEditCard}
-                className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
+                className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium">
                 Save
               </button>
             </div>
@@ -688,7 +690,7 @@ export default function Settings() {
                 Cancel
               </button>
               <button onClick={saveEditTransferCat}
-                className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium">
+                className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium">
                 Save
               </button>
             </div>

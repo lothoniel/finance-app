@@ -92,7 +92,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
             value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
             required
-            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
           />
         </div>
 
@@ -106,7 +106,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             required
             placeholder="e.g. CFE Febrero"
-            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
           />
         </div>
 
@@ -122,7 +122,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
             onChange={(e) => setForm({ ...form, amount: e.target.value })}
             required
             placeholder="0.00"
-            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
           />
         </div>
 
@@ -133,7 +133,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
           <select
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
           >
             {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map((cat) => (
               <option key={cat.id} value={cat.id}>
@@ -153,7 +153,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
             value={form.subCategory}
             onChange={(e) => setForm({ ...form, subCategory: e.target.value })}
             placeholder="e.g. Cancun Trip, Kitchen Project"
-            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
           />
           <datalist id="subcategory-suggestions">
             {subCategorySuggestions.map((s) => (
@@ -169,7 +169,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
           <select
             value={form.paidBy}
             onChange={(e) => setForm({ ...form, paidBy: e.target.value as 'user1' | 'user2' })}
-            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B3FA0]"
+            className="w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
           >
             <option value="user1">{user1Name}</option>
             <option value="user2">{user2Name}</option>
@@ -182,7 +182,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
             type="checkbox"
             checked={form.shared}
             onChange={(e) => setForm({ ...form, shared: e.target.checked })}
-            className="w-4 h-4 rounded border-gray-300 text-[#6B3FA0] focus:ring-[#6B3FA0]"
+            className="w-4 h-4 rounded border-gray-300 text-[#7C3AED] focus:ring-[#7C3AED]"
           />
           <label htmlFor="shared-cb" className="text-sm text-gray-700 dark:text-gray-300">
             Shared expense
@@ -199,7 +199,7 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
           </button>
           <button
             type="submit"
-            className="flex-1 bg-[#6B3FA0] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#5a3490] transition-colors"
+            className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
           >
             {expense ? 'Save Changes' : 'Add Expense'}
           </button>
