@@ -6,15 +6,26 @@ import HeroBand from '../components/ui/HeroBand'
 import HeroKpi from '../components/ui/HeroKpi'
 import HeroAction from '../components/ui/HeroAction'
 import SectionTitle from '../components/ui/SectionTitle'
+import PeriodTabs from '../components/ui/PeriodTabs'
 import Modal from '../components/ui/Modal'
 import SettlementModal from '../components/forms/SettlementModal'
 import { formatMXN, formatMXNCompact, formatDate, today } from '../lib/formatters'
+import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { calculateSettlement } from '../lib/settlement'
 import { inputClass } from '../lib/styles'
 
 export default function SharedBalance() {
   const [settleOpen, setSettleOpen] = useState(false)
   const [cashOpen, setCashOpen] = useState(false)
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('month')
+  const [periodValue, setPeriodValue] = useState<PeriodValue>(() => {
+    const d = new Date()
+    return { year: d.getFullYear(), month: d.getMonth() + 1 }
+  })
+  function onPeriodChange(mode: PeriodMode, value: PeriodValue) {
+    setPeriodMode(mode)
+    setPeriodValue(value)
+  }
   const [cashAmount, setCashAmount] = useState('')
   const [cashNote, setCashNote] = useState('')
   const [cashPaidBy, setCashPaidBy] = useState<'user1' | 'user2'>('user1')
@@ -50,7 +61,10 @@ export default function SharedBalance() {
   )
 
   const sharedExpenses = expensesSinceLastSettlement.filter((e) => e.shared)
-  const recentShared = [...sharedExpenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8)
+  const periodFiltered = periodMode === 'all'
+    ? sharedExpenses
+    : filterByPeriod(sharedExpenses, periodMode, periodValue)
+  const recentShared = [...periodFiltered].sort((a, b) => b.date.localeCompare(a.date))
 
   function handleAddCash(e: React.FormEvent) {
     e.preventDefault()
@@ -152,7 +166,10 @@ export default function SharedBalance() {
 
       {/* Recent Shared Expenses */}
       <div className="mb-8">
-        <SectionTitle>Recent Shared Expenses</SectionTitle>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Shared Expenses Since Last Settlement</span>
+          <PeriodTabs mode={periodMode} value={periodValue} onChange={onPeriodChange} />
+        </div>
         <div className={`${cardBase} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full">

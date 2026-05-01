@@ -229,14 +229,14 @@ export default function Income() {
         {/* Breakdown row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           {[
-            { label: 'Household', value: householdTotal, color: '#2e7d65' },
-            { label: 'Rental', value: rentalTotal, color: '#1a7a3c' },
-            { label: 'Others', value: othersTotal, color: '#c8912a' },
-            { label: 'Total', value: totalReceived, color: '#181d26' },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-4" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
-              <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">{label}</p>
-              <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] tabular-nums">{formatMXNCompact(value)}</p>
+            { label: 'Household', value: householdTotal, bg: '#e6f4ef', border: '#2e7d65', text: '#2e7d65' },
+            { label: 'Rental', value: rentalTotal, bg: '#e8f5ee', border: '#1a7a3c', text: '#1a7a3c' },
+            { label: 'Others', value: othersTotal, bg: '#fef6e4', border: '#c8912a', text: '#c8912a' },
+            { label: 'Total', value: totalReceived, bg: '#f0f2f5', border: '#41454d', text: '#181d26' },
+          ].map(({ label, value, bg, border, text }) => (
+            <div key={label} className="rounded-[10px] p-4" style={{ backgroundColor: bg, borderLeft: `3px solid ${border}` }}>
+              <p className="text-[11px] font-semibold uppercase mb-1" style={{ color: text }}>{label}</p>
+              <p className="text-[20px] font-semibold tabular-nums" style={{ color: text }}>{formatMXN(value)}</p>
             </div>
           ))}
         </div>

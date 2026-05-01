@@ -259,7 +259,7 @@ export default function Expenses() {
                       <td className={`px-4 py-[11px] text-[13px] text-[#41454d] dark:text-[#9297a0] whitespace-nowrap ${i < displayed.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{formatDate(e.date)}</td>
                       <td className={`px-4 py-[11px] ${i < displayed.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>
                         <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat?.color ?? '#9297a0' }} />
+                          <span className="flex-shrink-0" style={{ color: cat?.color ?? '#9297a0' }}>{renderIcon(cat?.icon ?? 'tag', 14)}</span>
                           <div>
                             <span className="text-[13px] text-[#333840] dark:text-[#c4c8d0]">{cat?.name ?? e.category}</span>
                             {e.subCategory && <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">{e.subCategory}</p>}

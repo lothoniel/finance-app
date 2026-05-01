@@ -47,7 +47,8 @@ const navGroups = [
 
 export default function Sidebar({ open, onClose, desktopOpen }: SidebarProps) {
   const user1Name = useStore((s) => s.settings.user1Name)
-  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const importedBackupDate = useStore((s) => s.importedBackupDate)
+  const backupLabel = importedBackupDate ? `Backup ${importedBackupDate}` : 'No backup loaded'
 
   return (
     <>
@@ -130,7 +131,7 @@ export default function Sidebar({ open, onClose, desktopOpen }: SidebarProps) {
             </div>
             <div className={`min-w-0 transition-opacity duration-200 ${desktopOpen ? 'opacity-100' : 'lg:opacity-0 lg:w-0 lg:overflow-hidden'}`}>
               <p className="text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] truncate">{user1Name}</p>
-              <p className="text-[11px] text-[#41454d] dark:text-[#9297a0] truncate">{today}</p>
+              <p className="text-[11px] text-[#41454d] dark:text-[#9297a0] truncate">{backupLabel}</p>
             </div>
           </div>
         </div>

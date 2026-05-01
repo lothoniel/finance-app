@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { ArrowLeftRight, Banknote, Receipt, CreditCard, TrendingUp, Wallet } from 'lucide-react'
 import { useStore } from '../store'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
-import { formatMXN, formatMXNCompact } from '../lib/formatters'
+import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
 
 function currentMonth(): PeriodValue {
   const now = new Date()
@@ -356,6 +356,9 @@ export default function Dashboard() {
                   <th className="text-left text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-5">
                     Description
                   </th>
+                  <th className="text-left text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-5">
+                    Date
+                  </th>
                   <th className="text-right text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-5">
                     Amount
                   </th>
@@ -367,6 +370,9 @@ export default function Dashboard() {
                     <td className={`py-[11px] px-5 ${i < recentActivity.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>
                       <p className="text-[13px] text-[#181d26] dark:text-[#e8eaf0] truncate max-w-[180px]">{item.description}</p>
                       <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">{item.sub}</p>
+                    </td>
+                    <td className={`py-[11px] px-5 text-[13px] text-[#41454d] dark:text-[#9297a0] whitespace-nowrap ${i < recentActivity.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>
+                      {formatDate(item.date)}
                     </td>
                     <td className={`py-[11px] px-5 text-right font-medium text-[13px] ${i < recentActivity.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}
                       style={{ color: item.amount >= 0 ? '#1a7a3c' : '#c0392b' }}

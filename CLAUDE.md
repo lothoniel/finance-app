@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Session Rules
+
+**At the start of every session:** Read `memory.md` (project root) before doing anything else. It has current status, pending debt, and the activity log.
+
+**At the end of every session:** Update `memory.md` AND `.claude/projects/-Users-lothoniel-Desktop-Claude-source-Apps-finance-app/memory/memory.md` with what was done (both must stay in sync).
+
 ## Commands
 
 ```bash

@@ -42,7 +42,6 @@ export default function CashFlow() {
   const totalExpenses = filteredExpenses.reduce((s, e) => s + e.amount, 0)
   const totalDebt = filteredDebt.reduce((s, d) => s + d.amount, 0)
   const totalGains = filteredMovements.filter((m) => m.type === 'GAIN').reduce((s, m) => s + m.amount, 0)
-  const totalDeposits = filteredMovements.filter((m) => m.type === 'DEPOSIT').reduce((s, m) => s + m.amount, 0)
   const netFlow = totalIncome - totalExpenses - totalDebt
 
   const months6 = useMemo(() => {
@@ -63,9 +62,9 @@ export default function CashFlow() {
         + filterByPeriod(transfers, 'month', val).reduce((s, t) => s + t.amount, 0)
       const exp = filterByPeriod(expenses, 'month', val).reduce((s, e) => s + e.amount, 0)
       const gains = filterByPeriod(investmentMovements, 'month', val).filter((m2) => m2.type === 'GAIN').reduce((s, m2) => s + m2.amount, 0)
-      const deposits = filterByPeriod(investmentMovements, 'month', val).filter((m2) => m2.type === 'DEPOSIT').reduce((s, m2) => s + m2.amount, 0)
+      const debt = filterByPeriod(debtPayments, 'month', val).reduce((s, d) => s + d.amount, 0)
       const label = new Date(y, m - 1).toLocaleString('en-US', { month: 'short' })
-      return { month: label, Income: inc, Expenses: exp, Gains: gains, Deposits: deposits }
+      return { month: label, Income: inc, Expenses: exp, Gains: gains, Debt: debt }
     })
   }, [months6, paychecks, transfers, expenses, investmentMovements])
 
@@ -138,10 +137,10 @@ export default function CashFlow() {
           <LineChart
             data={chartData}
             lines={[
-              { key: 'Income', color: '#1a7a3c', name: 'Income' },
-              { key: 'Expenses', color: '#c0392b', name: 'Expenses' },
-              { key: 'Deposits', color: '#333840', name: 'Deposits' },
-              { key: 'Gains', color: '#2e7d65', name: 'Gains' },
+              { key: 'Income', color: '#34a85a', name: 'Income' },
+              { key: 'Expenses', color: '#e05a4e', name: 'Expenses' },
+              { key: 'Debt', color: '#aa2d00', name: 'Debt' },
+              { key: 'Gains', color: '#3aab85', name: 'Gains' },
             ]}
             xKey="month"
             height={280}
@@ -191,10 +190,11 @@ export default function CashFlow() {
           ) : (
             <p className="text-[13px] text-[#41454d] dark:text-[#9297a0] py-8 text-center">No expenses in this period</p>
           )}
-          {totalGains > 0 && (
+          {(totalGains > 0 || totalDebt > 0) && (
             <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-3 text-center">
-              Investment returns: <span className="font-medium text-[#1a7a3c]">{formatMXNCompact(totalGains)}</span>
-              {totalDeposits > 0 && <> · Deposits: <span className="font-medium text-[#333840]">{formatMXNCompact(totalDeposits)}</span></>}
+              {totalGains > 0 && <>Investment returns: <span className="font-medium text-[#3aab85]">{formatMXNCompact(totalGains)}</span></>}
+              {totalGains > 0 && totalDebt > 0 && <> · </>}
+              {totalDebt > 0 && <>Debt payments: <span className="font-medium text-[#aa2d00]">{formatMXNCompact(totalDebt)}</span></>}
             </p>
           )}
         </div>
