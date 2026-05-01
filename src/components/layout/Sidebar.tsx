@@ -72,9 +72,10 @@ export default function Sidebar({ open, onClose, desktopOpen }: SidebarProps) {
       >
         {/* Logo */}
         <div className={`flex items-center border-b border-[#e8e8e8] dark:border-[#2d3347] py-[22px] transition-all duration-300 ${desktopOpen ? 'px-6 gap-3' : 'lg:justify-center lg:px-0 px-6 gap-3'}`}>
-          <div className="w-9 h-9 rounded-[10px] bg-[#181d26] dark:bg-[#e8eaf0] flex-shrink-0" />
+          <img src="/icon-light.png" className="w-9 h-9 rounded-[10px] flex-shrink-0 dark:hidden" />
+          <img src="/icon-dark.png" className="w-9 h-9 rounded-[10px] flex-shrink-0 hidden dark:block" />
           <span className={`text-[15px] font-semibold text-[#181d26] dark:text-[#e8eaf0] whitespace-nowrap transition-opacity duration-200 ${desktopOpen ? 'opacity-100' : 'lg:opacity-0 lg:w-0 lg:overflow-hidden'}`}>
-            FinanceApp
+            MyFinance
           </span>
         </div>
 

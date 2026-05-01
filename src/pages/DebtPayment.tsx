@@ -69,7 +69,7 @@ export default function DebtPaymentPage() {
             return (
               <div key={card.name} className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-4" style={{ borderLeftWidth: 3, borderLeftColor: card.color }}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span style={{ color: card.color }}>{renderIcon(card.icon, 14)}</span>
+                  {renderIcon(card.icon, 'w-3.5 h-3.5', card.color)}
                   <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] truncate">{card.name}</p>
                 </div>
                 <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] tabular-nums">{formatMXNCompact(total)}</p>
