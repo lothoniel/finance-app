@@ -45,7 +45,7 @@ export default function QuickAdd() {
 
         <button
           onClick={() => setOpen((v) => !v)}
-          className="w-14 h-14 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#9333EA] text-white shadow-xl flex items-center justify-center transition-all hover:scale-105 hover:shadow-[0_0_24px_#7C3AED55]"
+          className="w-14 h-14 rounded-full bg-[#181d26] text-white shadow-xl flex items-center justify-center transition-all hover:bg-[#0d1218] hover:scale-105"
         >
           {open ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
         </button>

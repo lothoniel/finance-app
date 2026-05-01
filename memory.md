@@ -2,7 +2,7 @@
 Finance app — personal expense tracker, React 19 + Zustand + Vite, all data in localStorage. Two-user shared expense model. QA-first collaboration: propose approach before writing code, small reviewable changes, flag tech debt.
 
 # Status
-Active development. No backend. Refactor audit complete. Visual refresh complete (2026-04-29).
+Active development. No backend. Design system overhaul complete (2026-04-30). Changes uncommitted.
 
 ## Pending Debt
 - `CreditCard` and `TransferCategory` types are identical in types.ts — decide whether to unify (requires store + form updates)
@@ -18,6 +18,11 @@ Active development. No backend. Refactor audit complete. Visual refresh complete
 - ✅ Expenses page: tabs removed → single page; charts at top, Settlement Breakdown removed, single filter bar with result count (2026-04-29)
 - ✅ Income page: tabs removed → single page; unified controls row, mini transfer breakdown row (Household/Rental/Others/Total), all sections always visible (2026-04-29)
 - ✅ Sidebar: icon-only minimize mode on desktop with PanelLeftClose/Open toggle in TopBar; smooth width animation (2026-04-29)
+- ✅ Design system overhaul: CSS token file (`src/styles/tokens.css`) with coral/forest/cream/peach/mint/mustard palette + full dark-mode variables; replaced violet accent (2026-04-30)
+- ✅ New UI component library: `HeroBand` (full-bleed colored header), `HeroKpi` (glass KPI card for bands), `HeroAction` (ghost/primary/ghost-dark button), `SectionTitle` (label + hairline divider), `PeriodTabs` (mode tabs + nav arrows, replaces PeriodSelector in page headers), `DataTable` (generic typed table) (2026-04-30)
+- ✅ All 8 pages redesigned with hero band at top carrying KPIs and period controls; body uses DataTable + SectionTitle pattern (2026-04-30)
+- ✅ All 10 forms refactored and significantly slimmed down (2026-04-30)
+- ✅ Design handoff package generated: `design_handoff_motsapp/` with tokens guide, HTML prototype, and CLAUDE_CODE_HANDOFF.md (2026-04-30)
 
 ## Feature Gap Priorities (UX audit 2026-04-29)
 Top 3 next features by effort/impact:
@@ -38,3 +43,4 @@ Quick wins (not yet done):
 2026-04-29 | UX gap analysis | Compared to YNAB/Mint; top gaps: budget overview, recurring templates, mortgage config UI
 2026-04-29 | Excel export refactor | SheetJS → ExcelJS; 12 sheets, Summary sheet, CashEntries, formatting
 2026-04-29 | Visual refresh | Violet accent, KpiCard redesign, sidebar pill nav + minimize, FAB gradient, Expenses/Income tabs removed
+2026-04-30 | Design system overhaul | CSS tokens (coral/forest/cream palette), 6 new UI components (HeroBand, HeroKpi, HeroAction, SectionTitle, PeriodTabs, DataTable), all 8 pages + 10 forms redesigned, design handoff package generated

@@ -69,30 +69,24 @@ export default function PeriodSelector({
   function handleModeChange(newMode: PeriodMode) {
     const now = new Date()
     let newValue: PeriodValue = {}
-    if (newMode === 'month') {
-      newValue = { year: now.getFullYear(), month: now.getMonth() + 1 }
-    } else if (newMode === 'quarter') {
-      newValue = { year: now.getFullYear(), quarter: Math.ceil((now.getMonth() + 1) / 3) }
-    } else if (newMode === 'year') {
-      newValue = { year: now.getFullYear() }
-    } else if (newMode === 'range') {
-      newValue = { start: '', end: '' }
-    }
+    if (newMode === 'month') newValue = { year: now.getFullYear(), month: now.getMonth() + 1 }
+    else if (newMode === 'quarter') newValue = { year: now.getFullYear(), quarter: Math.ceil((now.getMonth() + 1) / 3) }
+    else if (newMode === 'year') newValue = { year: now.getFullYear() }
+    else if (newMode === 'range') newValue = { start: '', end: '' }
     onChange(newMode, newValue)
   }
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      {/* Mode tabs */}
-      <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 gap-1">
+      <div className="flex bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full p-1 gap-1">
         {modes.map((m) => (
           <button
             key={m}
             onClick={() => handleModeChange(m)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
               mode === m
-                ? 'bg-[#7C3AED] text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-[#1e2330] text-[#181d26] dark:text-[#e8eaf0] shadow-sm'
+                : 'text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0]'
             }`}
           >
             {MODE_LABELS[m]}
@@ -100,21 +94,20 @@ export default function PeriodSelector({
         ))}
       </div>
 
-      {/* Navigation */}
       {showNav && (
-        <div className="flex items-center gap-2 bg-white dark:bg-[#1A1F2E] border border-gray-200 dark:border-[#2D3448] rounded-full px-3 py-1.5">
+        <div className="flex items-center gap-2 bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-full px-3 py-1.5">
           <button
             onClick={() => onChange(mode, navigate(mode, value, -1))}
-            className="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+            className="text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-medium text-gray-900 dark:text-white min-w-[130px] text-center">
+          <span className="text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] min-w-[130px] text-center">
             {getPeriodLabel(mode, value)}
           </span>
           <button
             onClick={() => onChange(mode, navigate(mode, value, 1))}
-            className="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+            className="text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0] transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -122,25 +115,25 @@ export default function PeriodSelector({
       )}
 
       {mode === 'all' && (
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-400 px-3 py-1.5 bg-white dark:bg-[#1A1F2E] border border-gray-200 dark:border-[#2D3448] rounded-full">
+        <span className="text-[13px] font-medium text-[#41454d] dark:text-[#9297a0] px-3 py-1.5 bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-full">
           All Time
         </span>
       )}
 
       {mode === 'range' && (
-        <div className="flex items-center gap-2 bg-white dark:bg-[#1A1F2E] border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-1.5">
+        <div className="flex items-center gap-2 bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] px-3 py-1.5">
           <input
             type="date"
             value={value.start ?? ''}
             onChange={(e) => onChange(mode, { ...value, start: e.target.value })}
-            className="text-sm text-gray-900 dark:text-white bg-transparent focus:outline-none"
+            className="text-[13px] text-[#181d26] dark:text-[#e8eaf0] bg-transparent focus:outline-none"
           />
-          <span className="text-gray-400 text-sm">–</span>
+          <span className="text-[#41454d] dark:text-[#9297a0] text-sm">–</span>
           <input
             type="date"
             value={value.end ?? ''}
             onChange={(e) => onChange(mode, { ...value, end: e.target.value })}
-            className="text-sm text-gray-900 dark:text-white bg-transparent focus:outline-none"
+            className="text-[13px] text-[#181d26] dark:text-[#e8eaf0] bg-transparent focus:outline-none"
           />
         </div>
       )}

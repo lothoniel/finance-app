@@ -1,8 +1,11 @@
 import { useState, useMemo } from 'react'
-import { TrendingUp, TrendingDown, BarChart2 } from 'lucide-react'
+import { Lightbulb } from 'lucide-react'
 import { useStore } from '../store'
-import KpiCard from '../components/ui/KpiCard'
+import HeroBand from '../components/ui/HeroBand'
+import HeroKpi from '../components/ui/HeroKpi'
+import PeriodTabs from '../components/ui/PeriodTabs'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import SectionTitle from '../components/ui/SectionTitle'
 import LineChart from '../components/charts/LineChart'
 import BarChart from '../components/charts/BarChart'
 import DonutChart from '../components/charts/DonutChart'
@@ -31,15 +34,17 @@ export default function CashFlow() {
   const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: filteredExpenses } = usePeriodFilter(expenses)
   const filteredPaychecks = filterByPeriod(paychecks, periodMode, periodValue)
   const filteredTransfers = filterByPeriod(transfers, periodMode, periodValue)
+  const filteredDebt = filterByPeriod(debtPayments, periodMode, periodValue)
   const filteredMovements = filterByPeriod(investmentMovements, periodMode, periodValue)
 
-  const totalIncome = filteredPaychecks.reduce((s, p) => s + p.mxnAmount, 0) +
-    filteredTransfers.reduce((s, t) => s + t.amount, 0)
+  const totalIncome = filteredPaychecks.reduce((s, p) => s + p.mxnAmount, 0)
+    + filteredTransfers.reduce((s, t) => s + t.amount, 0)
   const totalExpenses = filteredExpenses.reduce((s, e) => s + e.amount, 0)
+  const totalDebt = filteredDebt.reduce((s, d) => s + d.amount, 0)
   const totalGains = filteredMovements.filter((m) => m.type === 'GAIN').reduce((s, m) => s + m.amount, 0)
   const totalDeposits = filteredMovements.filter((m) => m.type === 'DEPOSIT').reduce((s, m) => s + m.amount, 0)
+  const netFlow = totalIncome - totalExpenses - totalDebt
 
-  // Last 6 months multi-line data
   const months6 = useMemo(() => {
     const result: string[] = []
     for (let i = 5; i >= 0; i--) {
@@ -54,8 +59,8 @@ export default function CashFlow() {
     return months6.map((month) => {
       const [y, m] = month.split('-').map(Number)
       const val: PeriodValue = { year: y, month: m }
-      const inc = filterByPeriod(paychecks, 'month', val).reduce((s, p) => s + p.mxnAmount, 0) +
-        filterByPeriod(transfers, 'month', val).reduce((s, t) => s + t.amount, 0)
+      const inc = filterByPeriod(paychecks, 'month', val).reduce((s, p) => s + p.mxnAmount, 0)
+        + filterByPeriod(transfers, 'month', val).reduce((s, t) => s + t.amount, 0)
       const exp = filterByPeriod(expenses, 'month', val).reduce((s, e) => s + e.amount, 0)
       const gains = filterByPeriod(investmentMovements, 'month', val).filter((m2) => m2.type === 'GAIN').reduce((s, m2) => s + m2.amount, 0)
       const deposits = filterByPeriod(investmentMovements, 'month', val).filter((m2) => m2.type === 'DEPOSIT').reduce((s, m2) => s + m2.amount, 0)
@@ -64,34 +69,27 @@ export default function CashFlow() {
     })
   }, [months6, paychecks, transfers, expenses, investmentMovements])
 
-  // Expense donut
   const donutData = useMemo(() => {
     const catTotals: Record<string, number> = {}
-    filteredExpenses.forEach((e) => {
-      catTotals[e.category] = (catTotals[e.category] ?? 0) + e.amount
-    })
+    filteredExpenses.forEach((e) => { catTotals[e.category] = (catTotals[e.category] ?? 0) + e.amount })
     return categories
       .filter((c) => (catTotals[c.id] ?? 0) > 0)
       .map((c) => ({ name: c.name, value: catTotals[c.id] ?? 0, color: c.color }))
       .sort((a, b) => b.value - a.value)
   }, [filteredExpenses, categories])
 
-  // Analysis table: last 6 months
-  const tableMonths = months6
-  const tableData = tableMonths.map((month) => {
+  const tableData = months6.map((month) => {
     const [y, m] = month.split('-').map(Number)
     const val: PeriodValue = { year: y, month: m }
-    const inc = filterByPeriod(paychecks, 'month', val).reduce((s, p) => s + p.mxnAmount, 0) +
-      filterByPeriod(transfers, 'month', val).reduce((s, t) => s + t.amount, 0)
+    const inc = filterByPeriod(paychecks, 'month', val).reduce((s, p) => s + p.mxnAmount, 0)
+      + filterByPeriod(transfers, 'month', val).reduce((s, t) => s + t.amount, 0)
     const exp = filterByPeriod(expenses, 'month', val).reduce((s, e) => s + e.amount, 0)
     const debt = filterByPeriod(debtPayments, 'month', val).reduce((s, d) => s + d.amount, 0)
-    const trnAmount = filterByPeriod(transfers, 'month', val).reduce((s, t) => s + t.amount, 0)
     const net = inc - debt
     const label = new Date(y, m - 1).toLocaleString('en-US', { month: 'short', year: '2-digit' })
-    return { label, inc, trnAmount, exp, debt, net }
+    return { label, inc, exp, debt, net }
   })
 
-  // Comparison
   function getMetrics(val: PeriodValue) {
     const paycheckInc = filterByPeriod(paychecks, 'month', val).reduce((s, p) => s + p.mxnAmount, 0)
     const trnAmount = filterByPeriod(transfers, 'month', val).reduce((s, t) => s + t.amount, 0)
@@ -104,14 +102,13 @@ export default function CashFlow() {
 
   const metricsA = getMetrics(compA)
   const metricsB = getMetrics(compB)
-
   const compMetrics = ['Income', 'Expenses', 'Debt', 'Net Flow'] as const
+
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December',
   ]
 
-  // Quick insight
   const bestMetric = compMetrics.reduce((best, m) => {
     const diff = (metricsB[m] ?? 0) - (metricsA[m] ?? 0)
     const bestDiff = (metricsB[best] ?? 0) - (metricsA[best] ?? 0)
@@ -121,183 +118,151 @@ export default function CashFlow() {
   const insight = `${bestMetric} ${diff >= 0 ? 'increased' : 'decreased'} by ${formatMXN(Math.abs(diff))} from ${monthNames[(compA.month ?? 1) - 1]} to ${monthNames[(compB.month ?? 1) - 1]}.`
 
   return (
-    <div className="space-y-6">
-      {/* KPIs */}
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Overview</h2>
-        <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KpiCard
-          title="Total Income"
-          value={formatMXNCompact(totalIncome)}
-          icon={<TrendingUp className="w-5 h-5" />}
-          accent="#22C55E"
-        />
-        <KpiCard
-          title="Total Expenses"
-          value={formatMXNCompact(totalExpenses)}
-          icon={<TrendingDown className="w-5 h-5" />}
-          accent="#EF4444"
-        />
-        <KpiCard
-          title="Investment Returns"
-          value={formatMXNCompact(totalGains)}
-          subtitle={`Deposits: ${formatMXNCompact(totalDeposits)}`}
-          icon={<BarChart2 className="w-5 h-5" />}
-          accent="#7C3AED"
-        />
+    <div>
+      <HeroBand color="#aa2d00">
+        <div className="mb-6">
+          <PeriodTabs mode={periodMode} value={periodValue} onChange={onPeriodChange} variant="light" />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <HeroKpi label="Total Income" value={formatMXN(totalIncome)} />
+          <HeroKpi label="Total Expenses" value={formatMXN(totalExpenses)} />
+          <HeroKpi label="Debt Payments" value={formatMXN(totalDebt)} />
+          <HeroKpi label="Net Flow" value={formatMXN(netFlow)} />
+        </div>
+      </HeroBand>
+
+      {/* Monthly Trend */}
+      <div className="mb-8">
+        <SectionTitle>Monthly Trend — Last 6 Months</SectionTitle>
+        <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
+          <LineChart
+            data={chartData}
+            lines={[
+              { key: 'Income', color: '#1a7a3c', name: 'Income' },
+              { key: 'Expenses', color: '#c0392b', name: 'Expenses' },
+              { key: 'Deposits', color: '#333840', name: 'Deposits' },
+              { key: 'Gains', color: '#2e7d65', name: 'Gains' },
+            ]}
+            xKey="month"
+            height={280}
+          />
+        </div>
       </div>
 
-      {/* Financial Performance chart */}
-      <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-          Financial Performance (Last 6 Months)
-        </p>
-        <LineChart
-          data={chartData}
-          lines={[
-            { key: 'Income', color: '#22C55E', name: 'Income' },
-            { key: 'Expenses', color: '#EF4444', name: 'Expenses' },
-            { key: 'Deposits', color: '#3B82F6', name: 'Deposits' },
-            { key: 'Gains', color: '#7C3AED', name: 'Gains' },
-          ]}
-          xKey="month"
-          height={280}
-        />
-      </div>
+      {/* Cash Flow Analysis + Expense Mix */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] overflow-hidden">
+          <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] px-5 pt-5 pb-3">Cash Flow Analysis</p>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[380px]">
+              <thead>
+                <tr>
+                  {['Month', 'Income', 'Expenses', 'Debt', 'Net'].map((h, i) => (
+                    <th key={h} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${i > 0 ? 'text-right' : 'text-left'}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...tableData].reverse().map((row, i, arr) => (
+                  <tr key={row.label}>
+                    <td className={`py-[11px] px-4 text-[13px] text-[#333840] dark:text-[#c4c8d0] font-medium ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{row.label}</td>
+                    <td className={`py-[11px] px-4 text-right text-[13px] font-medium ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`} style={{ color: '#1a7a3c' }}>{formatMXNCompact(row.inc)}</td>
+                    <td className={`py-[11px] px-4 text-right text-[13px] font-medium ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`} style={{ color: '#c0392b' }}>{formatMXNCompact(row.exp)}</td>
+                    <td className={`py-[11px] px-4 text-right text-[13px] font-medium ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`} style={{ color: '#c8912a' }}>{formatMXNCompact(row.debt)}</td>
+                    <td className={`py-[11px] px-4 text-right text-[13px] font-semibold ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`} style={{ color: row.net >= 0 ? '#1a7a3c' : '#c0392b' }}>{formatMXNCompact(row.net)}</td>
+                  </tr>
+                ))}
+                <tr className="border-t-2 border-[#e8e8e8] dark:border-[#2d3347]">
+                  <td className="py-[11px] px-4 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Total</td>
+                  <td className="py-[11px] px-4 text-right text-[13px] font-semibold" style={{ color: '#1a7a3c' }}>{formatMXNCompact(tableData.reduce((s, r) => s + r.inc, 0))}</td>
+                  <td className="py-[11px] px-4 text-right text-[13px] font-semibold" style={{ color: '#c0392b' }}>{formatMXNCompact(tableData.reduce((s, r) => s + r.exp, 0))}</td>
+                  <td className="py-[11px] px-4 text-right text-[13px] font-semibold" style={{ color: '#c8912a' }}>{formatMXNCompact(tableData.reduce((s, r) => s + r.debt, 0))}</td>
+                  <td className="py-[11px] px-4 text-right text-[13px] font-semibold" style={{ color: tableData.reduce((s, r) => s + r.net, 0) >= 0 ? '#1a7a3c' : '#c0392b' }}>{formatMXNCompact(tableData.reduce((s, r) => s + r.net, 0))}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      {/* Donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-            Expense Mix
-          </p>
+        <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
+          <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">Expense Mix</p>
           {donutData.length > 0 ? (
-            <DonutChart
-              data={donutData}
-              centerLabel="Total"
-              centerValue={formatMXNCompact(totalExpenses)}
-              height={200}
-            />
+            <DonutChart data={donutData} centerLabel="Total" centerValue={formatMXNCompact(totalExpenses)} height={200} />
           ) : (
-            <p className="text-sm text-gray-400 py-8 text-center">No expenses in this period</p>
+            <p className="text-[13px] text-[#41454d] dark:text-[#9297a0] py-8 text-center">No expenses in this period</p>
+          )}
+          {totalGains > 0 && (
+            <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-3 text-center">
+              Investment returns: <span className="font-medium text-[#1a7a3c]">{formatMXNCompact(totalGains)}</span>
+              {totalDeposits > 0 && <> · Deposits: <span className="font-medium text-[#333840]">{formatMXNCompact(totalDeposits)}</span></>}
+            </p>
           )}
         </div>
-
-        {/* Analysis Table */}
-        <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-x-auto">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-            Cash Flow Analysis
-          </p>
-          <table className="w-full text-sm min-w-[400px]">
-            <thead>
-              <tr className="text-xs text-gray-500 dark:text-gray-400">
-                <th className="text-left pb-2 font-medium">Month</th>
-                <th className="text-right pb-2 font-medium">Income</th>
-                <th className="text-right pb-2 font-medium">Expenses</th>
-                <th className="text-right pb-2 font-medium">Debt</th>
-                <th className="text-right pb-2 font-medium">Net</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-[#2D3448]">
-              {[...tableData].reverse().map((row) => (
-                <tr key={row.label}>
-                  <td className="py-2 text-gray-700 dark:text-gray-300 font-medium">{row.label}</td>
-                  <td className="py-2 text-right text-green-600">{formatMXNCompact(row.inc)}</td>
-                  <td className="py-2 text-right text-red-500">{formatMXNCompact(row.exp)}</td>
-                  <td className="py-2 text-right text-amber-500">{formatMXNCompact(row.debt)}</td>
-                  <td className="py-2 text-right font-semibold" style={{ color: row.net >= 0 ? '#22C55E' : '#EF4444' }}>
-                    {formatMXNCompact(row.net)}
-                  </td>
-                </tr>
-              ))}
-              <tr className="font-bold border-t-2 border-gray-200 dark:border-[#2D3448]">
-                <td className="py-2 text-gray-900 dark:text-white">TOTAL</td>
-                <td className="py-2 text-right text-green-600">{formatMXNCompact(tableData.reduce((s, r) => s + r.inc, 0))}</td>
-                <td className="py-2 text-right text-red-500">{formatMXNCompact(tableData.reduce((s, r) => s + r.exp, 0))}</td>
-                <td className="py-2 text-right text-amber-500">{formatMXNCompact(tableData.reduce((s, r) => s + r.debt, 0))}</td>
-                <td className="py-2 text-right text-[#7C3AED]">{formatMXNCompact(tableData.reduce((s, r) => s + r.net, 0))}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
 
-      {/* Comparison Tool */}
-      <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-          Period Comparison Tool
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Period A</p>
-            <PeriodSelector
-              mode="month"
-              value={compA}
-              onChange={(_, v) => setCompA(v)}
-              modes={['month']}
-            />
+      {/* Period Comparison */}
+      <div className="mb-8">
+        <SectionTitle>Period Comparison</SectionTitle>
+        <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            <div>
+              <p className="text-[12px] font-semibold text-[#41454d] dark:text-[#9297a0] mb-2">Period A</p>
+              <PeriodSelector mode="month" value={compA} onChange={(_, v) => setCompA(v)} modes={['month']} />
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold text-[#41454d] dark:text-[#9297a0] mb-2">Period B</p>
+              <PeriodSelector mode="month" value={compB} onChange={(_, v) => setCompB(v)} modes={['month']} />
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Period B</p>
-            <PeriodSelector
-              mode="month"
-              value={compB}
-              onChange={(_, v) => setCompB(v)}
-              modes={['month']}
-            />
+
+          <div className="overflow-x-auto mb-5">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  {['Metric', monthNames[(compA.month ?? 1) - 1], monthNames[(compB.month ?? 1) - 1], 'Variance'].map((h, i) => (
+                    <th key={h} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${i > 0 ? 'text-right' : 'text-left'}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {compMetrics.map((metric, i) => {
+                  const a = metricsA[metric] ?? 0
+                  const b = metricsB[metric] ?? 0
+                  const variance = b - a
+                  return (
+                    <tr key={metric}>
+                      <td className={`py-[11px] px-4 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${i < compMetrics.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{metric}</td>
+                      <td className={`py-[11px] px-4 text-right text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${i < compMetrics.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{formatMXN(a)}</td>
+                      <td className={`py-[11px] px-4 text-right text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${i < compMetrics.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{formatMXN(b)}</td>
+                      <td className={`py-[11px] px-4 text-right text-[13px] font-semibold ${i < compMetrics.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`} style={{ color: variance >= 0 ? '#1a7a3c' : '#c0392b' }}>
+                        {variance >= 0 ? '+' : ''}{formatMXN(variance)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-500 dark:text-gray-400">
-                <th className="text-left pb-2 font-medium">Metric</th>
-                <th className="text-right pb-2 font-medium">{monthNames[(compA.month ?? 1) - 1]}</th>
-                <th className="text-right pb-2 font-medium">{monthNames[(compB.month ?? 1) - 1]}</th>
-                <th className="text-right pb-2 font-medium">Variance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-[#2D3448]">
-              {compMetrics.map((metric) => {
-                const a = metricsA[metric] ?? 0
-                const b = metricsB[metric] ?? 0
-                const variance = b - a
-                return (
-                  <tr key={metric}>
-                    <td className="py-2 text-gray-700 dark:text-gray-300">{metric}</td>
-                    <td className="py-2 text-right text-gray-900 dark:text-white">{formatMXN(a)}</td>
-                    <td className="py-2 text-right text-gray-900 dark:text-white">{formatMXN(b)}</td>
-                    <td className="py-2 text-right font-semibold" style={{ color: variance >= 0 ? '#22C55E' : '#EF4444' }}>
-                      {variance >= 0 ? '+' : ''}{formatMXN(variance)}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+          <div className="bg-[#fffbeb] border border-[#f59e0b]/40 rounded-[8px] p-4 mb-5 flex gap-3">
+            <Lightbulb className="w-4 h-4 text-[#c8912a] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[11px] font-semibold uppercase text-[#c8912a] tracking-[0.4px] mb-1">Quick Insight</p>
+              <p className="text-[13px] text-[#333840]">{insight}</p>
+            </div>
+          </div>
 
-        <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-          <p className="text-xs font-semibold text-[#7C3AED] uppercase mb-1">Quick Insight</p>
-          <p className="text-sm text-gray-700 dark:text-gray-300">{insight}</p>
-        </div>
-
-        <div className="mt-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Visual Comparison</p>
           <BarChart
             data={[
-              { metric: 'Income',    A: metricsA.Income,    B: metricsB.Income },
-              { metric: 'Transfers', A: metricsA.Transfers,  B: metricsB.Transfers },
-              { metric: 'Expenses',  A: metricsA.Expenses,  B: metricsB.Expenses },
-              { metric: 'Debt Pay',  A: metricsA.Debt,      B: metricsB.Debt },
-              { metric: 'Net Flow',  A: metricsA['Net Flow'], B: metricsB['Net Flow'] },
+              { metric: 'Income',    A: metricsA.Income,       B: metricsB.Income },
+              { metric: 'Transfers', A: metricsA.Transfers,    B: metricsB.Transfers },
+              { metric: 'Expenses',  A: metricsA.Expenses,     B: metricsB.Expenses },
+              { metric: 'Debt Pay',  A: metricsA.Debt,         B: metricsB.Debt },
+              { metric: 'Net Flow',  A: metricsA['Net Flow'],  B: metricsB['Net Flow'] },
             ]}
             bars={[
-              { key: 'A', color: '#7C3AED', name: monthNames[(compA.month ?? 1) - 1] },
-              { key: 'B', color: '#94A3B8', name: monthNames[(compB.month ?? 1) - 1] },
+              { key: 'A', color: '#3b82f6', name: monthNames[(compA.month ?? 1) - 1] },
+              { key: 'B', color: '#f59e0b', name: monthNames[(compB.month ?? 1) - 1] },
             ]}
             xKey="metric"
             height={220}

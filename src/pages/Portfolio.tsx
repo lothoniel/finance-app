@@ -1,17 +1,20 @@
 import { useState, useMemo } from 'react'
-import { Plus, TrendingUp, ArrowUpCircle, BarChart2, Calendar, RefreshCw, Pencil, Trash2 } from 'lucide-react'
+import { Plus, TrendingUp, Calendar, RefreshCw, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
-import KpiCard from '../components/ui/KpiCard'
-import PeriodSelector from '../components/ui/PeriodSelector'
-import DonutChart from '../components/charts/DonutChart'
+import HeroBand from '../components/ui/HeroBand'
+import HeroKpi from '../components/ui/HeroKpi'
+import HeroAction from '../components/ui/HeroAction'
+import PeriodTabs from '../components/ui/PeriodTabs'
+import SectionTitle from '../components/ui/SectionTitle'
 import Badge from '../components/ui/Badge'
+import DonutChart from '../components/charts/DonutChart'
 import PortfolioForm from '../components/forms/PortfolioForm'
 import InvestmentMovementForm from '../components/forms/InvestmentMovementForm'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { Portfolio, InvestmentMovement } from '../store/types'
 
-const portfolioColors = ['#7C3AED', '#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#06B6D4']
+const portfolioColors = ['#2e7d65', '#1a7a3c', '#c8912a', '#c0392b', '#181d26', '#41454d']
 
 export default function PortfolioPage() {
   const [portfolioModal, setPortfolioModal] = useState(false)
@@ -24,6 +27,7 @@ export default function PortfolioPage() {
   const deleteInvestmentMovement = useStore((s) => s.deleteInvestmentMovement)
 
   const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: filteredMovements } = usePeriodFilter(investmentMovements)
+
   const totalGains = filteredMovements.filter((m) => m.type === 'GAIN').reduce((s, m) => s + m.amount, 0)
   const totalDeposits = filteredMovements.filter((m) => m.type === 'DEPOSIT').reduce((s, m) => s + m.amount, 0)
   const totalNetWorth = portfolios.reduce((s, p) => s + p.balance, 0)
@@ -34,7 +38,6 @@ export default function PortfolioPage() {
     color: portfolioColors[i % portfolioColors.length],
   }))
 
-  // Return % per portfolio (all-time gains / all-time deposits)
   const returnPct = useMemo(() => {
     const result: Record<string, string> = {}
     for (const p of portfolios) {
@@ -45,188 +48,160 @@ export default function PortfolioPage() {
     return result
   }, [portfolios, investmentMovements])
 
-  // Last gain per portfolio
   const lastGain = useMemo(() => {
     const result: Record<string, number> = {}
     investmentMovements
       .filter((m) => m.type === 'GAIN')
       .sort((a, b) => b.date.localeCompare(a.date))
-      .forEach((m) => {
-        if (!result[m.portfolioId]) {
-          result[m.portfolioId] = m.amount
-        }
-      })
+      .forEach((m) => { if (!result[m.portfolioId]) result[m.portfolioId] = m.amount })
     return result
   }, [investmentMovements])
 
+  const sortedMovements = useMemo(
+    () => [...filteredMovements].sort((a, b) => b.date.localeCompare(a.date)),
+    [filteredMovements]
+  )
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} />
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setEditMovement(undefined); setMovementModal(true) }}
-            className="flex items-center gap-2 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <TrendingUp className="w-4 h-4" />
-            Add Movement
-          </button>
-          <button
-            onClick={() => { setEditPortfolio(undefined); setPortfolioModal(true) }}
-            className="flex items-center gap-2 bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Portfolio
-          </button>
+    <div>
+      <HeroBand color="#2e7d65">
+        <div className="flex justify-end gap-2 mb-4 md:mb-0 md:absolute md:top-7 md:right-10">
+          <HeroAction variant="ghost" onClick={() => { setEditMovement(undefined); setMovementModal(true) }}>
+            <TrendingUp className="w-3.5 h-3.5 inline mr-1.5" />Add Movement
+          </HeroAction>
+          <HeroAction variant="primary" onClick={() => { setEditPortfolio(undefined); setPortfolioModal(true) }}>
+            <Plus className="w-3.5 h-3.5 inline mr-1.5" />Add Portfolio
+          </HeroAction>
         </div>
-      </div>
+        <div className="mb-6">
+          <PeriodTabs mode={periodMode} value={periodValue} onChange={onPeriodChange} variant="light" />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <HeroKpi label="Total Net Worth" value={formatMXN(totalNetWorth)} sub="Current balances" />
+          <HeroKpi label="Total Yield" value={formatMXN(totalGains)} sub="In selected period" />
+          <HeroKpi label="Total Deposits" value={formatMXN(totalDeposits)} />
+        </div>
+      </HeroBand>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KpiCard
-          title="Total Yield"
-          value={formatMXNCompact(totalGains)}
-          subtitle={`In selected period`}
-          icon={<TrendingUp className="w-5 h-5" />}
-          accent="#22C55E"
-        />
-        <KpiCard
-          title="Total Deposits"
-          value={formatMXNCompact(totalDeposits)}
-          icon={<ArrowUpCircle className="w-5 h-5" />}
-          accent="#3B82F6"
-        />
-        <KpiCard
-          title="Total Net Worth"
-          value={formatMXNCompact(totalNetWorth)}
-          subtitle="Current portfolio balances"
-          icon={<BarChart2 className="w-5 h-5" />}
-          accent="#7C3AED"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Donut */}
-        <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Asset Allocation</p>
+      {/* Holdings */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
+          <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">Asset Allocation</p>
           {donutData.length > 0 ? (
-            <DonutChart
-              data={donutData}
-              centerLabel="Total"
-              centerValue={formatMXNCompact(totalNetWorth)}
-              height={220}
-            />
+            <DonutChart data={donutData} centerLabel="Total" centerValue={formatMXNCompact(totalNetWorth)} height={220} />
           ) : (
-            <p className="text-center py-8 text-sm text-gray-400">No portfolios yet</p>
+            <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No portfolios yet</p>
           )}
         </div>
 
-        {/* Portfolio cards */}
         <div className="space-y-3">
+          {portfolios.length === 0 && (
+            <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-8 text-center">
+              <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">No portfolios yet. Add one to get started.</p>
+            </div>
+          )}
           {portfolios.map((p, i) => {
             const color = portfolioColors[i % portfolioColors.length]
             const gain = lastGain[p.id]
+            const alloc = totalNetWorth > 0 ? (p.balance / totalNetWorth * 100) : 0
             return (
               <div
                 key={p.id}
-                className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-4 border border-gray-200 dark:border-[#2D3448] shadow-sm cursor-pointer hover:border-[#7C3AED] transition-colors"
+                className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-4 cursor-pointer hover:border-[#181d26] dark:hover:border-[#9297a0] transition-colors"
                 onClick={() => { setEditPortfolio(p); setPortfolioModal(true) }}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{p.name}</p>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 mt-1">
-                      {p.type}
-                    </span>
+                    <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{p.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-[4px] bg-[#eef8f4] text-[#2e7d65]">{p.type}</span>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-[4px]"
+                        style={{ backgroundColor: p.apy >= 10 ? '#eef8f4' : '#fff1ec', color: p.apy >= 10 ? '#2e7d65' : '#aa2d00' }}>
+                        {p.apy}% APY
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex gap-4">
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">APY</p>
-                      <p className="text-sm font-bold" style={{ color }}>{p.apy}%</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">Return</p>
-                      <p className="text-sm font-bold text-green-500">{returnPct[p.id]}</p>
-                    </div>
+                  <div className="text-right">
+                    <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">Return</p>
+                    <p className="text-[13px] font-semibold text-[#1a7a3c]">{returnPct[p.id]}</p>
                   </div>
                 </div>
 
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatMXNCompact(p.balance)}</p>
-
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-[#2D3448]">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Updated: {formatDate(p.updatedDate)}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Renews: {formatDate(p.renewsDate)}
-                  </div>
-                </div>
+                <p className="text-[28px] font-normal text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(p.balance)}</p>
 
                 {gain !== undefined && (
-                  <div className="mt-2 text-xs text-green-600 font-medium">
-                    Last Gain: +{formatMXN(gain)}
-                  </div>
+                  <p className="text-[12px] text-[#1a7a3c] mt-1">Last gain: +{formatMXN(gain)}</p>
                 )}
+
+                <div className="mt-3">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[11px] text-[#41454d] dark:text-[#9297a0]">Portfolio allocation</span>
+                    <span className="text-[11px] font-medium text-[#181d26] dark:text-[#e8eaf0]">{alloc.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-[6px] bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${alloc}%`, backgroundColor: color }} />
+                  </div>
+                </div>
+
+                <div className="flex justify-between mt-3 pt-3 border-t border-[#e8e8e8] dark:border-[#2d3347]">
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#41454d] dark:text-[#9297a0]">
+                    <Calendar className="w-3.5 h-3.5" />Updated: {formatDate(p.updatedDate)}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#41454d] dark:text-[#9297a0]">
+                    <RefreshCw className="w-3.5 h-3.5" />Renews: {formatDate(p.renewsDate)}
+                  </div>
+                </div>
               </div>
             )
           })}
         </div>
       </div>
 
-      {/* Movements table */}
-      <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2D3448]">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Investment Deposits & Gains</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800/50">
-              <tr className="text-xs text-gray-500 dark:text-gray-400">
-                <th className="text-left px-5 py-3 font-medium">Date</th>
-                <th className="text-left px-5 py-3 font-medium">Portfolio</th>
-                <th className="text-left px-5 py-3 font-medium">Description</th>
-                <th className="text-left px-5 py-3 font-medium">Type</th>
-                <th className="text-right px-5 py-3 font-medium">Amount</th>
-                <th className="px-5 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-[#2D3448]">
-              {filteredMovements.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-400 text-sm">No movements in this period</td></tr>
-              )}
-              {filteredMovements.sort((a, b) => b.date.localeCompare(a.date)).map((m) => {
-                const portfolio = portfolios.find((p) => p.id === m.portfolioId)
-                return (
-                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                    <td className="px-5 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{formatDate(m.date)}</td>
-                    <td className="px-5 py-3 text-gray-900 dark:text-white">{portfolio?.name ?? m.portfolioId}</td>
-                    <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{m.description}</td>
-                    <td className="px-5 py-3"><Badge type={m.type.toLowerCase()} /></td>
-                    <td className="px-5 py-3 text-right font-semibold" style={{ color: m.type === 'GAIN' ? '#F59E0B' : m.type === 'WITHDRAWAL' ? '#EF4444' : '#22C55E' }}>
-                      {m.type === 'WITHDRAWAL' ? '-' : '+'}{formatMXN(m.amount)}
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => { setEditMovement(m); setMovementModal(true) }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#7C3AED] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => deleteInvestmentMovement(m.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      {/* Transaction History */}
+      <div>
+        <SectionTitle>Transaction History</SectionTitle>
+        <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  {['Date', 'Portfolio', 'Description', 'Type', 'Amount', ''].map((h, i) => (
+                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sortedMovements.length === 0 && (
+                  <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No movements in this period</td></tr>
+                )}
+                {sortedMovements.map((m, i, arr) => {
+                  const portfolio = portfolios.find((p) => p.id === m.portfolioId)
+                  const amtColor = m.type === 'GAIN' ? '#1a7a3c' : m.type === 'WITHDRAWAL' ? '#c0392b' : '#333840'
+                  return (
+                    <tr key={m.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
+                      <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{formatDate(m.date)}</td>
+                      <td className={`px-4 py-[11px] text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{portfolio?.name ?? m.portfolioId}</td>
+                      <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{m.description}</td>
+                      <td className={`px-4 py-[11px] ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}><Badge type={m.type.toLowerCase()} /></td>
+                      <td className={`px-4 py-[11px] text-right text-[13px] font-medium ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`} style={{ color: amtColor }}>
+                        {m.type === 'WITHDRAWAL' ? '-' : '+'}{formatMXN(m.amount)}
+                      </td>
+                      <td className={`px-4 py-[11px] ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setEditMovement(m); setMovementModal(true) }} className="p-1.5 rounded-[6px] text-[#41454d] hover:text-[#181d26] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] dark:hover:text-[#e8eaf0] transition-colors">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => deleteInvestmentMovement(m.id)} className="p-1.5 rounded-[6px] text-[#41454d] hover:text-[#c0392b] hover:bg-[#fdecea] transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

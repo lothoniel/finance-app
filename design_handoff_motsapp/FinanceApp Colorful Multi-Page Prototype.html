@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinanceApp — Redesign Prototype</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #181d26;
+      --ink: #181d26;
+      --body: #333840;
+      --muted: #41454d;
+      --hairline: #e8e8e8;
+      --canvas: #ffffff;
+      --surface-soft: #f8fafc;
+      --surface-mid: #f0f2f5;
+      --sig-coral: #aa2d00;
+      --sig-forest: #0a2e0e;
+      --sig-cream: #f5e9d4;
+      --sig-peach: #fcab79;
+      --sig-mint: #a8d8c4;
+      --sig-mint-dark: #2e7d65;
+      --sig-yellow: #f4d35e;
+      --sig-mustard: #c8912a;
+      --sig-coral-light: #fff1ec;
+      --sig-mint-light: #eef8f4;
+      --sig-mustard-light: #fdf6e3;
+      --success: #1a7a3c;
+      --success-bg: #e8f5ee;
+      --danger: #c0392b;
+      --danger-bg: #fdecea;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+    }
+
+    html, body, #root { height: 100%; width: 100%; }
+
+    body {
+      font-family: var(--font);
+      background: var(--surface-soft);
+      color: var(--ink);
+    }
+
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      width: 220px;
+      background: var(--canvas);
+      border-right: 1px solid var(--hairline);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0 16px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo {
+      padding: 0 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--hairline);
+      margin-bottom: 16px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-mark svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.3px;
+    }
+
+    .nav-group-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      padding: 8px 20px 4px;
+      opacity: 0.6;
+    }
+
+    .nav-list {
+      padding: 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .nav-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--body);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .nav-item:hover {
+      background: var(--surface-soft);
+      color: var(--ink);
+    }
+
+    .nav-item.active {
+      background: var(--surface-soft);
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .nav-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .nav-item.active .nav-dot {
+      background: var(--sig-coral);
+    }
+
+    .nav-item:not(.active) .nav-dot {
+      background: var(--hairline);
+    }
+
+    .sidebar-user {
+      padding: 16px 20px 0;
+      border-top: 1px solid var(--hairline);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      flex-shrink: 0;
+    }
+
+    .user-info-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .user-info-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ========== MAIN ========== */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--surface-soft);
+    }
+
+    /* ========== HERO BANDS ========== */
+    .hero-band {
+      padding: 36px 40px 36px;
+      position: relative;
+      overflow: visible;
+    }
+
+    .hero-actions {
+      position: absolute;
+      top: 28px;
+      right: 40px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .hero-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      font-family: var(--font);
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .hero-btn:active { transform: scale(0.97); }
+
+    .hero-btn.primary {
+      background: white;
+      color: var(--ink);
+    }
+
+    .hero-btn.primary:hover { opacity: 0.9; }
+
+    .hero-btn.ghost {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .hero-btn.ghost:hover { background: rgba(255,255,255,0.25); }
+
+    .hero-btn.ghost-dark {
+      background: rgba(0,0,0,0.07);
+      color: var(--ink);
+      border: 1px solid rgba(0,0,0,0.12);
+    }
+
+    .hero-btn.ghost-dark:hover { background: rgba(0,0,0,0.12); }
+
+    .hero-band.forest { background: var(--sig-forest); color: white; }
+    .hero-band.coral { background: var(--sig-coral); color: white; }
+    .hero-band.mint { background: var(--sig-mint-dark); color: white; }
+    .hero-band.mustard { background: var(--sig-mustard); color: white; }
+    .hero-band.peach { background: #e8874a; color: white; }
+    .hero-band.cream { background: var(--sig-cream); color: var(--ink); }
+    .hero-band.dark { background: var(--primary); color: white; }
+
+    .hero-period-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+
+    .period-tab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: transparent;
+      color: rgba(255,255,255,0.8);
+      transition: all 0.15s;
+    }
+
+    .period-tab.dark {
+      border-color: rgba(0,0,0,0.15);
+      color: rgba(0,0,0,0.6);
+    }
+
+    .period-tab.active {
+      background: white;
+      color: var(--ink);
+      border-color: white;
+      font-weight: 600;
+    }
+
+    .period-tab.active.dark {
+      background: var(--ink);
+      color: white;
+      border-color: var(--ink);
+    }
+
+    .hero-kpi-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hero-kpi {
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 16px 20px;
+      min-width: 150px;
+      backdrop-filter: blur(4px);
+    }
+
+    .hero-kpi.dark-bg {
+      background: rgba(0,0,0,0.06);
+      border-color: rgba(0,0,0,0.1);
+    }
+
+    .hero-kpi-label {
+      font-size: 11px;
+      opacity: 0.75;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 600;
+    }
+
+    .hero-kpi-value {
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.1;
+    }
+
+    .hero-kpi-sub {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 5px;
+    }
+
+    .hero-title {
+      font-size: 26px;
+      font-weight: 400;
+      margin-bottom: 20px;
+    }
+
+    /* ========== PAGE BODY ========== */
+    .page-body {
+      padding: 28px 40px 48px;
+    }
+
+    /* ========== SECTION ========== */
+    .section {
+      margin-bottom: 36px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--hairline);
+    }
+
+    /* ========== GRIDS ========== */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+
+    /* ========== CARDS ========== */
+    .card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--body);
+      margin-bottom: 14px;
+    }
+
+    /* ========== METRIC CARDS ========== */
+    .kpi-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      align-self: flex-start;
+    }
+
+    .kpi-chip.coral { background: var(--sig-coral-light); color: var(--sig-coral); }
+    .kpi-chip.mint { background: var(--sig-mint-light); color: var(--sig-mint-dark); }
+    .kpi-chip.mustard { background: var(--sig-mustard-light); color: var(--sig-mustard); }
+    .kpi-chip.cream { background: var(--sig-cream); color: #7a5a20; }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ========== CHART BARS ========== */
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-label {
+      font-size: 12px;
+      color: var(--body);
+      width: 70px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 10px;
+      background: var(--surface-mid);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.6s ease;
+    }
+
+    .bar-value {
+      font-size: 12px;
+      color: var(--muted);
+      width: 48px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    /* ========== MINI TREND ========== */
+    .trend-sparkline {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 40px;
+    }
+
+    .spark-bar {
+      flex: 1;
+      border-radius: 3px 3px 0 0;
+      min-height: 4px;
+    }
+
+    /* ========== TABLE ========== */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--hairline);
+      text-align: left;
+    }
+
+    .data-table td {
+      font-size: 13px;
+      color: var(--body);
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table td:last-child {
+      text-align: right;
+      font-weight: 500;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tag.shared { background: var(--sig-mint-light); color: var(--sig-mint-dark); }
+    .tag.personal { background: var(--sig-mustard-light); color: var(--sig-mustard); }
+    .tag.positive { color: var(--success); }
+    .tag.negative { color: var(--danger); }
+
+    /* ========== INSIGHT CARDS ========== */
+    .insight-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .insight-item {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-left: 3px solid;
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .insight-item.coral { border-left-color: var(--sig-coral); }
+    .insight-item.mint { border-left-color: var(--sig-mint-dark); }
+    .insight-item.mustard { border-left-color: var(--sig-mustard); }
+
+    .insight-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .insight-content-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 3px;
+    }
+
+    .insight-content-text {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* ========== DEBT CARDS ========== */
+    .debt-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .debt-card-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .debt-card-amount {
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      height: 6px;
+      background: var(--surface-mid);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .debt-card-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ========== PORTFOLIO CARD ========== */
+    .portfolio-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .portfolio-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+
+    .portfolio-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .portfolio-value {
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .portfolio-meta {
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .apy-badge {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ========== SHARED BALANCE CARDS ========== */
+    .ledger-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .ledger-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .ledger-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .ledger-row:last-child { border-bottom: none; }
+
+    .ledger-row .label { color: var(--muted); }
+
+    /* ========== SETTINGS ========== */
+    .settings-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .settings-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 16px;
+    }
+
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 13px;
+    }
+
+    .settings-row:last-child { border-bottom: none; }
+
+    .settings-row .key { color: var(--body); }
+
+    .settings-row .val {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .settings-btn {
+      padding: 8px 16px;
+      background: var(--surface-soft);
+      border: 1px solid var(--hairline);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--ink);
+    }
+
+    .settings-btn.danger {
+      background: var(--danger-bg);
+      border-color: #f5c6c4;
+      color: var(--danger);
+    }
+
+    .category-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 13px;
+    }
+
+    .category-row:last-child { border-bottom: none; }
+
+    .cat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cat-name { flex: 1; color: var(--body); }
+
+    .cat-budget {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface-soft);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 1100px) {
+      .hero-band, .page-body { padding-left: 24px; padding-right: 24px; }
+      .grid-5 { grid-template-columns: repeat(3, 1fr); }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .grid-5, .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const fmt = (v) => {
+      if (v >= 1000000) return '$' + (v/1000000).toFixed(1) + 'M';
+      if (v >= 1000) return '$' + (v/1000).toFixed(1) + 'k';
+      return '$' + v.toLocaleString();
+    };
+
+    /* ---- PERIOD TABS ---- */
+    const PeriodTabs = ({ value, onChange, dark = false }) => (
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '20px' }}>
+        {['Month', 'Quarter', 'Year', 'All Time'].map(p => (
+          <button
+            key={p}
+            className={`period-tab ${dark ? 'dark' : ''} ${value === p ? 'active' : ''}`}
+            onClick={() => onChange(p)}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+    );
+
+    /* ---- SIMPLE BAR CHART (CSS) ---- */
+    const BarChart = ({ data, color = '#aa2d00' }) => (
+      <div className="bar-chart">
+        {data.map((d, i) => (
+          <div className="bar-row" key={i}>
+            <div className="bar-label">{d.label}</div>
+            <div className="bar-track">
+              <div className="bar-fill" style={{ width: d.pct + '%', background: color }} />
+            </div>
+            <div className="bar-value">{d.value}</div>
+          </div>
+        ))}
+      </div>
+    );
+
+    /* ---- SPARKLINE BARS ---- */
+    const Sparkline = ({ data, color = '#aa2d00' }) => {
+      const max = Math.max(...data);
+      return (
+        <div className="trend-sparkline">
+          {data.map((v, i) => (
+            <div key={i} className="spark-bar"
+              style={{ height: (v / max * 100) + '%', background: i === data.length - 1 ? color : color + '55' }}
+            />
+          ))}
+        </div>
+      );
+    };
+
+    /* ============================
+       PAGES
+       ============================ */
+
+    const DashboardPage = ({ period, setPeriod }) => (
+      <div>
+        <div className="hero-band forest">
+          <div className="hero-actions">
+            <button className="hero-btn ghost">+ Add Transaction</button>
+          </div>
+          <PeriodTabs value={period} onChange={setPeriod} />
+          <div className="hero-kpi-row">
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Net Flow</div>
+              <div className="hero-kpi-value">$98.3k</div>
+              <div className="hero-kpi-sub">+12.4% vs last month</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Income</div>
+              <div className="hero-kpi-value">$84.9k</div>
+              <div className="hero-kpi-sub">4 paychecks</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Expenses</div>
+              <div className="hero-kpi-value">$76.4k</div>
+              <div className="hero-kpi-sub">↑ $46.6k vs Mar</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Debt Paid</div>
+              <div className="hero-kpi-value">$67.0k</div>
+              <div className="hero-kpi-sub">5 cards</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">Portfolio & Wealth</div>
+            <div className="grid-3">
+              <div className="kpi-card">
+                <div className="kpi-chip mint">Investments</div>
+                <div className="kpi-value">$6.7M</div>
+                <div className="kpi-label">+$21.5k this month</div>
+                <div style={{ marginTop: '12px' }}>
+                  <Sparkline data={[52,55,58,57,60,63,67]} color="#2e7d65" />
+                </div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-chip coral">Debt Ratio</div>
+                <div className="kpi-value">40.5%</div>
+                <div className="kpi-label">Monthly debt / income</div>
+                <div style={{ marginTop: '12px' }}>
+                  <Sparkline data={[48,46,45,44,43,42,40]} color="#aa2d00" />
+                </div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-chip mustard">Savings Rate</div>
+                <div className="kpi-value">59.2%</div>
+                <div className="kpi-label">Of gross income</div>
+                <div style={{ marginTop: '12px' }}>
+                  <Sparkline data={[52,54,53,56,57,58,59]} color="#c8912a" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Spending Breakdown</div>
+            <div className="grid-2">
+              <div className="card">
+                <div className="card-title">By Category — April 2026</div>
+                <BarChart
+                  color="#aa2d00"
+                  data={[
+                    { label: 'Salidas', pct: 100, value: '$715' },
+                    { label: 'Agua', pct: 60, value: '$433' },
+                    { label: 'Personal', pct: 48, value: '$341' },
+                    { label: 'Uber', pct: 43, value: '$306' },
+                    { label: 'Luz', pct: 20, value: '$145' },
+                  ]}
+                />
+              </div>
+              <div className="card">
+                <div className="card-title">Recent Activity</div>
+                <table className="data-table">
+                  <tbody>
+                    {[
+                      { name: 'Renta Mayo', cat: 'Rental', amt: '+$16.0k', pos: true },
+                      { name: 'Papa Mayo', cat: 'Others', amt: '+$12.5k', pos: true },
+                      { name: 'Pago Tarjeta', cat: 'Banamex', amt: '-$20.0k', pos: false },
+                      { name: 'Pago Seguro', cat: 'Banamex', amt: '-$1.9k', pos: false },
+                      { name: 'Deposito Ini', cat: 'Rental', amt: '+$16.0k', pos: true },
+                    ].map((r, i) => (
+                      <tr key={i}>
+                        <td>
+                          <div style={{ fontWeight: 500, color: 'var(--ink)' }}>{r.name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{r.cat}</div>
+                        </td>
+                        <td style={{ color: r.pos ? 'var(--success)' : 'var(--danger)' }}>{r.amt}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Insights</div>
+            <div className="insight-row">
+              <div className="insight-item coral">
+                <div className="insight-icon">↑</div>
+                <div>
+                  <div className="insight-content-title">Spending Alert</div>
+                  <div className="insight-content-text">Salidas increased 34.6% vs March. Consider reviewing.</div>
+                </div>
+              </div>
+              <div className="insight-item mint">
+                <div className="insight-icon">✓</div>
+                <div>
+                  <div className="insight-content-title">Investment Growth</div>
+                  <div className="insight-content-text">Portfolio gained $21.5k this month. 12% annual return on track.</div>
+                </div>
+              </div>
+              <div className="insight-item mustard">
+                <div className="insight-icon">💰</div>
+                <div>
+                  <div className="insight-content-title">Debt Progress</div>
+                  <div className="insight-content-text">Paid $67k toward debt. Debt-free in 3.7 years at current pace.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const CashFlowPage = ({ period, setPeriod }) => (
+      <div>
+        <div className="hero-band coral">
+          <div className="hero-actions">
+            <button className="hero-btn ghost">Export</button>
+          </div>
+          <PeriodTabs value={period} onChange={setPeriod} />
+          <div className="hero-kpi-row">
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Total Income</div>
+              <div className="hero-kpi-value">$165.4k</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Total Expenses</div>
+              <div className="hero-kpi-value">$76.4k</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Debt Payments</div>
+              <div className="hero-kpi-value">$67.0k</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Net Flow</div>
+              <div className="hero-kpi-value">$98.4k</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">Monthly Trend</div>
+            <div className="card">
+              <div className="card-title">Income vs Expenses vs Debt — Last 6 Months</div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                {['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'].map((m, i) => {
+                  const income = [135, 148, 147, 147, 147, 165];
+                  const exp = [30, 29, 29, 30, 29, 76];
+                  const debt = [40, 82, 40, 40, 40, 67];
+                  const maxV = 180;
+                  return (
+                    <div key={m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '120px' }}>
+                        <div style={{ width: '12px', background: '#0a2e0e', borderRadius: '2px 2px 0 0', height: (income[i]/maxV*100) + '%' }} />
+                        <div style={{ width: '12px', background: '#aa2d00', borderRadius: '2px 2px 0 0', height: (exp[i]/maxV*100) + '%' }} />
+                        <div style={{ width: '12px', background: '#c8912a', borderRadius: '2px 2px 0 0', height: (debt[i]/maxV*100) + '%' }} />
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{m}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '11px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '10px', height: '10px', background: '#0a2e0e', borderRadius: '2px', display: 'inline-block' }} /> Income</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '10px', height: '10px', background: '#aa2d00', borderRadius: '2px', display: 'inline-block' }} /> Expenses</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '10px', height: '10px', background: '#c8912a', borderRadius: '2px', display: 'inline-block' }} /> Debt</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Cash Flow Analysis</div>
+            <div className="card">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Income</th>
+                    <th>Expenses</th>
+                    <th>Debt</th>
+                    <th>Net</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Apr 26', '$165.4k', '$76.4k', '$67.0k', '+$99.4k'],
+                    ['Mar 26', '$147.6k', '$29.9k', '$40.3k', '+$107.3k'],
+                    ['Feb 26', '$147.6k', '$29.9k', '$40.3k', '+$107.3k'],
+                    ['Jan 26', '$149.4k', '$0', '$83.9k', '+$65.8k'],
+                    ['Dec 25', '$135.3k', '$0', '$116.1k', '+$19.1k'],
+                  ].map(([m, inc, exp, dbt, net], i) => (
+                    <tr key={i}>
+                      <td style={{ fontWeight: 500, color: 'var(--ink)' }}>{m}</td>
+                      <td style={{ color: 'var(--success)' }}>{inc}</td>
+                      <td style={{ color: 'var(--danger)' }}>{exp}</td>
+                      <td>{dbt}</td>
+                      <td style={{ color: 'var(--success)', fontWeight: 600 }}>{net}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const IncomePage = ({ period, setPeriod }) => (
+      <div>
+        <div className="hero-band mint">
+          <div className="hero-actions">
+            <button className="hero-btn ghost">+ Add Transfer</button>
+            <button className="hero-btn primary">+ Add Paycheck</button>
+          </div>
+          <PeriodTabs value={period} onChange={setPeriod} />
+          <div className="hero-kpi-row">
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Gross Income</div>
+              <div className="hero-kpi-value">$84.9k</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Net Income</div>
+              <div className="hero-kpi-value">$84.7k</div>
+              <div className="hero-kpi-sub">−$235 taxes</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Transfers Received</div>
+              <div className="hero-kpi-value">$80.4k</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">Paychecks</div>
+            <div className="card">
+              <table className="data-table">
+                <thead>
+                  <tr><th>Date</th><th>USD</th><th>Rate</th><th>MXN</th></tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Apr 24, 2026', '$1,086.95', '17.28', '$18,787.62'],
+                    ['Apr 17, 2026', '$1,086.95', '17.11', '$18,602.86'],
+                    ['Apr 10, 2026', '$1,359.44', '17.26', '$23,463.48'],
+                    ['Apr 3, 2026', '$1,359.44', '—', '$24,094.34'],
+                  ].map(([date, usd, rate, mxn], i) => (
+                    <tr key={i}>
+                      <td>{date}</td>
+                      <td>{usd}</td>
+                      <td style={{ color: 'var(--muted)' }}>{rate}</td>
+                      <td style={{ fontWeight: 600 }}>{mxn}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Transfers Received</div>
+            <div className="grid-3">
+              {[
+                { name: 'Household', val: '$23.4k', color: '#aa2d00' },
+                { name: 'Rental', val: '$32.0k', color: '#2e7d65' },
+                { name: 'Others', val: '$25.0k', color: '#c8912a' },
+              ].map((t, i) => (
+                <div className="kpi-card" key={i}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: t.color, marginBottom: '8px' }} />
+                  <div className="kpi-label">{t.name}</div>
+                  <div className="kpi-value">{t.val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const ExpensesPage = ({ period, setPeriod }) => (
+      <div>
+        <div className="hero-band coral">
+          <div className="hero-actions">
+            <button className="hero-btn ghost">Import</button>
+            <button className="hero-btn primary">+ Add Expense</button>
+          </div>
+          <PeriodTabs value={period} onChange={setPeriod} />
+          <div className="hero-kpi-row">
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Total Expenses</div>
+              <div className="hero-kpi-value">$76.4k</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Avg Per Month</div>
+              <div className="hero-kpi-value">$35.2k</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Top Category</div>
+              <div className="hero-kpi-value">Misc Casa</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">Spending by Category</div>
+            <div className="grid-2">
+              <div className="card">
+                <div className="card-title">Breakdown</div>
+                <BarChart
+                  color="#aa2d00"
+                  data={[
+                    { label: 'Misc Casa', pct: 100, value: '$74.8k' },
+                    { label: 'Cara Fest', pct: 78, value: '$58.1k' },
+                    { label: 'Viaje Fri', pct: 34, value: '$25.4k' },
+                    { label: 'Personal', pct: 26, value: '$19.7k' },
+                    { label: 'Mandado', pct: 15, value: '$11.2k' },
+                  ]}
+                />
+              </div>
+              <div className="card">
+                <div className="card-title">Recent Transactions</div>
+                <table className="data-table">
+                  <thead>
+                    <tr><th>Description</th><th>Type</th><th>Amount</th></tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['Onza brunch', 'personal', '$341.00'],
+                      ['Agua dos meses', 'shared', '$433.00'],
+                      ['Uber', 'shared', '$305.76'],
+                      ['Cafenio', 'shared', '$145.00'],
+                      ['Onza Desayuno', 'shared', '$715.00'],
+                    ].map(([desc, type, amt], i) => (
+                      <tr key={i}>
+                        <td>{desc}</td>
+                        <td><span className={`tag ${type}`}>{type.toUpperCase()}</span></td>
+                        <td style={{ color: 'var(--danger)' }}>{amt}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const DebtPage = ({ period, setPeriod }) => (
+      <div>
+        <div className="hero-band mustard">
+          <div className="hero-actions">
+            <button className="hero-btn primary">+ Record Payment</button>
+          </div>
+          <PeriodTabs value={period} onChange={setPeriod} />
+          <div className="hero-kpi-row">
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Total Paid</div>
+              <div className="hero-kpi-value">$67.0k</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Remaining Debt</div>
+              <div className="hero-kpi-value">$247.5k</div>
+              <div className="hero-kpi-sub">5 cards total</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Debt Ratio</div>
+              <div className="hero-kpi-value">40.5%</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">Card Balances</div>
+            <div className="grid-3">
+              {[
+                { name: 'Banorte Platinum', balance: 35200, max: 50000, color: '#aa2d00' },
+                { name: 'Banamex Costco', balance: 27600, max: 50000, color: '#c8912a' },
+                { name: 'Banamex Oro', balance: 4200, max: 20000, color: '#2e7d65' },
+                { name: 'Banamex Roja', balance: 0, max: 15000, color: '#a8d8c4' },
+                { name: 'Cash / Transfers', balance: 0, max: 10000, color: '#dddddd' },
+              ].map((card, i) => (
+                <div className="debt-card" key={i}>
+                  <div className="debt-card-name">{card.name}</div>
+                  <div className="debt-card-amount">{fmt(card.balance)}</div>
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: (card.balance / card.max * 100) + '%', background: card.color }} />
+                  </div>
+                  <div className="debt-card-sub">{Math.round(card.balance / card.max * 100)}% of {fmt(card.max)} limit</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Recent Payments</div>
+            <div className="card">
+              <table className="data-table">
+                <thead>
+                  <tr><th>Date</th><th>Card</th><th>Description</th><th>Amount</th></tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Apr 25', 'Banorte Platinum', 'Pago Tarjeta carofest T_T', '$20,000'],
+                    ['Apr 25', 'Banamex Oro', 'Pago Seguro 5/6', '$1,896'],
+                    ['Apr 25', 'Banamex Costco', 'Pago Tarjeta Caro fest', '$15,000'],
+                    ['Apr 7', 'Banorte Platinum', 'Pago Tarjeta total', '$15,227'],
+                    ['Apr 7', 'Banamex Costco', 'Pago Tarjeta Full', '$10,631'],
+                  ].map(([date, card, desc, amt], i) => (
+                    <tr key={i}>
+                      <td style={{ color: 'var(--muted)' }}>{date}</td>
+                      <td style={{ fontWeight: 500 }}>{card}</td>
+                      <td style={{ color: 'var(--muted)' }}>{desc}</td>
+                      <td style={{ color: 'var(--success)', fontWeight: 600 }}>{amt}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const MortgagePage = ({ period, setPeriod }) => (
+      <div>
+        <div className="hero-band peach">
+          <div className="hero-actions">
+            <button className="hero-btn ghost">+ Add Contribution</button>
+            <button className="hero-btn primary">+ Add Payment</button>
+          </div>
+          <PeriodTabs value={period} onChange={setPeriod} />
+          <div className="hero-kpi-row">
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Current Balance</div>
+              <div className="hero-kpi-value">$2.5M</div>
+              <div className="hero-kpi-sub">8.8% paid off</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Time Saved</div>
+              <div className="hero-kpi-value">3yr 4mo</div>
+              <div className="hero-kpi-sub">vs minimum payments</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Projected Payoff</div>
+              <div className="hero-kpi-value">Apr 2040</div>
+              <div className="hero-kpi-sub">14yr remaining</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Interest Saved</div>
+              <div className="hero-kpi-value">$827.0k</div>
+              <div className="hero-kpi-sub">from extra deposits</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">Payment History</div>
+            <div className="card">
+              <table className="data-table">
+                <thead>
+                  <tr><th>Date</th><th>Total Paid</th><th>Extra Capital</th><th>Balance After</th></tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Apr 1, 2026', '$58,666', '$30,274', '$2,458,780'],
+                    ['Mar 2, 2026', '$48,000', '$35,463', '$2,484,472'],
+                    ['Feb 9, 2026', '$16,000', '—', '$2,535,032'],
+                    ['Jan 30, 2026', '$32,000', '$4,183', '$2,535,032'],
+                    ['Dec 30, 2025', '$32,000', '$4,178', '$2,544,240'],
+                  ].map(([date, total, extra, balance], i) => (
+                    <tr key={i}>
+                      <td style={{ color: 'var(--muted)' }}>{date}</td>
+                      <td style={{ fontWeight: 500 }}>{total}</td>
+                      <td style={{ color: extra === '—' ? 'var(--muted)' : 'var(--success)', fontWeight: extra !== '—' ? 600 : 400 }}>{extra}</td>
+                      <td style={{ color: 'var(--ink)' }}>{balance}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const PortfolioPage = ({ period, setPeriod }) => (
+      <div>
+        <div className="hero-band mint">
+          <div className="hero-actions">
+            <button className="hero-btn ghost">+ Add Movement</button>
+            <button className="hero-btn primary">+ Add Portfolio</button>
+          </div>
+          <PeriodTabs value={period} onChange={setPeriod} />
+          <div className="hero-kpi-row">
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Total Net Worth</div>
+              <div className="hero-kpi-value">$6.7M</div>
+              <div className="hero-kpi-sub">Current portfolio</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Total Yield</div>
+              <div className="hero-kpi-value">$21.5k</div>
+              <div className="hero-kpi-sub">This period</div>
+            </div>
+            <div className="hero-kpi">
+              <div className="hero-kpi-label">Total Deposits</div>
+              <div className="hero-kpi-value">$520.0k</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">Holdings</div>
+            <div className="grid-2">
+              {[
+                { name: 'Banorte 28 días', type: '28 Días', value: 2100000, apy: '6%', gain: '+$8,307', color: '#2e7d65', pct: '31.1%' },
+                { name: 'Banorte NTEDIG', type: 'Daily', value: 4600000, apy: '5%', gain: '+$2,677', color: '#aa2d00', pct: '68.9%' },
+              ].map((p, i) => (
+                <div className="portfolio-card" key={i}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div>
+                      <div className="portfolio-name">{p.name}</div>
+                      <div className="portfolio-sub">{p.type} · {p.pct} of portfolio</div>
+                    </div>
+                    <span className="apy-badge" style={{ background: i === 0 ? 'var(--sig-mint-light)' : 'var(--sig-coral-light)', color: p.color }}>
+                      {p.apy} APY
+                    </span>
+                  </div>
+                  <div className="portfolio-value">{fmt(p.value)}</div>
+                  <div className="portfolio-meta">
+                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>{p.gain} last gain</span>
+                  </div>
+                  <div className="progress-track" style={{ marginTop: '12px' }}>
+                    <div className="progress-fill" style={{ width: p.pct, background: p.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Transaction History</div>
+            <div className="card">
+              <table className="data-table">
+                <thead>
+                  <tr><th>Date</th><th>Portfolio</th><th>Type</th><th>Amount</th></tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Apr 29', 'Banorte NTEDIG', 'GAIN', '+$2,677'],
+                    ['Apr 24', 'Banorte NTEDIG', 'GAIN', '+$5,405'],
+                    ['Apr 14', 'Banorte NTEDIG', 'WITHDRAWAL', '-$499,418'],
+                    ['Apr 14', 'Banorte 28 días', 'DEPOSIT', '+$520,000'],
+                    ['Apr 14', 'Banorte 28 días', 'GAIN', '+$6,307'],
+                  ].map(([date, port, type, amt], i) => (
+                    <tr key={i}>
+                      <td style={{ color: 'var(--muted)' }}>{date}</td>
+                      <td style={{ fontWeight: 500 }}>{port}</td>
+                      <td>
+                        <span className="tag" style={{
+                          background: type === 'GAIN' ? 'var(--success-bg)' : type === 'DEPOSIT' ? 'var(--sig-mint-light)' : 'var(--danger-bg)',
+                          color: type === 'GAIN' ? 'var(--success)' : type === 'DEPOSIT' ? 'var(--sig-mint-dark)' : 'var(--danger)'
+                        }}>
+                          {type}
+                        </span>
+                      </td>
+                      <td style={{ color: amt.startsWith('+') ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>{amt}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const SharedBalancePage = ({ period, setPeriod }) => (
+      <div>
+        <div className="hero-band cream">
+          <div className="hero-actions">
+            <button className="hero-btn ghost-dark">+ Cash</button>
+            <button className="hero-btn primary">+ Record Settlement</button>
+          </div>
+          <PeriodTabs value={period} onChange={setPeriod} dark />
+          <div className="hero-kpi-row">
+            <div className="hero-kpi dark-bg">
+              <div className="hero-kpi-label">Total Shared</div>
+              <div className="hero-kpi-value">$33.6k</div>
+              <div className="hero-kpi-sub" style={{ color: 'var(--muted)' }}>Since Apr 13, 2026</div>
+            </div>
+            <div className="hero-kpi dark-bg">
+              <div className="hero-kpi-label">Per Person</div>
+              <div className="hero-kpi-value">$16.8k</div>
+              <div className="hero-kpi-sub" style={{ color: 'var(--muted)' }}>50% split</div>
+            </div>
+            <div className="hero-kpi dark-bg">
+              <div className="hero-kpi-label">Net Settlement</div>
+              <div className="hero-kpi-value" style={{ color: 'var(--sig-coral)' }}>$20,290</div>
+              <div className="hero-kpi-sub" style={{ color: 'var(--muted)' }}>Jorge owes Lothoniel</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">Individual Ledgers</div>
+            <div className="grid-2">
+              {[
+                { name: "Lothoniel", paid: '$30,812', share: '$16,822', owed: '+$20,290', color: 'var(--success)' },
+                { name: "Jorge", paid: '$2,833', share: '$16,822', owed: '-$20,290', color: 'var(--danger)' },
+              ].map((user, i) => (
+                <div className="ledger-card" key={i}>
+                  <div className="ledger-name">{user.name}'s Ledger</div>
+                  <div className="ledger-row">
+                    <span className="label">Total Paid (Shared)</span>
+                    <span style={{ fontWeight: 500 }}>{user.paid}</span>
+                  </div>
+                  <div className="ledger-row">
+                    <span className="label">Share (50%)</span>
+                    <span>{user.share}</span>
+                  </div>
+                  <div className="ledger-row">
+                    <span className="label">{i === 0 ? 'Is Owed' : 'Still Owes'}</span>
+                    <span style={{ color: user.color, fontWeight: 600 }}>{user.owed}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Recent Shared Expenses</div>
+            <div className="card">
+              <table className="data-table">
+                <thead>
+                  <tr><th>Date</th><th>Description</th><th>Paid By</th><th>Amount</th></tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Apr 23', 'Uber', 'Lothoniel', '$305.76'],
+                    ['Apr 23', 'Cafenio', 'Lothoniel', '$145.00'],
+                    ['Apr 23', 'Onza Desayuno', 'Lothoniel', '$715.00'],
+                    ['Apr 15', 'Vacunas Moton', 'Jorge', '$2,400.00'],
+                    ['Apr 24', 'Agua dos meses', 'Jorge', '$433.00'],
+                  ].map(([date, desc, by, amt], i) => (
+                    <tr key={i}>
+                      <td style={{ color: 'var(--muted)' }}>{date}</td>
+                      <td style={{ fontWeight: 500 }}>{desc}</td>
+                      <td style={{ color: 'var(--muted)' }}>{by}</td>
+                      <td style={{ color: 'var(--danger)', fontWeight: 600 }}>{amt}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const catColors = ['#aa2d00','#2e7d65','#c8912a','#fcab79','#a8d8c4','#f4d35e','#0a2e0e','#e8874a','#1b61c9','#9c27b0','#2196f3','#e91e63','#009688','#ff5722'];
+
+    const SettingsPage = () => (
+      <div>
+        <div className="hero-band dark">
+          <div style={{ fontSize: '26px', fontWeight: 400, marginBottom: '8px' }}>Settings</div>
+          <div style={{ fontSize: '14px', opacity: 0.75 }}>Manage your account and preferences</div>
+        </div>
+        <div className="page-body">
+          <div className="section">
+            <div className="section-title">User Names</div>
+            <div className="settings-card">
+              <div className="grid-2">
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>User 1</div>
+                  <input style={{ padding: '8px 12px', border: '1px solid var(--hairline)', borderRadius: '6px', fontSize: '13px', width: '100%', fontFamily: 'var(--font)' }} defaultValue="Lothoniel" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>User 2</div>
+                  <input style={{ padding: '8px 12px', border: '1px solid var(--hairline)', borderRadius: '6px', fontSize: '13px', width: '100%', fontFamily: 'var(--font)' }} defaultValue="Jorge" />
+                </div>
+              </div>
+              <button style={{ marginTop: '16px', padding: '8px 20px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                Save Names
+              </button>
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Transaction Categories</div>
+            <div className="settings-card">
+              {['149A','Agua','Cable','Caro Fest 26','Celular','Gasolina','Luz','Mandado','Medicos','Misc Casa','Personal','Salidas','Subscriptions','Uber','Viaje Pris','Viajes'].map((cat, i) => (
+                <div className="category-row" key={cat}>
+                  <div className="cat-dot" style={{ background: catColors[i % catColors.length] }} />
+                  <div className="cat-name">{cat}</div>
+                  <div className="cat-budget">Budget</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="section">
+            <div className="section-title">Data Management</div>
+            <div className="settings-card">
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button className="settings-btn">Export JSON</button>
+                <button className="settings-btn">Export Excel</button>
+                <button className="settings-btn">Export XML</button>
+                <button className="settings-btn">Import JSON</button>
+                <button className="settings-btn danger">Clear All Data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    /* ============================
+       SIDEBAR + APP
+       ============================ */
+    const NavIcon = ({ id, active }) => {
+      const col = active ? '#181d26' : '#9297a0';
+      const icons = {
+        dashboard: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill={col}/><rect x="9" y="1" width="5" height="5" rx="1" fill={col}/><rect x="1" y="9" width="5" height="5" rx="1" fill={col}/><rect x="9" y="9" width="5" height="5" rx="1" fill={col}/></svg>,
+        cashflow: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 12 L4 8 L7 9 L10 5 L14 3" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M11 3 H14 V6" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+        income: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 13V2M7.5 2L3.5 6M7.5 2L11.5 6" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+        expenses: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="3" width="13" height="9" rx="1.5" stroke={col} strokeWidth="1.5"/><path d="M1 6h13" stroke={col} strokeWidth="1.5"/><circle cx="4.5" cy="9" r="1" fill={col}/></svg>,
+        debt: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M3 12V5a2 2 0 012-2h5a2 2 0 012 2v7" stroke={col} strokeWidth="1.5" strokeLinecap="round"/><path d="M1 12h13" stroke={col} strokeWidth="1.5" strokeLinecap="round"/><path d="M6 8h3" stroke={col} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+        mortgage: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1 7L7.5 2L14 7" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 6v6h3V9h3v3h3V6" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+        portfolio: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="8" width="3" height="5" rx="0.5" fill={col}/><rect x="6" y="5" width="3" height="8" rx="0.5" fill={col}/><rect x="11" y="2" width="3" height="11" rx="0.5" fill={col}/></svg>,
+        shared: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="5" cy="5" r="2.5" stroke={col} strokeWidth="1.5"/><circle cx="10" cy="5" r="2.5" stroke={col} strokeWidth="1.5"/><path d="M1 13c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke={col} strokeWidth="1.5" strokeLinecap="round"/><path d="M10 9c1.3.3 3 1.5 3 4" stroke={col} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+        settings: <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="2" stroke={col} strokeWidth="1.5"/><path d="M7.5 1v2M7.5 12v2M1 7.5h2M12 7.5h2M2.93 2.93l1.41 1.41M10.66 10.66l1.41 1.41M2.93 12.07l1.41-1.41M10.66 4.34l1.41-1.41" stroke={col} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+      };
+      return icons[id] || null;
+    };
+
+    const navItems = [
+      { id: 'dashboard', label: 'Dashboard' },
+      { id: 'cashflow', label: 'Cash Flow' },
+      { id: 'income', label: 'Income' },
+      { id: 'expenses', label: 'Expenses' },
+      { id: 'debt', label: 'Debt' },
+      { id: 'mortgage', label: 'Mortgage' },
+      { id: 'portfolio', label: 'Portfolio' },
+      { id: 'shared', label: 'Shared Balance' },
+      { id: 'settings', label: 'Settings' },
+    ];
+
+    const App = () => {
+      const [page, setPage] = useState('dashboard');
+      const [period, setPeriod] = useState('Month');
+
+      const handleNav = (id) => {
+        setPage(id);
+        setPeriod('Month');
+      };
+
+      const renderPage = () => {
+        const props = { period, setPeriod };
+        switch (page) {
+          case 'dashboard': return <DashboardPage {...props} />;
+          case 'cashflow': return <CashFlowPage {...props} />;
+          case 'income': return <IncomePage {...props} />;
+          case 'expenses': return <ExpensesPage {...props} />;
+          case 'debt': return <DebtPage {...props} />;
+          case 'mortgage': return <MortgagePage {...props} />;
+          case 'portfolio': return <PortfolioPage {...props} />;
+          case 'shared': return <SharedBalancePage {...props} />;
+          case 'settings': return <SettingsPage />;
+          default: return <DashboardPage {...props} />;
+        }
+      };
+
+      return (
+        <div className="app">
+          <div className="sidebar">
+            <div className="sidebar-logo">
+              <div className="logo-mark">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <rect x="2" y="10" width="4" height="8" rx="1" fill="white" opacity="0.6"/>
+                  <rect x="8" y="6" width="4" height="12" rx="1" fill="white" opacity="0.8"/>
+                  <rect x="14" y="2" width="4" height="16" rx="1" fill="white"/>
+                </svg>
+              </div>
+              <span className="logo-text">FinanceApp</span>
+            </div>
+
+            <div className="nav-group-label">Main</div>
+            <div className="nav-list">
+              {navItems.slice(0, 5).map(n => (
+                <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => handleNav(n.id)}>
+                  <NavIcon id={n.id} active={page === n.id} />
+                  {n.label}
+                </button>
+              ))}
+              <div className="nav-group-label" style={{ paddingLeft: 0, marginTop: '8px' }}>Assets</div>
+              {navItems.slice(5, 8).map(n => (
+                <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => handleNav(n.id)}>
+                  <NavIcon id={n.id} active={page === n.id} />
+                  {n.label}
+                </button>
+              ))}
+              <div className="nav-group-label" style={{ paddingLeft: 0, marginTop: '8px' }}>System</div>
+              {navItems.slice(8).map(n => (
+                <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => handleNav(n.id)}>
+                  <NavIcon id={n.id} active={page === n.id} />
+                  {n.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="sidebar-user">
+              <div className="user-avatar">L</div>
+              <div>
+                <div className="user-info-name">Lothoniel</div>
+                <div className="user-info-sub">Apr 30, 2026</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="main-content">
+            {renderPage()}
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

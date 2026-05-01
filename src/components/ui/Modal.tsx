@@ -18,14 +18,8 @@ const sizeClasses = {
 
 export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
   }, [open])
 
   useEffect(() => {
@@ -40,28 +34,17 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Card */}
-      <div
-        className={`relative w-full ${sizeClasses[size]} bg-white dark:bg-[#1A1F2E] rounded-2xl shadow-xl border border-gray-200 dark:border-[#2D3448] flex flex-col max-h-[90vh]`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-[#2D3448]">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className={`relative w-full ${sizeClasses[size]} bg-white dark:bg-[#1e2330] rounded-[12px] shadow-xl border border-[#e8e8e8] dark:border-[#2d3347] flex flex-col max-h-[90vh]`}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e8e8e8] dark:border-[#2d3347]">
+          <h2 className="text-[15px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-[6px] text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
-
-        {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-4">{children}</div>
       </div>
     </div>

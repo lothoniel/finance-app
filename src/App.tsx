@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useStore } from './store'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import CashFlow from './pages/CashFlow'
@@ -11,6 +13,12 @@ import SharedBalance from './pages/SharedBalance'
 import Settings from './pages/Settings'
 
 export default function App() {
+  const theme = useStore((s) => s.settings.theme)
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+  }, [theme])
+
   return (
     <BrowserRouter>
       <Routes>
