@@ -2,30 +2,17 @@ import { generateId } from '../lib/id'
 import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
-import HeroBand from '../components/ui/HeroBand'
-import HeroKpi from '../components/ui/HeroKpi'
-import HeroAction from '../components/ui/HeroAction'
-import SectionTitle from '../components/ui/SectionTitle'
-import PeriodTabs from '../components/ui/PeriodTabs'
 import Modal from '../components/ui/Modal'
 import SettlementModal from '../components/forms/SettlementModal'
 import { formatMXN, formatMXNCompact, formatDate, today } from '../lib/formatters'
-import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { calculateSettlement } from '../lib/settlement'
 import { inputClass } from '../lib/styles'
+
+const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 
 export default function SharedBalance() {
   const [settleOpen, setSettleOpen] = useState(false)
   const [cashOpen, setCashOpen] = useState(false)
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('month')
-  const [periodValue, setPeriodValue] = useState<PeriodValue>(() => {
-    const d = new Date()
-    return { year: d.getFullYear(), month: d.getMonth() + 1 }
-  })
-  function onPeriodChange(mode: PeriodMode, value: PeriodValue) {
-    setPeriodMode(mode)
-    setPeriodValue(value)
-  }
   const [cashAmount, setCashAmount] = useState('')
   const [cashNote, setCashNote] = useState('')
   const [cashPaidBy, setCashPaidBy] = useState<'user1' | 'user2'>('user1')
@@ -61,10 +48,7 @@ export default function SharedBalance() {
   )
 
   const sharedExpenses = expensesSinceLastSettlement.filter((e) => e.shared)
-  const periodFiltered = periodMode === 'all'
-    ? sharedExpenses
-    : filterByPeriod(sharedExpenses, periodMode, periodValue)
-  const recentShared = [...periodFiltered].sort((a, b) => b.date.localeCompare(a.date))
+  const recentShared = [...sharedExpenses].sort((a, b) => b.date.localeCompare(a.date))
 
   function handleAddCash(e: React.FormEvent) {
     e.preventDefault()
@@ -88,53 +72,55 @@ export default function SharedBalance() {
     ? `${user2Name} owes ${user1Name}`
     : `${user1Name} owes ${user2Name}`
 
-  const cardBase = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
-
   return (
-    <div>
-      <HeroBand color="#f5e9d4" light>
-        <div className="flex justify-end gap-2 mb-4 md:mb-0 md:absolute md:top-7 md:right-10">
-          <HeroAction variant="ghost-dark" onClick={() => setCashOpen(true)}>
-            <Plus className="w-3.5 h-3.5 inline mr-1" />Cash
-          </HeroAction>
-          <HeroAction variant="ghost-dark" onClick={() => setSettleOpen(true)}>
-            <Plus className="w-3.5 h-3.5 inline mr-1" />Record Settlement
-          </HeroAction>
+    <div className="p-6 max-w-[1400px]">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Shared Balance</h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setCashOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-[#e8e8e8] dark:border-[#2d3347] text-[13px] font-medium text-[#41454d] dark:text-[#9297a0] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />Cash
+          </button>
+          <button
+            onClick={() => setSettleOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] text-[13px] font-medium hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-3.5 h-3.5" />Record Settlement
+          </button>
         </div>
-        <div className="flex gap-3 flex-wrap">
-          <HeroKpi
-            label="Total Shared"
-            value={formatMXNCompact(settlement.totalShared)}
-            sub={lastSettlementDate ? `Since ${formatDate(lastSettlementDate)}` : 'All time'}
-            light
-          />
-          <HeroKpi label="Per Person" value={formatMXNCompact(settlement.perPerson)} sub="50% split" light />
-          <HeroKpi
-            label="Net Settlement"
-            value={formatMXN(settlement.netSettlement)}
-            sub={netLabel}
-            light
-          />
+      </div>
+
+      {/* KPI Strip */}
+      <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
+        <div className="flex-1 px-6 py-4">
+          <div className="text-[22px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(settlement.totalShared)}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">TOTAL SHARED</div>
+          <div className="text-[11px] text-[#9297a0] mt-0.5">{lastSettlementDate ? `Since ${formatDate(lastSettlementDate)}` : 'All time'}</div>
         </div>
-      </HeroBand>
+        <div className="flex-1 px-6 py-4">
+          <div className="text-[22px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(settlement.perPerson)}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">PER PERSON</div>
+          <div className="text-[11px] text-[#9297a0] mt-0.5">50% split</div>
+        </div>
+        <div className="flex-1 px-6 py-4">
+          <div className="text-[22px] font-bold" style={{ color: settlement.creditor === 'even' ? '#1a7a3c' : '#c0392b' }}>
+            {formatMXN(settlement.netSettlement)}
+          </div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">NET SETTLEMENT</div>
+          <div className="text-[11px] text-[#9297a0] mt-0.5">{netLabel}</div>
+        </div>
+      </div>
 
       {/* Individual Ledgers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         {[
-          {
-            name: user1Name,
-            paid: settlement.user1Paid,
-            owes: settlement.user1Owes,
-            counterOwes: settlement.user2Owes,
-          },
-          {
-            name: user2Name,
-            paid: settlement.user2Paid,
-            owes: settlement.user2Owes,
-            counterOwes: settlement.user1Owes,
-          },
+          { name: user1Name, paid: settlement.user1Paid, owes: settlement.user1Owes, counterOwes: settlement.user2Owes },
+          { name: user2Name, paid: settlement.user2Paid, owes: settlement.user2Owes, counterOwes: settlement.user1Owes },
         ].map(({ name, paid, owes, counterOwes }) => (
-          <div key={name} className={`${cardBase} p-5`}>
+          <div key={name} className={`${CARD} p-5`}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 rounded-full bg-[#f0f2f5] dark:bg-[#252b3b] flex items-center justify-center flex-shrink-0">
                 <span className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{name.charAt(0).toUpperCase()}</span>
@@ -164,36 +150,40 @@ export default function SharedBalance() {
         ))}
       </div>
 
-      {/* Recent Shared Expenses */}
+      {/* Shared Expenses Since Last Settlement */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3 mb-4">
           <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Shared Expenses Since Last Settlement</span>
-          <PeriodTabs mode={periodMode} value={periodValue} onChange={onPeriodChange} />
+          <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
         </div>
-        <div className={`${cardBase} overflow-hidden`}>
+        <div className={`${CARD} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr>
-                  {['Date', 'Description', 'Paid By', 'Amount'].map((h, i) => (
-                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
+                  {['Date', 'Description', 'Category', 'Paid By', 'Amount'].map((h, i) => (
+                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {recentShared.length === 0 && (
-                  <tr><td colSpan={4} className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No shared expenses yet</td></tr>
+                  <tr><td colSpan={5} className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No shared expenses since last settlement</td></tr>
                 )}
-                {recentShared.map((e, i, arr) => (
-                  <tr key={e.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
-                    <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{formatDate(e.date)}</td>
-                    <td className={`px-4 py-[11px] text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{e.description}</td>
-                    <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>
-                      {e.paidBy === 'user1' ? user1Name : user2Name}
-                    </td>
-                    <td className={`px-4 py-[11px] text-right text-[13px] font-medium text-[#c0392b] ${i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''}`}>{formatMXN(e.amount)}</td>
-                  </tr>
-                ))}
+                {recentShared.map((e, i, arr) => {
+                  const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
+                  return (
+                    <tr key={e.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
+                      <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(e.date)}</td>
+                      <td className={`px-4 py-3 text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{e.description}</td>
+                      <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{e.category}</td>
+                      <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>
+                        {e.paidBy === 'user1' ? user1Name : user2Name}
+                      </td>
+                      <td className={`px-4 py-3 text-right text-[13px] font-medium text-[#c0392b] ${border}`}>{formatMXN(e.amount)}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -203,8 +193,11 @@ export default function SharedBalance() {
       {/* Cash Entries */}
       {cashEntriesSinceLastSettlement.length > 0 && (
         <div className="mb-8">
-          <SectionTitle>Cash Entries</SectionTitle>
-          <div className={`${cardBase} divide-y divide-[#e8e8e8]`}>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Cash Entries</span>
+            <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
+          </div>
+          <div className={`${CARD} divide-y divide-[#e8e8e8] dark:divide-[#2d3347]`}>
             {[...cashEntriesSinceLastSettlement].sort((a, b) => b.date.localeCompare(a.date)).map((c) => (
               <div key={c.id} className="flex items-center justify-between px-5 py-3 hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                 <div className="min-w-0 flex-1">
@@ -227,8 +220,11 @@ export default function SharedBalance() {
 
       {/* Settlement History */}
       <div>
-        <SectionTitle>Settlement History</SectionTitle>
-        <div className={`${cardBase} divide-y divide-[#e8e8e8]`}>
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Settlement History</span>
+          <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
+        </div>
+        <div className={`${CARD} divide-y divide-[#e8e8e8] dark:divide-[#2d3347]`}>
           {settlements.length === 0 && (
             <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No settlements recorded yet</p>
           )}
