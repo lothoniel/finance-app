@@ -3,7 +3,6 @@ import { useState, useRef } from 'react'
 import { Trash2, Plus, RotateCcw, Download, Upload, AlertTriangle, Pencil } from 'lucide-react'
 import { useStore } from '../store'
 import type { Category, CreditCard, TransferCategory } from '../store/types'
-import HeroBand from '../components/ui/HeroBand'
 import SectionTitle from '../components/ui/SectionTitle'
 import Modal from '../components/ui/Modal'
 import { exportToExcel, exportToXML } from '../lib/exporters'
@@ -197,19 +196,6 @@ export default function Settings() {
 
   return (
     <div>
-      <HeroBand color="#181d26">
-        <div className="flex gap-3 flex-wrap">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-white/75 mb-1">User 1</p>
-            <p className="text-[20px] font-normal text-white">{settings.user1Name}</p>
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-white/75 mb-1">User 2</p>
-            <p className="text-[20px] font-normal text-white">{settings.user2Name}</p>
-          </div>
-        </div>
-      </HeroBand>
-
       <div className="space-y-6 max-w-4xl">
         {/* User Names */}
         <div>

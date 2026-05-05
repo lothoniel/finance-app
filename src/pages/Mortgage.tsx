@@ -12,13 +12,13 @@ import MortgagePaymentForm from '../components/forms/MortgagePaymentForm'
 import MortgageContributionForm from '../components/forms/MortgageContributionForm'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
-import { monthsRemaining, totalInterestRemaining, buildBalanceSeries } from '../lib/mortgage'
+import { monthsRemaining, totalInterestRemaining, buildBalanceSeries, calcMonthlyPayment } from '../lib/mortgage'
 import type { MortgagePayment, MortgageContribution } from '../store/types'
 
 function addMonths(dateStr: string, months: number): string {
-  const d = new Date(dateStr)
-  d.setMonth(d.getMonth() + Math.round(months))
-  return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+  const [y, m] = dateStr.split('-').map(Number)
+  const total = y * 12 + (m - 1) + Math.ceil(months)
+  return new Date(Math.floor(total / 12), total % 12, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
 }
 
 function formatDuration(months: number): string {
@@ -97,8 +97,9 @@ export default function MortgagePage() {
   const totalExtraCapital = payments.reduce((s, p) => s + p.extraCapital, 0)
   const paidOffPct = ((1 - currentBalance / config.principal) * 100).toFixed(1)
 
-  const origMonthsLeft = useMemo(() => monthsRemaining(config.principal, config.interestRate, config.minimumPayment), [config])
-  const actualMonthsLeft = useMemo(() => monthsRemaining(currentBalance, config.interestRate, config.minimumPayment), [currentBalance, config])
+  const contractualPayment = useMemo(() => calcMonthlyPayment(config.principal, config.interestRate, config.termMonths), [config])
+  const origMonthsLeft = useMemo(() => monthsRemaining(config.principal, config.interestRate, contractualPayment), [config, contractualPayment])
+  const actualMonthsLeft = useMemo(() => monthsRemaining(currentBalance, config.interestRate, contractualPayment), [currentBalance, config, contractualPayment])
   const monthsSaved = useMemo(() => isFinite(origMonthsLeft) && isFinite(actualMonthsLeft) ? Math.max(0, origMonthsLeft - actualMonthsLeft) : 0, [origMonthsLeft, actualMonthsLeft])
   const origInterestRemaining = useMemo(() => totalInterestRemaining(config.principal, config.interestRate, origMonthsLeft), [config, origMonthsLeft])
   const actualInterestRemaining = useMemo(() => totalInterestRemaining(currentBalance, config.interestRate, actualMonthsLeft), [currentBalance, config, actualMonthsLeft])
@@ -111,19 +112,21 @@ export default function MortgagePage() {
     const extra = parseFloat(simAmount)
     if (!extra || extra <= 0) return null
     const newBalance = Math.max(0, currentBalance - extra)
-    const newMonths = monthsRemaining(newBalance, config.interestRate, config.minimumPayment)
-    const saved = isFinite(actualMonthsLeft) && isFinite(newMonths) ? Math.max(0, actualMonthsLeft - newMonths) : 0
-    const interestNow = totalInterestRemaining(currentBalance, config.interestRate, actualMonthsLeft)
+    const baseMonths = monthsRemaining(currentBalance, config.interestRate, contractualPayment)
+    const newMonths = monthsRemaining(newBalance, config.interestRate, contractualPayment)
+    const saved = isFinite(baseMonths) && isFinite(newMonths) ? Math.max(0, baseMonths - newMonths) : 0
+    const interestNow = totalInterestRemaining(currentBalance, config.interestRate, baseMonths)
     const interestAfter = totalInterestRemaining(newBalance, config.interestRate, newMonths)
+    const alreadyPaid = payments.reduce((s, p) => s + p.totalPaid, 0)
     return {
       newBalance,
       monthsSaved: saved,
-      newPayoffDate: addMonths(new Date().toISOString().slice(0, 10), newMonths),
+      newPayoffDate: addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, newMonths),
       interestSaved: Math.max(0, interestNow - interestAfter),
-      totalPaidWithout: currentBalance + interestNow,
-      totalPaidWith: extra + newBalance + interestAfter,
+      totalPaidWithout: contractualPayment * config.termMonths,
+      totalPaidWith: alreadyPaid + currentBalance + interestAfter,
     }
-  }, [simAmount, currentBalance, config, actualMonthsLeft])
+  }, [simAmount, currentBalance, config, payments, contractualPayment])
 
   const sortedContribs = useMemo(() => [...filteredContribs].sort((a, b) => b.date.localeCompare(a.date)), [filteredContribs])
   const totalContributed = filteredContribs.reduce((s, c) => s + c.amount, 0)
@@ -153,7 +156,7 @@ export default function MortgagePage() {
           <div className="flex gap-3 flex-wrap flex-1">
             <HeroKpi label="Current Balance" value={formatMXN(currentBalance)} sub={`${paidOffPct}% paid off`} />
             <HeroKpi label="Time Saved" value={formatDuration(monthsSaved)} sub="vs. min payments only" />
-            <HeroKpi label="Projected Payoff" value={addMonths(new Date().toISOString().slice(0, 10), actualMonthsLeft)} sub={formatDuration(actualMonthsLeft) + ' remaining'} />
+            <HeroKpi label="Projected Payoff" value={addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, actualMonthsLeft)} sub={formatDuration(actualMonthsLeft) + ' remaining'} />
             <HeroKpi label="Interest Saved" value={formatMXNCompact(interestSaved)} />
           </div>
           <div className="flex gap-2 flex-shrink-0 mt-1">
@@ -247,19 +250,22 @@ export default function MortgagePage() {
                 <span className="text-[13px] text-[#41454d] dark:text-[#9297a0]">today...</span>
               </div>
               {simResult ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { label: 'Months Saved', value: formatDuration(simResult.monthsSaved), color: '#e8874a' },
                     { label: 'New Payoff', value: simResult.newPayoffDate, color: '#1a7a3c' },
                     { label: 'Interest Saved', value: formatMXNCompact(simResult.interestSaved), color: '#2e7d65' },
-                    { label: 'Total Paid (w/o extra)', value: formatMXNCompact(simResult.totalPaidWithout), color: '#41454d' },
-                    { label: 'Total Paid (with deposit)', value: formatMXNCompact(simResult.totalPaidWith), color: '#2e7d65' },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="bg-[#f8fafc] dark:bg-[#161b25] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] p-3">
                       <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">{label}</p>
                       <p className="text-[16px] font-semibold" style={{ color }}>{value}</p>
                     </div>
                   ))}
+                  <div className="bg-[#f8fafc] dark:bg-[#161b25] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] p-3">
+                    <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">Total Paid</p>
+                    <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">w/o extras: <span className="font-semibold text-[#c0392b]">{formatMXN(simResult.totalPaidWithout)}</span></p>
+                    <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">with deposit: <span className="font-semibold text-[#1a7a3c]">{formatMXN(simResult.totalPaidWith)}</span></p>
+                  </div>
                 </div>
               ) : (
                 <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] text-center py-2">Enter an amount to see the impact</p>

@@ -121,6 +121,16 @@ export interface MortgageContribution {
   amount: number
 }
 
+export interface RecurringExpense {
+  id: string
+  name: string
+  amount: number
+  category: string
+  frequency: 'monthly' | 'bimonthly' | 'annual'
+  lastDate: string // YYYY-MM-DD — next date is calculated from this
+  status: 'active' | 'paused'
+}
+
 export interface AppSettings {
   user1Name: string
   user2Name: string

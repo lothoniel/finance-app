@@ -11,6 +11,10 @@ import MortgagePage from './pages/Mortgage'
 import Portfolio from './pages/Portfolio'
 import SharedBalance from './pages/SharedBalance'
 import Settings from './pages/Settings'
+import NetWorth from './pages/NetWorth'
+import Reports from './pages/Reports'
+import Budget from './pages/Budget'
+import Transactions from './pages/Transactions'
 
 export default function App() {
   const theme = useStore((s) => s.settings.theme)
@@ -32,6 +36,10 @@ export default function App() {
           <Route path="portfolio" element={<Portfolio />} />
           <Route path="shared-balance" element={<SharedBalance />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="net-worth" element={<NetWorth />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="budget" element={<Budget />} />
+          <Route path="transactions" element={<Transactions />} />
         </Route>
       </Routes>
     </BrowserRouter>

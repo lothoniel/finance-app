@@ -2,7 +2,7 @@ import { generateId } from '../../lib/id'
 import { useState, useEffect, useMemo } from 'react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
-import type { Expense } from '../../store/types'
+import type { Expense, RecurringExpense } from '../../store/types'
 import { today } from '../../lib/formatters'
 import { inputClass } from '../../lib/styles'
 
@@ -10,18 +10,21 @@ interface ExpenseFormProps {
   open: boolean
   onClose: () => void
   expense?: Expense
+  editRecurring?: RecurringExpense
 }
 
 const label = 'block text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] mb-1'
 const cancelBtn = 'flex-1 border border-[#e8e8e8] dark:border-[#2d3347] text-[#181d26] dark:text-[#e8eaf0] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors'
 const submitBtn = 'flex-1 bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors'
 
-export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps) {
+export default function ExpenseForm({ open, onClose, expense, editRecurring }: ExpenseFormProps) {
   const categories = useStore((s) => s.settings.expenseCategories)
   const user1Name = useStore((s) => s.settings.user1Name)
   const user2Name = useStore((s) => s.settings.user2Name)
   const addExpense = useStore((s) => s.addExpense)
   const updateExpense = useStore((s) => s.updateExpense)
+  const addRecurringExpense = useStore((s) => s.addRecurringExpense)
+  const updateRecurringExpense = useStore((s) => s.updateRecurringExpense)
   const allExpenses = useStore((s) => s.expenses)
 
   const [form, setForm] = useState({
@@ -32,6 +35,9 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
     subCategory: '',
     paidBy: 'user1' as 'user1' | 'user2',
     shared: true,
+    recurring: false,
+    frequency: 'monthly' as 'monthly' | 'bimonthly' | 'annual',
+    recurringStatus: 'active' as 'active' | 'paused',
   })
 
   const subCategorySuggestions = useMemo(() => {
@@ -42,7 +48,20 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
   }, [allExpenses, form.category])
 
   useEffect(() => {
-    if (expense) {
+    if (editRecurring) {
+      setForm({
+        date: editRecurring.lastDate,
+        description: editRecurring.name,
+        amount: String(editRecurring.amount),
+        category: editRecurring.category,
+        subCategory: '',
+        paidBy: 'user1',
+        shared: true,
+        recurring: true,
+        frequency: editRecurring.frequency,
+        recurringStatus: editRecurring.status,
+      })
+    } else if (expense) {
       setForm({
         date: expense.date,
         description: expense.description,
@@ -51,19 +70,36 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
         subCategory: expense.subCategory ?? '',
         paidBy: expense.paidBy,
         shared: expense.shared,
+        recurring: false,
+        frequency: 'monthly',
+        recurringStatus: 'active',
       })
     } else {
-      setForm({ date: today(), description: '', amount: '', category: categories[0]?.id ?? '', subCategory: '', paidBy: 'user1', shared: true })
+      setForm({ date: today(), description: '', amount: '', category: categories[0]?.id ?? '', subCategory: '', paidBy: 'user1', shared: true, recurring: false, frequency: 'monthly', recurringStatus: 'active' })
     }
-  }, [expense, open, categories])
+  }, [expense, editRecurring, open, categories])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const amount = parseFloat(form.amount) || 0
+
+    if (editRecurring) {
+      updateRecurringExpense(editRecurring.id, {
+        name: form.description,
+        amount,
+        category: form.category,
+        frequency: form.frequency,
+        status: form.recurringStatus,
+      })
+      onClose()
+      return
+    }
+
     const data: Expense = {
       id: expense?.id ?? generateId(),
       date: form.date,
       description: form.description,
-      amount: parseFloat(form.amount) || 0,
+      amount,
       category: form.category,
       subCategory: form.subCategory || undefined,
       paidBy: form.paidBy,
@@ -71,16 +107,33 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
     }
     if (expense) updateExpense(expense.id, data)
     else addExpense(data)
+
+    if (!expense && form.recurring) {
+      addRecurringExpense({
+        id: generateId(),
+        name: form.description,
+        amount,
+        category: form.category,
+        frequency: form.frequency,
+        lastDate: form.date,
+        status: form.recurringStatus,
+      })
+    }
     onClose()
   }
 
+  const isEditRecurring = !!editRecurring
+  const title = isEditRecurring ? 'Edit Recurring' : expense ? 'Edit Expense' : 'Add Expense'
+
   return (
-    <Modal open={open} onClose={onClose} title={expense ? 'Edit Expense' : 'Add Expense'}>
+    <Modal open={open} onClose={onClose} title={title}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className={label}>Date</label>
-          <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required className={inputClass} />
-        </div>
+        {!isEditRecurring && (
+          <div>
+            <label className={label}>Date</label>
+            <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required className={inputClass} />
+          </div>
+        )}
         <div>
           <label className={label}>Description</label>
           <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder="e.g. CFE Febrero" className={inputClass} />
@@ -97,27 +150,66 @@ export default function ExpenseForm({ open, onClose, expense }: ExpenseFormProps
             ))}
           </select>
         </div>
-        <div>
-          <label className={label}>Sub-category <span className="text-[#41454d] font-normal">(optional)</span></label>
-          <input type="text" list="subcategory-suggestions" value={form.subCategory} onChange={(e) => setForm({ ...form, subCategory: e.target.value })} placeholder="e.g. Cancun Trip" className={inputClass} />
-          <datalist id="subcategory-suggestions">
-            {subCategorySuggestions.map((s) => <option key={s} value={s} />)}
-          </datalist>
-        </div>
-        <div>
-          <label className={label}>Paid By</label>
-          <select value={form.paidBy} onChange={(e) => setForm({ ...form, paidBy: e.target.value as 'user1' | 'user2' })} className={inputClass}>
-            <option value="user1">{user1Name}</option>
-            <option value="user2">{user2Name}</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-3">
-          <input id="shared-cb" type="checkbox" checked={form.shared} onChange={(e) => setForm({ ...form, shared: e.target.checked })} className="w-4 h-4 rounded border-[#e8e8e8] accent-[#181d26]" />
-          <label htmlFor="shared-cb" className="text-[13px] text-[#333840]">Shared expense</label>
-        </div>
+        {!isEditRecurring && (
+          <>
+            <div>
+              <label className={label}>Sub-category <span className="text-[#41454d] font-normal">(optional)</span></label>
+              <input type="text" list="subcategory-suggestions" value={form.subCategory} onChange={(e) => setForm({ ...form, subCategory: e.target.value })} placeholder="e.g. Cancun Trip" className={inputClass} />
+              <datalist id="subcategory-suggestions">
+                {subCategorySuggestions.map((s) => <option key={s} value={s} />)}
+              </datalist>
+            </div>
+            <div>
+              <label className={label}>Paid By</label>
+              <select value={form.paidBy} onChange={(e) => setForm({ ...form, paidBy: e.target.value as 'user1' | 'user2' })} className={inputClass}>
+                <option value="user1">{user1Name}</option>
+                <option value="user2">{user2Name}</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-3">
+              <input id="shared-cb" type="checkbox" checked={form.shared} onChange={(e) => setForm({ ...form, shared: e.target.checked })} className="w-4 h-4 rounded border-[#e8e8e8] accent-[#181d26]" />
+              <label htmlFor="shared-cb" className="text-[13px] text-[#333840]">Shared expense</label>
+            </div>
+          </>
+        )}
+
+        {/* Recurring toggle */}
+        {!isEditRecurring && !expense && (
+          <div className="flex items-center gap-3">
+            <input
+              id="recurring-cb"
+              type="checkbox"
+              checked={form.recurring}
+              onChange={(e) => setForm({ ...form, recurring: e.target.checked })}
+              className="w-4 h-4 rounded border-[#e8e8e8] accent-[#181d26]"
+            />
+            <label htmlFor="recurring-cb" className="text-[13px] text-[#333840] dark:text-[#c4c8d0]">Recurring expense</label>
+          </div>
+        )}
+
+        {(form.recurring || isEditRecurring) && (
+          <div className="grid grid-cols-2 gap-3 pl-7">
+            <div>
+              <label className={label}>Frequency</label>
+              <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value as typeof form.frequency })} className={inputClass}>
+                <option value="monthly">Monthly</option>
+                <option value="bimonthly">Bimonthly</option>
+                <option value="annual">Annual</option>
+              </select>
+            </div>
+            <div>
+              <label className={label}>Status</label>
+              <select value={form.recurringStatus} onChange={(e) => setForm({ ...form, recurringStatus: e.target.value as 'active' | 'paused' })} className={inputClass}>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+              </select>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className={cancelBtn}>Cancel</button>
-          <button type="submit" className={submitBtn}>{expense ? 'Save Changes' : 'Add Expense'}</button>
+          <button type="submit" className={submitBtn}>{isEditRecurring ? 'Save Changes' : expense ? 'Save Changes' : 'Add Expense'}</button>
         </div>
       </form>
     </Modal>
