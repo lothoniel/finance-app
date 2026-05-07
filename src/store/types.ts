@@ -4,6 +4,8 @@ export interface Category {
   icon: string // lucide icon name
   color: string
   budget?: number
+  categoryGroup?: string // e.g. 'Housing', 'Auto', 'Food & Dining'
+  expenseType?: 'fixed' | 'variable'
 }
 
 export interface Expense {

@@ -16,16 +16,17 @@ interface AreaChartProps {
   areas: { key: string; color: string; name: string }[]
   xKey: string
   height?: number
+  fillOpacity?: number
 }
 
-export default function AreaChart({ data, areas, xKey, height = 300 }: AreaChartProps) {
+export default function AreaChart({ data, areas, xKey, height = 300, fillOpacity = 0.3 }: AreaChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ReAreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
         <defs>
           {areas.map((area) => (
-            <linearGradient key={area.key} id={`grad-${area.key}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={area.color} stopOpacity={0.3} />
+            <linearGradient key={area.key} id={`grad-${area.key.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={area.color} stopOpacity={fillOpacity} />
               <stop offset="95%" stopColor={area.color} stopOpacity={0.02} />
             </linearGradient>
           ))}
@@ -53,7 +54,7 @@ export default function AreaChart({ data, areas, xKey, height = 300 }: AreaChart
             name={area.name}
             stroke={area.color}
             strokeWidth={2}
-            fill={`url(#grad-${area.key})`}
+            fill={`url(#grad-${area.key.replace(/\s+/g, '-')})`}
           />
         ))}
       </ReAreaChart>

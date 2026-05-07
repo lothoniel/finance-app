@@ -1,13 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Users } from 'lucide-react'
 import { useStore } from '../store'
-import HeroBand from '../components/ui/HeroBand'
-import HeroKpi from '../components/ui/HeroKpi'
-import HeroAction from '../components/ui/HeroAction'
-import SectionTitle from '../components/ui/SectionTitle'
 import Tabs from '../components/ui/Tabs'
 import PeriodSelector from '../components/ui/PeriodSelector'
-import LineChart from '../components/charts/LineChart'
+import AreaChart from '../components/charts/AreaChart'
 import MortgagePaymentForm from '../components/forms/MortgagePaymentForm'
 import MortgageContributionForm from '../components/forms/MortgageContributionForm'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
@@ -31,6 +27,7 @@ function formatDuration(months: number): string {
   return `${y}yr ${rem}mo`
 }
 
+const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const CONTRIBUTOR_COLORS = ['#2e7d65', '#1a7a3c', '#c8912a', '#c0392b', '#181d26', '#41454d', '#aa2d00']
 
 export default function MortgagePage() {
@@ -150,34 +147,52 @@ export default function MortgagePage() {
   const borderB = 'border-b border-[#e8e8e8] dark:border-[#2d3347]'
 
   return (
-    <div>
-      <HeroBand color="#e8874a">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex gap-3 flex-wrap flex-1">
-            <HeroKpi label="Current Balance" value={formatMXN(currentBalance)} sub={`${paidOffPct}% paid off`} />
-            <HeroKpi label="Time Saved" value={formatDuration(monthsSaved)} sub="vs. min payments only" />
-            <HeroKpi label="Projected Payoff" value={addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, actualMonthsLeft)} sub={formatDuration(actualMonthsLeft) + ' remaining'} />
-            <HeroKpi label="Interest Saved" value={formatMXNCompact(interestSaved)} />
-          </div>
-          <div className="flex gap-2 flex-shrink-0 mt-1">
-            {tab === 'overview' && (
-              <HeroAction variant="primary" onClick={() => { setEditPayment(undefined); setModalOpen(true) }}>
-                <Plus className="w-3.5 h-3.5 inline mr-1.5" />Add Payment
-              </HeroAction>
-            )}
-            {tab === 'contributions' && (
-              <HeroAction variant="primary" onClick={() => { setEditContrib(undefined); setContribModalOpen(true) }}>
-                <Plus className="w-3.5 h-3.5 inline mr-1.5" />Add Contribution
-              </HeroAction>
-            )}
-          </div>
+    <div className="p-6 max-w-[1400px]">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+        <div>
+          <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Mortgage</h1>
+          <p className="text-[12px] text-[#9297a0] mt-0.5">
+            {formatMXN(config.principal)} · {config.interestRate}% · {config.termMonths / 12} years · started {formatDate(config.startDate)}
+          </p>
         </div>
-      </HeroBand>
+        <div className="flex gap-2">
+          {tab === 'overview' && (
+            <button
+              onClick={() => { setEditPayment(undefined); setModalOpen(true) }}
+              className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />Add Payment
+            </button>
+          )}
+          {tab === 'contributions' && (
+            <button
+              onClick={() => { setEditContrib(undefined); setContribModalOpen(true) }}
+              className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />Add Contribution
+            </button>
+          )}
+        </div>
+      </div>
 
-      {/* Config caption */}
-      <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mb-4">
-        {formatMXN(config.principal)} · {config.interestRate}% · {config.termMonths / 12} years · started {formatDate(config.startDate)}
-      </p>
+      {/* KPI Strip */}
+      <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-6 overflow-x-auto`}>
+        {[
+          { label: 'CURRENT BALANCE', value: formatMXN(currentBalance), sub: `${paidOffPct}% paid off`, color: '#c0392b' },
+          { label: 'PROJECTED PAYOFF', value: addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, actualMonthsLeft), sub: formatDuration(actualMonthsLeft) + ' remaining', color: undefined },
+          { label: 'TIME SAVED', value: formatDuration(monthsSaved), sub: 'vs. min payments only', color: '#2e7d65' },
+          { label: 'INTEREST SAVED', value: formatMXNCompact(interestSaved), sub: undefined, color: '#2e7d65' },
+        ].map((kpi) => (
+          <div key={kpi.label} className="flex-1 min-w-[140px] px-5 py-4">
+            <div className={`text-[22px] font-bold leading-tight ${kpi.color ? '' : 'text-[#181d26] dark:text-[#e8eaf0]'}`} style={kpi.color ? { color: kpi.color } : undefined}>
+              {kpi.value}
+            </div>
+            <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
+            {kpi.sub && <div className="text-[11px] text-[#9297a0] mt-0.5">{kpi.sub}</div>}
+          </div>
+        ))}
+      </div>
 
       <div className="mb-6">
         <Tabs
@@ -207,21 +222,22 @@ export default function MortgagePage() {
 
           {/* Balance chart */}
           <div>
-            <SectionTitle>Balance Over Time</SectionTitle>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Balance Over Time</p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
               {chartFiltered.length > 1 ? (
-                <LineChart
+                <AreaChart
                   data={chartFiltered.map(p => ({
-                    label: p.label,
+                    name: p.label,
                     'Original Schedule': p.original,
                     ...(p.actual !== null ? { 'Actual Balance': p.actual } : {}),
                   }))}
-                  lines={[
-                    { key: 'Original Schedule', color: '#e0e2e6', name: 'Original Schedule' },
-                    { key: 'Actual Balance', color: '#e8874a', name: 'Actual Balance' },
+                  areas={[
+                    { key: 'Original Schedule', color: '#93c5fd', name: 'Original Schedule' },
+                    { key: 'Actual Balance', color: '#6ee7b7', name: 'Actual Balance' },
                   ]}
-                  xKey="label"
+                  xKey="name"
                   height={280}
+                  fillOpacity={0.15}
                 />
               ) : (
                 <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">Add payments to see balance progression</p>
@@ -231,7 +247,7 @@ export default function MortgagePage() {
 
           {/* Simulator */}
           <div>
-            <SectionTitle>Extra Deposit Simulator</SectionTitle>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Extra Deposit Simulator</p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
               <div className="flex items-center gap-3 mb-4 flex-wrap">
                 <span className="text-[13px] text-[#41454d] dark:text-[#9297a0] whitespace-nowrap">If I deposit an extra</span>
@@ -275,7 +291,7 @@ export default function MortgagePage() {
 
           {/* Payment Log */}
           <div>
-            <SectionTitle>Payment History</SectionTitle>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Payment History</p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] overflow-hidden">
               {sorted.length === 0 ? (
                 <p className="text-center py-10 text-[13px] text-[#41454d] dark:text-[#9297a0]">No payments recorded yet</p>
@@ -346,7 +362,7 @@ export default function MortgagePage() {
           </div>
 
           <div>
-            <SectionTitle>Contribution History</SectionTitle>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Contribution History</p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] overflow-hidden">
               {sortedContribs.length === 0 ? (
                 <p className="text-center py-10 text-[13px] text-[#41454d] dark:text-[#9297a0]">No contributions in this period</p>

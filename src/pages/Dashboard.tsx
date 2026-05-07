@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { addMonths, parseISO } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
@@ -54,13 +55,7 @@ const TAB_MODES: { label: string; mode: PeriodMode }[] = [
   { label: 'Yearly', mode: 'year' },
 ]
 
-const MOCK_RECURRING = [
-  { name: 'Netflix', amount: 299 },
-  { name: 'Spotify', amount: 99 },
-  { name: 'Luz CFE', amount: 1200 },
-  { name: 'Agua', amount: 433 },
-  { name: 'Gym', amount: 899 },
-]
+const FREQ_MONTHS: Record<string, number> = { monthly: 1, bimonthly: 2, annual: 12 }
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 
@@ -77,6 +72,7 @@ export default function Dashboard() {
   const mortgagePayments = useStore((s) => s.mortgagePayments)
   const mortgageConfig = useStore((s) => s.mortgageConfig)
   const expenseCategories = useStore((s) => s.settings.expenseCategories)
+  const recurringExpenses = useStore((s) => s.recurringExpenses)
 
   const categoryNameById = useMemo(
     () => Object.fromEntries(expenseCategories.map((c) => [c.id, c.name])),
@@ -121,17 +117,6 @@ export default function Dashboard() {
       ? Math.max(((periodIncome - periodExpenses - periodDebt) / periodIncome) * 100, 0)
       : 0
 
-  // Always current-month for portfolio tiles + right panel
-  const currMonth = currentMonth()
-  const monthPaychecks = useMemo(() => filterByPeriod(paychecks, 'month', currMonth), [paychecks])
-  const monthTransfers = useMemo(() => filterByPeriod(transfers, 'month', currMonth), [transfers])
-  const monthDebt = useMemo(() => filterByPeriod(debtPayments, 'month', currMonth), [debtPayments])
-
-  const monthlyInflow =
-    monthPaychecks.reduce((s, p) => s + p.mxnAmount, 0) +
-    monthTransfers.reduce((s, t) => s + t.amount, 0)
-  const monthlyDebt = monthDebt.reduce((s, d) => s + d.amount, 0)
-
   const totalPortfolioBalance = portfolios.reduce((s, p) => s + p.balance, 0)
 
   const currentMortgageBalance = useMemo(() => {
@@ -141,7 +126,7 @@ export default function Dashboard() {
 
   const netWorth = totalPortfolioBalance - currentMortgageBalance
   const debtToIncomeRaw =
-    monthlyInflow > 0 ? (monthlyDebt / monthlyInflow) * 100 : 0
+    periodIncome > 0 ? (periodDebt / periodIncome) * 100 : 0
 
   // 7-month sparklines
   const sevenMonths = useMemo(() => last7Months(), [])
@@ -170,6 +155,18 @@ export default function Dashboard() {
       }),
     [sevenMonths, paychecks, transfers, debtPayments]
   )
+
+  const upcomingRecurring = useMemo(() => {
+    return recurringExpenses
+      .filter((r) => r.status === 'active')
+      .map((r) => ({
+        name: r.name,
+        amount: r.amount,
+        nextDate: addMonths(parseISO(r.lastDate), FREQ_MONTHS[r.frequency] ?? 1),
+      }))
+      .sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime())
+      .slice(0, 5)
+  }, [recurringExpenses])
 
   // Period-filtered category totals (Spending Breakdown + Insights)
   const categoryTotals = useMemo(() => {
@@ -333,52 +330,35 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Portfolio & Wealth — full width */}
-      <div className="mb-8">
-        <SectionTitle>Portfolio &amp; Wealth</SectionTitle>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Net Worth */}
-          <div className={`${CARD} p-5`}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">
-              Net Worth
-            </p>
-            <p className="text-[28px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">
-              {formatMXNCompact(netWorth)}
-            </p>
-            <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Assets – liabilities</p>
-            <Sparkline values={investmentSparkline} color="#2e7d65" />
-          </div>
-
-          {/* Investments */}
-          <div className={`${CARD} p-5`}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">
-              Investments
-            </p>
-            <p className="text-[28px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">
-              {formatMXNCompact(totalPortfolioBalance)}
-            </p>
-            <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Total portfolio</p>
-            <Sparkline values={investmentSparkline} color="#2e7d65" />
-          </div>
-
-          {/* Debt Ratio */}
-          <div className={`${CARD} p-5`}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">
-              Debt Ratio
-            </p>
-            <p className="text-[28px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">
-              {debtToIncomeRaw.toFixed(1)}%
-            </p>
-            <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Debt-to-income</p>
-            <Sparkline values={debtRatioSparkline} color="#aa2d00" />
-          </div>
-        </div>
-      </div>
-
       {/* 2-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6 items-start">
         {/* Left column */}
         <div className="space-y-8 min-w-0">
+
+          {/* Portfolio & Wealth */}
+          <div>
+            <SectionTitle>Portfolio &amp; Wealth</SectionTitle>
+            <div className={`${CARD} grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#e8e8e8] dark:divide-[#2d3347]`}>
+              <div className="p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">Net Worth</p>
+                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMXNCompact(netWorth)}</p>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Assets – liabilities</p>
+                <Sparkline values={investmentSparkline} color="#2e7d65" />
+              </div>
+              <div className="p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">Investments</p>
+                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMXNCompact(totalPortfolioBalance)}</p>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Total portfolio</p>
+                <Sparkline values={investmentSparkline} color="#2e7d65" />
+              </div>
+              <div className="p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">Debt Ratio</p>
+                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{debtToIncomeRaw.toFixed(1)}%</p>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Debt-to-income</p>
+                <Sparkline values={debtRatioSparkline} color="#aa2d00" />
+              </div>
+            </div>
+          </div>
 
           {/* Monthly Spending Trends */}
           <div>
@@ -595,14 +575,14 @@ export default function Dashboard() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
               Financial Snapshot
             </p>
-            <div className="space-y-3">
+            <div className="divide-y divide-[#e8e8e8] dark:divide-[#2d3347]">
               {[
-                { label: 'Net Worth', value: formatMXNCompact(netWorth), color: undefined },
-                { label: 'Investments', value: formatMXNCompact(totalPortfolioBalance), color: undefined },
+                { label: 'Net Worth', value: formatMXNCompact(netWorth), color: '#2e7d65' },
+                { label: 'Investments', value: formatMXNCompact(totalPortfolioBalance), color: '#2e7d65' },
                 { label: 'Cash', value: '—', color: undefined },
                 { label: 'Total Debt', value: `-${formatMXNCompact(periodDebt)}`, color: '#c0392b' },
               ].map(({ label, value, color }) => (
-                <div key={label} className="flex items-center justify-between">
+                <div key={label} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
                   <span className="text-[13px] text-[#41454d] dark:text-[#9297a0]">{label}</span>
                   <span
                     className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]"
@@ -664,16 +644,20 @@ export default function Dashboard() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
               Upcoming Recurring
             </p>
-            <div className="space-y-2.5">
-              {MOCK_RECURRING.map(({ name, amount }) => (
-                <div key={name} className="flex items-center justify-between">
-                  <span className="text-[13px] text-[#333840] dark:text-[#c4c8d0]">{name}</span>
-                  <span className="text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0]">
-                    {formatMXNCompact(amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {upcomingRecurring.length === 0 ? (
+              <p className="text-[13px] text-[#9297a0]">No recurring expenses set.</p>
+            ) : (
+              <div className="space-y-2.5">
+                {upcomingRecurring.map(({ name, amount }) => (
+                  <div key={name} className="flex items-center justify-between">
+                    <span className="text-[13px] text-[#333840] dark:text-[#c4c8d0]">{name}</span>
+                    <span className="text-[13px] font-medium" style={{ color: '#aa2d00' }}>
+                      {formatMXNCompact(amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -108,7 +108,7 @@ export default function ExpenseForm({ open, onClose, expense, editRecurring }: E
     if (expense) updateExpense(expense.id, data)
     else addExpense(data)
 
-    if (!expense && form.recurring) {
+    if (form.recurring) {
       addRecurringExpense({
         id: generateId(),
         name: form.description,
@@ -174,7 +174,7 @@ export default function ExpenseForm({ open, onClose, expense, editRecurring }: E
         )}
 
         {/* Recurring toggle */}
-        {!isEditRecurring && !expense && (
+        {!isEditRecurring && (
           <div className="flex items-center gap-3">
             <input
               id="recurring-cb"

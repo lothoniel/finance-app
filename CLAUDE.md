@@ -1,13 +1,5 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Session Rules
-
-**At the start of every session:** Read `memory.md` (project root) before doing anything else. It has current status, pending debt, and the activity log.
-
-**At the end of every session:** Update `memory.md` AND `.claude/projects/-Users-lothoniel-Desktop-Claude-source-Apps-finance-app/memory/memory.md` with what was done (both must stay in sync).
-
 ## Commands
 
 ```bash
@@ -56,3 +48,4 @@ npx vitest run src/__tests__/lib/settlement.test.ts
 - `src/lib/settlement.ts` — shared balance calculation logic (unit tested)
 
 **Tests:** Vitest + jsdom + Testing Library. Tests are in `src/__tests__/` and cover pure utility functions (`settlement`, `filters`, `formatters`). Setup file: `src/test/setup.ts`.
+

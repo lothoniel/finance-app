@@ -20,6 +20,7 @@ import {
   Sun,
   Moon,
 } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
 import { useStore } from '../../store'
 import { filterByPeriod } from '../../lib/filters'
 
@@ -45,7 +46,9 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
   const updateSettings = useStore((s) => s.updateSettings)
   const expenses = useStore((s) => s.expenses)
   const expenseCategories = useStore((s) => s.settings.expenseCategories)
-  const backupLabel = importedBackupDate ? `Backup ${importedBackupDate}` : 'No backup loaded'
+  const backupLabel = importedBackupDate
+    ? `Backup ${format(parseISO(importedBackupDate), 'MMM d')}`
+    : 'No backup'
 
   const overBudgetCount = useMemo(() => {
     const now = new Date()
@@ -65,7 +68,7 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
       label: 'Overview',
       items: [
         { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-        { to: '/net-worth', label: 'Net Worth', icon: Landmark, badge: 'new' as const },
+        { to: '/net-worth', label: 'Net Worth', icon: Landmark },
         { to: '/reports', label: 'Reports', icon: FileText },
       ],
     },
@@ -73,8 +76,8 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
       label: 'Money',
       items: [
         { to: '/expenses', label: 'Expenses', icon: CreditCard, badge: overBudgetCount > 0 ? (`${overBudgetCount} over` as const) : undefined },
-        { to: '/budget', label: 'Budget', icon: Wallet, badge: 'new' as const },
-        { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight, badge: 'new' as const },
+        { to: '/budget', label: 'Budget', icon: Wallet },
+        { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
         { to: '/income', label: 'Income', icon: DollarSign },
         { to: '/cash-flow', label: 'Cash Flow', icon: TrendingUp },
       ],
@@ -151,7 +154,7 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
                     title={!desktopOpen ? label : undefined}
                     className={({ isActive }) =>
                       `flex items-center py-[10px] rounded-[8px] text-[13px] font-medium transition-colors ${
-                        desktopOpen ? 'gap-3 px-3' : 'lg:justify-center lg:px-0 gap-3 px-3'
+                        desktopOpen ? 'gap-3 px-3' : 'lg:justify-center lg:px-0 lg:gap-0 gap-3 px-3'
                       } ${
                         isActive
                           ? 'bg-[#f8fafc] dark:bg-[#252b3b] text-[#181d26] dark:text-[#e8eaf0] font-semibold'

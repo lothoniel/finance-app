@@ -116,6 +116,7 @@ export default function Settings() {
       mortgageConfig: store.mortgageConfig,
       mortgagePayments: store.mortgagePayments,
       mortgageContributions: store.mortgageContributions,
+      recurringExpenses: store.recurringExpenses,
       settings: store.settings,
     }
   }
@@ -165,6 +166,7 @@ export default function Settings() {
         if (!data.mortgageConfig) data.mortgageConfig = currentStore.mortgageConfig
         if (!data.mortgagePayments) data.mortgagePayments = currentStore.mortgagePayments
         if (!data.mortgageContributions) data.mortgageContributions = currentStore.mortgageContributions
+        if (!data.recurringExpenses) data.recurringExpenses = currentStore.recurringExpenses
         localStorage.setItem('finance-app-backup-date', backupDate)
         window.dispatchEvent(new Event('financeAppBackupImported'))
         importData(data)
@@ -179,7 +181,7 @@ export default function Settings() {
 
   function clearData() {
     if (confirmClear) {
-      importData({ expenses: [], paychecks: [], manualTaxes: [], transfers: [], debtPayments: [], portfolios: [], investmentMovements: [], settlements: [] })
+      importData({ expenses: [], paychecks: [], manualTaxes: [], transfers: [], debtPayments: [], portfolios: [], investmentMovements: [], settlements: [], recurringExpenses: [] })
       setConfirmClear(false)
     } else {
       setConfirmClear(true)
@@ -236,16 +238,9 @@ export default function Settings() {
                     {renderIcon(cat.icon, 'w-3.5 h-3.5', cat.color)}
                   </span>
                   <span className="text-[13px] text-[#181d26] dark:text-[#e8eaf0] flex-1">{cat.name}</span>
-                  <input
-                    type="number" min="0" step="1"
-                    value={cat.budget ?? ''}
-                    placeholder="Budget"
-                    onChange={(e) => {
-                      const budget = e.target.value ? parseFloat(e.target.value) : undefined
-                      updateSettings({ expenseCategories: settings.expenseCategories.map((c) => c.id === cat.id ? { ...c, budget } : c) })
-                    }}
-                    className="w-24 border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] px-2 py-1 text-[12px] text-[#181d26] dark:text-[#e8eaf0] bg-white dark:bg-[#252b3b] focus:outline-none focus:border-[#181d26]"
-                  />
+                  {cat.categoryGroup && (
+                    <span className="text-[11px] text-[#41454d] dark:text-[#9297a0] hidden sm:inline">{cat.categoryGroup}</span>
+                  )}
                   <button onClick={() => setEditCat({ ...cat })} className={`${iconBtn} hover:text-[#181d26] dark:hover:text-[#e8eaf0] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b]`}>
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -426,6 +421,22 @@ export default function Settings() {
               <input type="number" min="0" step="1" value={editCat.budget ?? ''} placeholder="0"
                 onChange={(e) => setEditCat({ ...editCat, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
                 className={modalInput} /></div>
+            <div><label className={modalLabel}>Category Group (optional)</label>
+              <input type="text" value={editCat.categoryGroup ?? ''} placeholder="e.g. Housing, Auto, Food & Dining"
+                onChange={(e) => setEditCat({ ...editCat, categoryGroup: e.target.value || undefined })}
+                className={modalInput} /></div>
+            <div><label className={modalLabel}>Expense Type</label>
+              <div className="flex gap-2">
+                {(['fixed', 'variable'] as const).map((t) => (
+                  <button key={t} onClick={() => setEditCat({ ...editCat, expenseType: editCat.expenseType === t ? undefined : t })}
+                    className={`px-3 py-1.5 rounded-[6px] text-[12px] font-medium capitalize border transition-colors ${
+                      editCat.expenseType === t
+                        ? 'bg-[#181d26] text-white border-[#181d26]'
+                        : 'border-[#e8e8e8] dark:border-[#2d3347] text-[#41454d] dark:text-[#9297a0] hover:border-[#181d26] dark:hover:border-[#e8eaf0]'
+                    }`}>{t}</button>
+                ))}
+              </div>
+            </div>
             <div className="flex gap-3 pt-2">
               <button onClick={() => setEditCat(null)} className={`${modalBtn} border border-[#e8e8e8] dark:border-[#2d3347] text-[#181d26] dark:text-[#e8eaf0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]`}>Cancel</button>
               <button onClick={saveEditCat} className={`${modalBtn} bg-[#181d26] text-white hover:bg-[#0d1218]`}>Save</button>
