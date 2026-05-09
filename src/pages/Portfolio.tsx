@@ -7,6 +7,7 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import PortfolioForm from '../components/forms/PortfolioForm'
 import InvestmentMovementForm from '../components/forms/InvestmentMovementForm'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
+import { sortByDateDesc } from '../lib/filters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { Portfolio, InvestmentMovement } from '../store/types'
 
@@ -49,15 +50,13 @@ export default function PortfolioPage() {
 
   const lastGain = useMemo(() => {
     const result: Record<string, number> = {}
-    investmentMovements
-      .filter((m) => m.type === 'GAIN')
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .forEach((m) => { if (!result[m.portfolioId]) result[m.portfolioId] = m.amount })
+    const gains = investmentMovements.filter((m) => m.type === 'GAIN')
+    sortByDateDesc(gains).forEach((m) => { if (!result[m.portfolioId]) result[m.portfolioId] = m.amount })
     return result
   }, [investmentMovements])
 
   const sortedMovements = useMemo(
-    () => [...filteredMovements].sort((a, b) => b.date.localeCompare(a.date)),
+    () => sortByDateDesc(filteredMovements),
     [filteredMovements]
   )
 

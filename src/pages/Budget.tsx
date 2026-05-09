@@ -5,9 +5,9 @@ import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filter
 import { formatMXNCompact } from '../lib/formatters'
 import { renderIcon } from '../lib/iconRenderer'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import { PERIOD_SCALE } from '../lib/constants'
 import type { Expense } from '../store/types'
 
-const SCALE: Record<string, number> = { month: 1, quarter: 3, year: 12 }
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const COL = 'w-24 text-right flex-shrink-0'
 
@@ -211,7 +211,7 @@ export default function Budget() {
   const categories = useStore(s => s.settings.expenseCategories)
   const updateSettings = useStore(s => s.updateSettings)
 
-  const scale = SCALE[periodMode] ?? 1
+  const scale = PERIOD_SCALE[periodMode] ?? 1
 
   function handlePeriodChange(mode: PeriodMode, value: PeriodValue) {
     setPeriodMode(mode)

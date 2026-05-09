@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react'
 import { addMonths, parseISO } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store'
-import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
+import { filterByPeriod, sortByDateDesc, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMXNCompact, formatShortMonth, formatDate } from '../lib/formatters'
+import { PERIOD_SCALE } from '../lib/constants'
 import StackedBarChart from '../components/charts/StackedBarChart'
 
 function currentMonth(): PeriodValue {
@@ -56,7 +57,6 @@ const TAB_MODES: { label: string; mode: PeriodMode }[] = [
 ]
 
 const FREQ_MONTHS: Record<string, number> = { monthly: 1, bimonthly: 2, annual: 12 }
-const SCALE: Record<string, number> = { month: 1, quarter: 3, year: 12 }
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 
@@ -131,7 +131,7 @@ export default function Dashboard() {
 
   const currentMortgageBalance = useMemo(() => {
     if (mortgagePayments.length === 0) return mortgageConfig.principal
-    return [...mortgagePayments].sort((a, b) => b.date.localeCompare(a.date))[0].balanceAfter
+    return sortByDateDesc(mortgagePayments)[0].balanceAfter
   }, [mortgagePayments, mortgageConfig])
 
   const netWorth = totalPortfolioBalance - currentMortgageBalance
@@ -286,13 +286,13 @@ export default function Dashboard() {
         sub: d.card,
       })),
     ]
-    return all.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6)
+    return sortByDateDesc(all).slice(0, 6)
   }, [expenses, paychecks, transfers, debtPayments, categoryNameById])
 
   // Budget status (period-filtered)
   const budgetStatus = useMemo(
     () => {
-      const scale = SCALE[activeTab] ?? 1
+      const scale = PERIOD_SCALE[activeTab] ?? 1
       return expenseCategories
         .filter((cat) => cat.budget && cat.budget > 0)
         .map((cat) => {

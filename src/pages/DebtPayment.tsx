@@ -4,7 +4,7 @@ import { useStore } from '../store'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import AreaChart from '../components/charts/AreaChart'
 import DebtPaymentForm from '../components/forms/DebtPaymentForm'
-import { filterByPeriod } from '../lib/filters'
+import { filterByPeriod, sortByDateDesc } from '../lib/filters'
 import { formatMXN, formatMXNCompact, formatDate, formatShortMonth } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { DebtPayment } from '../store/types'
@@ -54,7 +54,7 @@ export default function DebtPaymentPage() {
   }, [paychecks, transfers, periodMode, periodValue, totalPaid])
 
   const sortedPayments = useMemo(
-    () => [...filtered].sort((a, b) => b.date.localeCompare(a.date)),
+    () => sortByDateDesc(filtered),
     [filtered]
   )
 

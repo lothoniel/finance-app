@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../store'
 import DonutChart from '../components/charts/DonutChart'
+import { sortByDateDesc } from '../lib/filters'
 import { formatMXN, formatMXNCompact } from '../lib/formatters'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
@@ -16,7 +17,7 @@ export default function NetWorth() {
 
   const currentMortgageBalance = useMemo(() => {
     if (mortgagePayments.length === 0) return mortgageConfig.principal
-    return [...mortgagePayments].sort((a, b) => b.date.localeCompare(a.date))[0].balanceAfter
+    return sortByDateDesc(mortgagePayments)[0].balanceAfter
   }, [mortgagePayments, mortgageConfig.principal])
 
   const totalLiabilities = currentMortgageBalance

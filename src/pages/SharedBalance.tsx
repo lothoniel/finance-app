@@ -6,6 +6,7 @@ import Modal from '../components/ui/Modal'
 import SettlementModal from '../components/forms/SettlementModal'
 import { formatMXN, formatMXNCompact, formatDate, today } from '../lib/formatters'
 import { calculateSettlement } from '../lib/settlement'
+import { sortByDateAsc, sortByDateDesc } from '../lib/filters'
 import { inputClass } from '../lib/styles'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
@@ -28,7 +29,7 @@ export default function SharedBalance() {
 
   const lastSettlementDate = useMemo(() => {
     if (settlements.length === 0) return null
-    const sorted = [...settlements].sort((a, b) => a.date.localeCompare(b.date))
+    const sorted = sortByDateAsc(settlements)
     let lastZeroDate: string | null = null
     for (const s of sorted) {
       const expBefore = expenses.filter((e) => e.shared && e.date <= s.date)
@@ -58,7 +59,7 @@ export default function SharedBalance() {
   )
 
   const sharedExpenses = expensesSinceLastSettlement.filter((e) => e.shared)
-  const recentShared = [...sharedExpenses].sort((a, b) => b.date.localeCompare(a.date))
+  const recentShared = sortByDateDesc(sharedExpenses)
 
   function handleAddCash(e: React.FormEvent) {
     e.preventDefault()
@@ -208,7 +209,7 @@ export default function SharedBalance() {
             <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
           </div>
           <div className={`${CARD} divide-y divide-[#e8e8e8] dark:divide-[#2d3347]`}>
-            {[...cashEntriesSinceLastSettlement].sort((a, b) => b.date.localeCompare(a.date)).map((c) => (
+            {sortByDateDesc(cashEntriesSinceLastSettlement).map((c) => (
               <div key={c.id} className="flex items-center justify-between px-5 py-3 hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{c.note || 'Cash'}</p>
@@ -238,7 +239,7 @@ export default function SharedBalance() {
           {settlements.length === 0 && (
             <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No settlements recorded yet</p>
           )}
-          {[...settlements].sort((a, b) => b.date.localeCompare(a.date)).map((s) => (
+          {sortByDateDesc(settlements).map((s) => (
             <div key={s.id} className="flex items-center justify-between px-5 py-3 hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
               <div>
                 <p className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{s.description || 'Settlement'}</p>

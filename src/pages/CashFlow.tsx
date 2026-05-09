@@ -7,7 +7,7 @@ import AreaChart from '../components/charts/AreaChart'
 import BarChart from '../components/charts/BarChart'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
-import { formatMXN, formatMXNCompact } from '../lib/formatters'
+import { formatMXN, formatMXNCompact, formatShortMonth } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
@@ -170,7 +170,7 @@ export default function CashFlow() {
     const exp = filterByPeriod(expenses, 'month', val).reduce((s, e) => s + e.amount, 0)
     const debt = filterByPeriod(debtPayments, 'month', val).reduce((s, d) => s + d.amount, 0)
     const net = inc - debt
-    const label = new Date(y, m - 1).toLocaleString('en-US', { month: 'short', year: '2-digit' })
+    const label = formatShortMonth(`${y}-${String(m).padStart(2, '0')}-01`)
     return { label, inc, exp, debt, net }
   })
 

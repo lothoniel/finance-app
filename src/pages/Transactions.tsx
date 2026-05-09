@@ -3,6 +3,7 @@ import { Search } from 'lucide-react'
 import { useStore } from '../store'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
+import { sortByDateDesc } from '../lib/filters'
 import { formatDate, formatMXNCompact } from '../lib/formatters'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
@@ -112,7 +113,7 @@ export default function Transactions() {
       const q = search.toLowerCase()
       rows = rows.filter((r) => r.description.toLowerCase().includes(q) || r.categoryLabel.toLowerCase().includes(q))
     }
-    return [...rows].sort((a, b) => b.date.localeCompare(a.date))
+    return sortByDateDesc(rows)
   }, [periodFiltered, typeFilter, search])
 
   const totalIncome = useMemo(

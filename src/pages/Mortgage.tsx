@@ -6,7 +6,8 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import AreaChart from '../components/charts/AreaChart'
 import MortgagePaymentForm from '../components/forms/MortgagePaymentForm'
 import MortgageContributionForm from '../components/forms/MortgageContributionForm'
-import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
+import { formatMXN, formatMXNCompact, formatDate, formatMonthYear } from '../lib/formatters'
+import { sortByDateAsc, sortByDateDesc } from '../lib/filters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import { monthsRemaining, totalInterestRemaining, buildBalanceSeries, calcMonthlyPayment } from '../lib/mortgage'
 import type { MortgagePayment, MortgageContribution } from '../store/types'
@@ -14,7 +15,9 @@ import type { MortgagePayment, MortgageContribution } from '../store/types'
 function addMonths(dateStr: string, months: number): string {
   const [y, m] = dateStr.split('-').map(Number)
   const total = y * 12 + (m - 1) + Math.ceil(months)
-  return new Date(Math.floor(total / 12), total % 12, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+  const yr = Math.floor(total / 12)
+  const mo = total % 12
+  return formatMonthYear(`${yr}-${String(mo + 1).padStart(2, '0')}-01`)
 }
 
 function formatDuration(months: number): string {
@@ -89,7 +92,7 @@ export default function MortgagePage() {
 
   const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: filteredContribs } = usePeriodFilter(contributions, 'year')
 
-  const sorted = useMemo(() => [...payments].sort((a, b) => b.date.localeCompare(a.date)), [payments])
+  const sorted = useMemo(() => sortByDateDesc(payments), [payments])
   const currentBalance = sorted[0]?.balanceAfter ?? config.principal
   const totalExtraCapital = payments.reduce((s, p) => s + p.extraCapital, 0)
   const paidOffPct = ((1 - currentBalance / config.principal) * 100).toFixed(1)
@@ -125,7 +128,7 @@ export default function MortgagePage() {
     }
   }, [simAmount, currentBalance, config, payments, contractualPayment])
 
-  const sortedContribs = useMemo(() => [...filteredContribs].sort((a, b) => b.date.localeCompare(a.date)), [filteredContribs])
+  const sortedContribs = useMemo(() => sortByDateDesc(filteredContribs), [filteredContribs])
   const totalContributed = filteredContribs.reduce((s, c) => s + c.amount, 0)
 
   const byPerson = useMemo(() => {
@@ -137,7 +140,7 @@ export default function MortgagePage() {
   const personColors = useMemo(() => {
     const seen: Record<string, string> = {}
     let idx = 0
-    ;[...contributions].sort((a, b) => a.date.localeCompare(b.date)).forEach((c) => {
+    sortByDateAsc(contributions).forEach((c) => {
       if (!seen[c.by]) { seen[c.by] = CONTRIBUTOR_COLORS[idx % CONTRIBUTOR_COLORS.length]; idx++ }
     })
     return seen

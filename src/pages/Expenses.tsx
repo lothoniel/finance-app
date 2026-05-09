@@ -7,12 +7,13 @@ import ExpenseForm from '../components/forms/ExpenseForm'
 import ScreenshotImportModal from '../components/forms/ScreenshotImportModal'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
+import { sortByDateDesc } from '../lib/filters'
+import { PERIOD_SCALE } from '../lib/constants'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { Expense, RecurringExpense } from '../store/types'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] uppercase mb-4'
-const SCALE: Record<string, number> = { month: 1, quarter: 3, year: 12 }
 
 type BottomTab = 'transactions' | 'recurring'
 
@@ -47,12 +48,12 @@ export default function Expenses() {
   const { mode, value, onChange, filtered: periodFiltered } = usePeriodFilter(expenses, 'month')
 
   const displayed = useMemo(() => {
-    return periodFiltered.filter((e) => {
+    return sortByDateDesc(periodFiltered.filter((e) => {
       const matchSearch = e.description.toLowerCase().includes(search.toLowerCase())
       const matchCat = catFilter === 'all' || e.category === catFilter
       const matchType = typeFilter === 'all' || (typeFilter === 'shared' ? e.shared : !e.shared)
       return matchSearch && matchCat && matchType
-    }).sort((a, b) => b.date.localeCompare(a.date))
+    }))
   }, [periodFiltered, search, catFilter, typeFilter])
 
   // KPIs
@@ -90,7 +91,7 @@ export default function Expenses() {
     return totals
   }, [periodFiltered])
 
-  const scale = SCALE[mode] ?? 1
+  const scale = PERIOD_SCALE[mode] ?? 1
 
   const budgetCats = useMemo(() => {
     return categories.filter((c) => c.budget && c.budget > 0)

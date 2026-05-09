@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 import { calculateSettlement } from './settlement'
+import { sortByDateDesc } from './filters'
 import { today } from './formatters'
 import type {
   Expense,
@@ -169,7 +170,7 @@ function addSummarySheet(wb: ExcelJS.Workbook, data: ExportData) {
 
   // --- Net Worth ---
   const totalPortfolio = data.portfolios.reduce((s, p) => s + p.balance, 0)
-  const lastMortgagePayment = [...(data.mortgagePayments ?? [])].sort((a, b) => b.date.localeCompare(a.date))[0]
+  const lastMortgagePayment = sortByDateDesc(data.mortgagePayments ?? [])[0]
   const mortgageBalance = lastMortgagePayment?.balanceAfter ?? data.mortgageConfig?.principal ?? 0
   const netWorth = totalPortfolio - mortgageBalance
 
@@ -197,7 +198,7 @@ function addSummarySheet(wb: ExcelJS.Workbook, data: ExportData) {
   blank()
 
   // --- Shared Balance ---
-  const lastSettlement = [...data.settlements].sort((a, b) => b.date.localeCompare(a.date))[0]
+  const lastSettlement = sortByDateDesc(data.settlements)[0]
   const cutoff = lastSettlement?.date ?? '1970-01-01'
   const result = calculateSettlement(
     data.expenses.filter((e) => e.date >= cutoff),

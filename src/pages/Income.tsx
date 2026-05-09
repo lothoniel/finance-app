@@ -9,7 +9,7 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import PaycheckForm from '../components/forms/PaycheckForm'
 import ManualTaxForm from '../components/forms/ManualTaxForm'
 import TransferForm from '../components/forms/TransferForm'
-import { filterByPeriod } from '../lib/filters'
+import { filterByPeriod, sortByDateAsc, sortByDateDesc } from '../lib/filters'
 import { formatMXN, formatMXNCompact, formatDate, formatShortMonth } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { Paycheck, Transfer } from '../store/types'
@@ -90,20 +90,16 @@ export default function Income() {
   }, [filteredPaychecks, filteredTaxes])
 
   const rateChartData = useMemo(() => {
-    return paychecks
-      .filter((p) => p.exchangeRate != null)
-      .sort((a, b) => a.date.localeCompare(b.date))
+    return sortByDateAsc(paychecks.filter((p) => p.exchangeRate != null))
       .map((p) => ({ month: formatShortMonth(p.date), Rate: p.exchangeRate as number }))
   }, [paychecks])
 
   const displayedTransfers = useMemo(() => {
-    return [...filteredTransfers]
-      .filter((t) => {
-        const matchSearch = t.description.toLowerCase().includes(searchTransfer.toLowerCase())
-        const matchCat = filterCat === 'all' || t.category === filterCat
-        return matchSearch && matchCat
-      })
-      .sort((a, b) => b.date.localeCompare(a.date))
+    return sortByDateDesc(filteredTransfers.filter((t) => {
+      const matchSearch = t.description.toLowerCase().includes(searchTransfer.toLowerCase())
+      const matchCat = filterCat === 'all' || t.category === filterCat
+      return matchSearch && matchCat
+    }))
   }, [filteredTransfers, searchTransfer, filterCat])
 
   return (
@@ -216,7 +212,7 @@ export default function Income() {
               {filteredPaychecks.length === 0 && (
                 <tr><td colSpan={5} className="text-center py-8 text-[13px] text-[#9297a0]">No paychecks in this period</td></tr>
               )}
-              {[...filteredPaychecks].sort((a, b) => b.date.localeCompare(a.date)).map((p, i, arr) => {
+              {sortByDateDesc(filteredPaychecks).map((p, i, arr) => {
                 const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
                 return (
                   <tr key={p.id} className="group hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
@@ -266,7 +262,7 @@ export default function Income() {
               {filteredTaxes.length === 0 && (
                 <tr><td colSpan={4} className="text-center py-8 text-[13px] text-[#9297a0]">No tax records in this period</td></tr>
               )}
-              {[...filteredTaxes].sort((a, b) => b.date.localeCompare(a.date)).map((t, i, arr) => {
+              {sortByDateDesc(filteredTaxes).map((t, i, arr) => {
                 const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
                 return (
                   <tr key={t.id} className="group hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">

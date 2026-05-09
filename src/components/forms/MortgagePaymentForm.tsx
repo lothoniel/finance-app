@@ -4,6 +4,7 @@ import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { MortgagePayment } from '../../store/types'
 import { today } from '../../lib/formatters'
+import { sortByDateDesc } from '../../lib/filters'
 import { inputClass } from '../../lib/styles'
 
 interface Props {
@@ -39,7 +40,7 @@ export default function MortgagePaymentForm({ open, onClose, payment }: Props) {
   const previousBalance = useMemo(() => {
     const others = payment ? allPayments.filter((p) => p.id !== payment.id) : allPayments
     if (others.length === 0) return config.principal
-    return [...others].sort((a, b) => b.date.localeCompare(a.date))[0].balanceAfter
+    return sortByDateDesc(others)[0].balanceAfter
   }, [allPayments, payment, config.principal])
 
   const autoExtraCapital = useMemo(() => {

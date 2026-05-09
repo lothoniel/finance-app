@@ -7,8 +7,7 @@ Active development. No backend. Design system overhaul in progress across all pa
 ## Pending Debt
 - `CreditCard` and `TransferCategory` types identical in types.ts — unify or keep separate
 - `Paycheck.grossAmount` never populated — remove
-- `.sort((a, b) => b.date.localeCompare(a.date))` inline in many places — `sortByDateDesc/Asc` helpers exist in filters.ts but not migrated
-- `formatShortMonth()` exists but Dashboard/CashFlow still use inline `toLocaleString()`
+- `formatShortMonth()` still inline in Reports.tsx (locale `'default'`) and a few non-`en-US` sites; CashFlow/Mortgage migrated
 - `config.minimumPayment` in localStorage is 26,500 (user's stored value), not the contractual P+I of 25,176.53 — no config UI yet to fix it (P4 roadmap item: Mortgage Config UI)
 
 ## Key Decisions (non-obvious, affects future work)
@@ -18,6 +17,8 @@ Active development. No backend. Design system overhaul in progress across all pa
 - **Mortgage projection uses `calcMonthlyPayment()` (contractual P+I)**, not stored `minimumPayment` — must stay consistent or payoff date breaks
 - **RecurringExpense type** (store v11) — monthly/bimonthly/annual, active/paused
 - **Cash Flow Model** — see dedicated section below
+- **Category budgets stored as monthly amounts** — `SCALE = { month: 1, quarter: 3, year: 12 }` must be applied in any page that displays budgets with a period filter (Budget.tsx, Expenses.tsx, Dashboard.tsx all do this now)
+- **Dashboard `filterByPeriod` for quarter mode requires `periodValue.quarter`** — `handleTabChange` must set `{ year, quarter: Math.ceil(month/3) }` not `currentMonth()`, otherwise falls back to Q1
 
 ## Cash Flow Model (established 2026-05-04)
 - **Expenses** = credit card charges (reference/informational only — not cash leaving bank)
@@ -39,7 +40,24 @@ Active development. No backend. Design system overhaul in progress across all pa
 - P4: Custom app icon — assets in repo (mots_1.PNG = light, mots_2.PNG = dark). Wire up favicon + PWA icons.
 - Net Worth, Budget stub pages (not yet built)
 
-## Bug Fixed (2026-05-06)
+## Bugs Fixed (2026-05-07)
+- **Budget period scaling missing on Expenses + Dashboard**: category budgets (stored monthly) were not scaled for quarter/year period filters. Added `SCALE = { month:1, quarter:3, year:12 }` multiplier in Expenses.tsx and Dashboard.tsx, matching existing Budget.tsx pattern.
+- **Dashboard Quarterly filter always showed Q1**: `handleTabChange` was resetting `periodValue` to `{ year, month }` with no `quarter` field; `filterByPeriod` falls back to `quarter ?? 1`. Fixed by setting `{ year, quarter: Math.ceil(month/3) }` when switching to quarter mode.
+- **Dashboard Spending Breakdown capped at top 5**: removed `.slice(0, 5)` — all categories for the period now display.
+- **Dashboard Budget Status showed zero-spend categories**: added `.filter(item => item.spent > 0)` to hide unstarted budgets.
+
+## Bugs Fixed (2026-05-06)
 - AreaChart gradient IDs cannot have spaces in SVG — keys like "Original Schedule" caused `url(#grad-Original Schedule)` to silently fail, falling back to solid black fill. Fixed by sanitizing IDs with `.replace(/\s+/g, '-')` in AreaChart.tsx.
 - `recurringExpenses` was missing from JSON backup (export/import/clearData) — added to `getExportData()` in Settings.tsx, with fallback on import for old backups.
 - Edit expense modal now shows the recurring checkbox (was gated to add-only) — saving an edited expense with recurring checked creates a RecurringExpense template.
+
+## Features Added (2026-05-08)
+- **CashFlow Period Comparison syncs with main filter**: `compMode` derived from `periodMode`; switching to quarter/year resets comparison selectors and defaults. `getMetrics` uses `compMode`. Labels use `formatPeriodLabel()` helper. See CashFlow.tsx.
+- **CashFlow Sankey 3-layer structure**: Paycheck + Transfers flow into middle "Income" node, then branch to Savings/Debt/Investments. Flows scaled to balance when Debt+Invest > Income. Source links colored by source (green/blue), dest links by destination. Removed `iterations={0}`.
+- **SharedBalance partial settlement fix**: `lastSettlementDate` now computed via `findLastZeroBalanceDate()` — scans settlement history chronologically, advances cutoff only when balance hits zero. Partial payments no longer hide accumulated expenses.
+- **Settings Recurring Expenses section**: lists all recurring templates with status badge, pause/resume toggle, and delete. No schema change.
+- **Table style standardized**: DebtPayment and Mortgage Payment History updated — header text `#9297a0`, padding `py-2.5`, row dividers `border-[#f4f5f7]`. Mortgage Extra Capital color changed from orange `#e8874a` to green `#1a7a3c`, row highlight removed.
+- **Portfolio buttons**: removed `+` text prefix from "Movement" and "Portfolio" action buttons (icon already conveys add action).
+
+## Features Added (2026-05-07)
+- **Dashboard Spending Trends chart**: now period-aware. Monthly = last 7 months ending at selected month; Quarterly = 3 months of selected quarter; Yearly = all 12 months of selected year. Top 7 categories (was 6) recalculated from visible months. Chart title updates dynamically. Section renamed "Spending Trends".
