@@ -1,12 +1,13 @@
 import { generateId } from '../lib/id'
 import { useState, useRef } from 'react'
-import { Trash2, Plus, RotateCcw, Download, Upload, AlertTriangle, Pencil } from 'lucide-react'
+import { Trash2, Plus, RotateCcw, Download, Upload, AlertTriangle, Pencil, Pause, Play } from 'lucide-react'
 import { useStore } from '../store'
 import type { Category, CreditCard, TransferCategory } from '../store/types'
 import SectionTitle from '../components/ui/SectionTitle'
 import Modal from '../components/ui/Modal'
 import { exportToExcel, exportToXML } from '../lib/exporters'
 import { renderIcon } from '../lib/iconRenderer'
+import { formatMXN } from '../lib/formatters'
 import IconPicker from '../components/ui/IconPicker'
 import { inputClass } from '../lib/styles'
 
@@ -21,6 +22,9 @@ export default function Settings() {
   const updateSettings = useStore((s) => s.updateSettings)
   const resetToDefaults = useStore((s) => s.resetToDefaults)
   const importData = useStore((s) => s.importData)
+  const recurringExpenses = useStore((s) => s.recurringExpenses)
+  const updateRecurringExpense = useStore((s) => s.updateRecurringExpense)
+  const deleteRecurringExpense = useStore((s) => s.deleteRecurringExpense)
   const store = useStore()
 
   const [user1, setUser1] = useState(settings.user1Name)
@@ -218,6 +222,44 @@ export default function Settings() {
                 Save Names
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Recurring Expenses */}
+        <div>
+          <SectionTitle>Recurring Expenses</SectionTitle>
+          <div className={card}>
+            {recurringExpenses.length === 0 ? (
+              <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No recurring expenses set up yet</p>
+            ) : (
+              <div className="divide-y divide-[#e8e8e8] dark:divide-[#2d3347]">
+                {[...recurringExpenses].sort((a, b) => a.name.localeCompare(b.name)).map((r) => (
+                  <div key={r.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] truncate">{r.name}</p>
+                      <p className="text-[11px] text-[#9297a0] mt-0.5">{r.category} · {r.frequency}</p>
+                    </div>
+                    <span className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] tabular-nums">{formatMXN(r.amount)}</span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-[4px] ${r.status === 'active' ? 'bg-[#eef8f4] text-[#2e7d65]' : 'bg-[#fef3c7] text-[#c8912a]'}`}>
+                      {r.status.toUpperCase()}
+                    </span>
+                    <button
+                      onClick={() => updateRecurringExpense(r.id, { status: r.status === 'active' ? 'paused' : 'active' })}
+                      title={r.status === 'active' ? 'Pause' : 'Resume'}
+                      className={`${iconBtn} hover:text-[#181d26] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b]`}
+                    >
+                      {r.status === 'active' ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => deleteRecurringExpense(r.id)}
+                      className={`${iconBtn} hover:text-[#c0392b] hover:bg-[#fdecea]`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

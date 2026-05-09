@@ -144,7 +144,7 @@ export default function MortgagePage() {
   }, [contributions])
 
   const td = 'px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0]'
-  const borderB = 'border-b border-[#e8e8e8] dark:border-[#2d3347]'
+  const borderB = 'border-b border-[#f4f5f7] dark:border-[#252a38]'
 
   return (
     <div className="p-6 max-w-[1400px]">
@@ -301,18 +301,18 @@ export default function MortgagePage() {
                     <thead>
                       <tr>
                         {['Date', 'Total Paid', 'Extra Capital', 'Balance After', 'Note', ''].map((h, i) => (
-                          <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${['Total Paid','Extra Capital','Balance After'].includes(h) ? 'text-right' : 'text-left'}`}>{h}</th>
+                          <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${['Total Paid','Extra Capital','Balance After'].includes(h) ? 'text-right' : 'text-left'}`}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {sorted.map((p, i, arr) => (
-                        <tr key={p.id} className={`hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] ${p.extraCapital > 0 ? 'bg-[#fff8f5] dark:bg-[#2a2218]' : ''}`}>
+                        <tr key={p.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                           <td className={`${td} ${i < arr.length - 1 ? borderB : ''}`}>{formatDate(p.date)}</td>
                           <td className={`${td} text-right font-semibold text-[#181d26] dark:text-[#e8eaf0] ${i < arr.length - 1 ? borderB : ''}`}>{formatMXN(p.totalPaid)}</td>
                           <td className={`${td} text-right ${i < arr.length - 1 ? borderB : ''}`}>
                             {p.extraCapital > 0
-                              ? <span className="font-semibold text-[#e8874a]">{formatMXN(p.extraCapital)}</span>
+                              ? <span className="font-semibold text-[#1a7a3c]">{formatMXN(p.extraCapital)}</span>
                               : <span className="text-[#e0e2e6]">—</span>}
                           </td>
                           <td className={`${td} text-right ${i < arr.length - 1 ? borderB : ''}`}>{formatMXN(p.balanceAfter)}</td>

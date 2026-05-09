@@ -166,7 +166,7 @@ export default function DebtPaymentPage() {
               <thead>
                 <tr>
                   {['Date', 'Card', 'Description', 'Amount', ''].map((h, i) => (
-                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
+                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -180,7 +180,7 @@ export default function DebtPaymentPage() {
                 )}
                 {sortedPayments.map((d, i, arr) => {
                   const cardColor = creditCards.find((c) => c.name === d.card)?.color ?? '#9297a0'
-                  const border = i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''
+                  const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
                   return (
                     <tr key={d.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                       <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(d.date)}</td>

@@ -56,6 +56,7 @@ const TAB_MODES: { label: string; mode: PeriodMode }[] = [
 ]
 
 const FREQ_MONTHS: Record<string, number> = { monthly: 1, bimonthly: 2, annual: 12 }
+const SCALE: Record<string, number> = { month: 1, quarter: 3, year: 12 }
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 
@@ -85,7 +86,16 @@ export default function Dashboard() {
 
   function handleTabChange(mode: PeriodMode) {
     setActiveTab(mode)
-    setPeriodValue(currentMonth())
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth() + 1
+    if (mode === 'quarter') {
+      setPeriodValue({ year, quarter: Math.ceil(month / 3) })
+    } else if (mode === 'year') {
+      setPeriodValue({ year })
+    } else {
+      setPeriodValue({ year, month })
+    }
   }
 
   // Period-filtered data
@@ -177,23 +187,51 @@ export default function Dashboard() {
     })
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
   }, [filteredExpenses, categoryNameById])
 
   const maxCategoryTotal = categoryTotals[0]?.[1] ?? 1
 
-  // Stacked bar chart: last 7 months × top 6 categories
+  // Chart months: window depends on active tab
+  const chartMonths = useMemo((): PeriodValue[] => {
+    if (activeTab === 'quarter') {
+      const q = periodValue.quarter ?? 1
+      const year = periodValue.year ?? new Date().getFullYear()
+      const startMonth = (q - 1) * 3 + 1
+      return [0, 1, 2].map((i) => ({ year, month: startMonth + i }))
+    }
+    if (activeTab === 'year') {
+      const year = periodValue.year ?? new Date().getFullYear()
+      return Array.from({ length: 12 }, (_, i) => ({ year, month: i + 1 }))
+    }
+    // month: last 7 months ending at selected month
+    const endYear = periodValue.year ?? new Date().getFullYear()
+    const endMonth = periodValue.month ?? new Date().getMonth() + 1
+    const months: PeriodValue[] = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(endYear, endMonth - 1 - i, 1)
+      months.push({ year: d.getFullYear(), month: d.getMonth() + 1 })
+    }
+    return months
+  }, [activeTab, periodValue])
+
+  const chartTitle = useMemo(() => {
+    if (activeTab === 'quarter') return `Category Breakdown — Q${periodValue.quarter ?? 1} ${periodValue.year}`
+    if (activeTab === 'year') return `Category Breakdown — ${periodValue.year}`
+    return 'Category Breakdown — Last 7 Months'
+  }, [activeTab, periodValue])
+
+  // Stacked bar chart: period-aware months × top 7 categories
   const { stackedChartData, chartCategories } = useMemo(() => {
-    const allTimeMap: Record<string, number> = {}
-    sevenMonths.forEach(({ year, month }) => {
+    const totalsMap: Record<string, number> = {}
+    chartMonths.forEach(({ year, month }) => {
       filterByPeriod(expenses, 'month', { year, month }).forEach((e) => {
         const name = categoryNameById[e.category] ?? e.category
-        allTimeMap[name] = (allTimeMap[name] ?? 0) + e.amount
+        totalsMap[name] = (totalsMap[name] ?? 0) + e.amount
       })
     })
-    const topCats = Object.entries(allTimeMap)
+    const topCats = Object.entries(totalsMap)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
+      .slice(0, 7)
       .map(([name]) => name)
 
     const chartCategories = topCats.map((name) => ({
@@ -201,7 +239,7 @@ export default function Dashboard() {
       color: categoryColorByName[name] ?? '#aaa',
     }))
 
-    const stackedChartData = sevenMonths.map(({ year, month }) => {
+    const stackedChartData = chartMonths.map(({ year, month }) => {
       const monthExp = filterByPeriod(expenses, 'month', { year, month })
       const row: Record<string, unknown> = {
         month: formatShortMonth(`${year}-${String(month).padStart(2, '0')}-01`),
@@ -214,7 +252,7 @@ export default function Dashboard() {
       return row
     })
     return { stackedChartData, chartCategories }
-  }, [sevenMonths, expenses, categoryNameById, categoryColorByName])
+  }, [chartMonths, expenses, categoryNameById, categoryColorByName])
 
   // Recent activity
   const recentActivity = useMemo(() => {
@@ -253,18 +291,22 @@ export default function Dashboard() {
 
   // Budget status (period-filtered)
   const budgetStatus = useMemo(
-    () =>
-      expenseCategories
+    () => {
+      const scale = SCALE[activeTab] ?? 1
+      return expenseCategories
         .filter((cat) => cat.budget && cat.budget > 0)
         .map((cat) => {
           const spent = filteredExpenses
             .filter((e) => e.category === cat.id)
             .reduce((s, e) => s + e.amount, 0)
-          const pct = (spent / cat.budget!) * 100
-          return { id: cat.id, name: cat.name, color: cat.color, spent, budget: cat.budget!, pct }
+          const budget = cat.budget! * scale
+          const pct = (spent / budget) * 100
+          return { id: cat.id, name: cat.name, color: cat.color, spent, budget, pct }
         })
-        .sort((a, b) => b.pct - a.pct),
-    [expenseCategories, filteredExpenses]
+        .filter((item) => item.spent > 0)
+        .sort((a, b) => b.pct - a.pct)
+    },
+    [expenseCategories, filteredExpenses, activeTab]
   )
 
   // Insights
@@ -360,12 +402,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Monthly Spending Trends */}
+          {/* Spending Trends */}
           <div>
-            <SectionTitle>Monthly Spending Trends</SectionTitle>
+            <SectionTitle>Spending Trends</SectionTitle>
             <div className={`${CARD} p-5`}>
               <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">
-                Category Breakdown — Last 7 Months
+                {chartTitle}
               </p>
               {chartCategories.length === 0 ? (
                 <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">No expense data yet.</p>

@@ -72,13 +72,13 @@ export default function PortfolioPage() {
             onClick={() => { setEditMovement(undefined); setMovementModal(true) }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-[#e8e8e8] dark:border-[#2d3347] text-[13px] font-medium text-[#41454d] dark:text-[#9297a0] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] transition-colors"
           >
-            <TrendingUp className="w-3.5 h-3.5" />+ Movement
+            <TrendingUp className="w-3.5 h-3.5" />Movement
           </button>
           <button
             onClick={() => { setEditPortfolio(undefined); setPortfolioModal(true) }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] text-[13px] font-medium hover:opacity-90 transition-opacity"
           >
-            <Plus className="w-3.5 h-3.5" />+ Portfolio
+            <Plus className="w-3.5 h-3.5" />Portfolio
           </button>
         </div>
       </div>

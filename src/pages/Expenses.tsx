@@ -12,6 +12,7 @@ import type { Expense, RecurringExpense } from '../store/types'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] uppercase mb-4'
+const SCALE: Record<string, number> = { month: 1, quarter: 3, year: 12 }
 
 type BottomTab = 'transactions' | 'recurring'
 
@@ -88,6 +89,8 @@ export default function Expenses() {
     periodFiltered.forEach((e) => { totals[e.category] = (totals[e.category] ?? 0) + e.amount })
     return totals
   }, [periodFiltered])
+
+  const scale = SCALE[mode] ?? 1
 
   const budgetCats = useMemo(() => {
     return categories.filter((c) => c.budget && c.budget > 0)
@@ -200,7 +203,7 @@ export default function Expenses() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               {budgetCats.map((c) => {
                 const actual = catTotals[c.id] ?? 0
-                const budget = c.budget!
+                const budget = c.budget! * scale
                 const pct = Math.min((actual / budget) * 100, 100)
                 const over = actual > budget
                 const diff = Math.abs(actual - budget)

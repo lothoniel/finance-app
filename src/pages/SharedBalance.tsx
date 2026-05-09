@@ -1,5 +1,5 @@
 import { generateId } from '../lib/id'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import Modal from '../components/ui/Modal'
@@ -26,10 +26,20 @@ export default function SharedBalance() {
   const addCashEntry = useStore((s) => s.addCashEntry)
   const deleteCashEntry = useStore((s) => s.deleteCashEntry)
 
-  const lastSettlement = settlements.length > 0
-    ? settlements.reduce((latest, s) => s.date > latest.date ? s : latest)
-    : null
-  const lastSettlementDate = lastSettlement?.date ?? null
+  const lastSettlementDate = useMemo(() => {
+    if (settlements.length === 0) return null
+    const sorted = [...settlements].sort((a, b) => a.date.localeCompare(b.date))
+    let lastZeroDate: string | null = null
+    for (const s of sorted) {
+      const expBefore = expenses.filter((e) => e.shared && e.date <= s.date)
+      const stlBefore = settlements.filter((st) => st.date <= s.date)
+      const ceBefore = cashEntries.filter((c) => c.date <= s.date)
+      if (calculateSettlement(expBefore, stlBefore, ceBefore).netSettlement < 1) {
+        lastZeroDate = s.date
+      }
+    }
+    return lastZeroDate
+  }, [settlements, expenses, cashEntries])
 
   const expensesSinceLastSettlement = lastSettlementDate
     ? expenses.filter((e) => e.date > lastSettlementDate)
