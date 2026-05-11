@@ -10,6 +10,7 @@ import DebtPayment from './pages/DebtPayment'
 import MortgagePage from './pages/Mortgage'
 import Portfolio from './pages/Portfolio'
 import SharedBalance from './pages/SharedBalance'
+import SharedBalanceView from './pages/SharedBalanceView'
 import Settings from './pages/Settings'
 import NetWorth from './pages/NetWorth'
 import Reports from './pages/Reports'
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="budget" element={<Budget />} />
           <Route path="transactions" element={<Transactions />} />
         </Route>
+        <Route path="/shared-balance/view" element={<SharedBalanceView />} />
       </Routes>
     </BrowserRouter>
   )

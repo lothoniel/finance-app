@@ -57,6 +57,7 @@ interface AppState {
   updateInvestmentMovement: (id: string, m: Partial<InvestmentMovement>) => void
   deleteInvestmentMovement: (id: string) => void
   addSettlement: (s: Settlement) => void
+  deleteSettlement: (id: string) => void
   addCashEntry: (c: CashEntry) => void
   deleteCashEntry: (id: string) => void
   updateMortgageConfig: (c: Partial<MortgageConfig>) => void
@@ -69,6 +70,7 @@ interface AppState {
   addRecurringExpense: (r: RecurringExpense) => void
   updateRecurringExpense: (id: string, r: Partial<RecurringExpense>) => void
   deleteRecurringExpense: (id: string) => void
+  updateSharedExpensesSplitRatio: (ratio: number, fromDate?: string) => void
   importData: (data: Partial<AppState>) => void
   resetToDefaults: () => void
 }
@@ -162,6 +164,9 @@ export const useStore = create<AppState>()(
       addSettlement: (s) =>
         set((state) => ({ settlements: [...state.settlements, s] })),
 
+      deleteSettlement: (id) =>
+        set((state) => ({ settlements: state.settlements.filter((s) => s.id !== id) })),
+
       addCashEntry: (c) =>
         set((state) => ({ cashEntries: [...state.cashEntries, c] })),
 
@@ -204,6 +209,13 @@ export const useStore = create<AppState>()(
       deleteRecurringExpense: (id) =>
         set((state) => ({ recurringExpenses: state.recurringExpenses.filter((x) => x.id !== id) })),
 
+      updateSharedExpensesSplitRatio: (ratio, fromDate) =>
+        set((state) => ({
+          expenses: state.expenses.map((e) =>
+            e.shared && (!fromDate || e.date >= fromDate) ? { ...e, splitRatio: ratio } : e
+          ),
+        })),
+
       importData: (data) =>
         set((state) => ({
           ...state,
@@ -223,7 +235,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'finance-app-v1',
-      version: 11,
+      version: 12,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>
         const settings = (state.settings ?? {}) as Record<string, unknown>
@@ -332,6 +344,16 @@ export const useStore = create<AppState>()(
         if (version < 11) {
           if (!state.recurringExpenses) {
             state.recurringExpenses = []
+          }
+        }
+        if (version < 12) {
+          if (typeof settings.splitRatio !== 'number') {
+            settings.splitRatio = 0.5
+          }
+          if (Array.isArray(state.expenses)) {
+            state.expenses = (state.expenses as Record<string, unknown>[]).map((e) =>
+              e.shared && e.splitRatio === undefined ? { ...e, splitRatio: 0.5 } : e
+            )
           }
         }
         state.settings = settings
