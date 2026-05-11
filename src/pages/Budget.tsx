@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, RotateCcw } from 'lucide-react'
 import { useStore } from '../store'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMXNCompact } from '../lib/formatters'
@@ -203,6 +203,9 @@ export default function Budget() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [showUnbudgeted, setShowUnbudgeted] = useState(false)
   const [popover, setPopover] = useState<PopoverState | null>(null)
+  const [rolloverTooltip, setRolloverTooltip] = useState<{
+    catName: string; rollover: number; budget: number; actual: number; remaining: number; x: number; y: number; mode: 'month' | 'year'
+  } | null>(null)
 
   const expenses = useStore(s => s.expenses)
   const paychecks = useStore(s => s.paychecks)
@@ -259,6 +262,35 @@ export default function Budget() {
   )
   const totalIncomeBudget = paycheckBudget + Object.values(transferBudgetByCategory).reduce((s, v) => s + v, 0)
   const totalIncomeActual = actualPaychecks + Object.values(actualTransfersByCategory).reduce((s, v) => s + v, 0)
+
+  const rolloverByCategory = useMemo(() => {
+    if (periodMode !== 'month') return {}
+    const result: Record<string, number> = {}
+    const year = periodValue.year!
+    const month = periodValue.month ?? 1
+    for (const cat of categories) {
+      if (!cat.rollover || !cat.budget) continue
+      if (cat.rollover === 'month') {
+        const prevDate = new Date(year, month - 2, 1)
+        const prefix = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`
+        const prevActual = expenses
+          .filter(e => e.category === cat.id && e.date.startsWith(prefix))
+          .reduce((s, e) => s + e.amount, 0)
+        result[cat.id] = cat.budget - prevActual
+      } else if (cat.rollover === 'year') {
+        let balance = 0
+        for (let m = 1; m < month; m++) {
+          const prefix = `${year}-${String(m).padStart(2, '0')}`
+          const monthActual = expenses
+            .filter(e => e.category === cat.id && e.date.startsWith(prefix))
+            .reduce((s, e) => s + e.amount, 0)
+          balance += cat.budget - monthActual
+        }
+        result[cat.id] = balance
+      }
+    }
+    return result
+  }, [periodMode, periodValue, categories, expenses])
 
   const actualByCategory = useMemo(() => {
     const map: Record<string, number> = {}
@@ -484,6 +516,10 @@ export default function Budget() {
                     {isOpen && cats.map(cat => {
                       const budget = (cat.budget ?? 0) * scale
                       const actual = actualByCategory[cat.id] ?? 0
+                      const rollover = rolloverByCategory[cat.id] ?? 0
+                      const effectiveBudget = budget + rollover
+                      const remaining = effectiveBudget - actual
+                      const hasRollover = (cat.rollover === 'month' || cat.rollover === 'year') && periodMode === 'month'
                       const isPopoverOpen = popover?.catId === cat.id
 
                       return (
@@ -493,7 +529,7 @@ export default function Budget() {
                           </span>
                           <div className="flex-1 min-w-0">
                             <div className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{cat.name}</div>
-                            <ProgressBar actual={actual} budget={budget} />
+                            <ProgressBar actual={actual} budget={effectiveBudget} />
                           </div>
                           <div className={`${COL} text-[13px]`}>
                             <button
@@ -505,12 +541,26 @@ export default function Budget() {
                               }`}
                               title="Click to edit budget"
                             >
-                              {formatMXNCompact(budget)}
+                              {formatMXNCompact(hasRollover ? effectiveBudget : budget)}
                             </button>
                           </div>
                           <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(actual)}</div>
                           <div className={`${COL} text-[13px]`}>
-                            <RemainingCell remaining={budget - actual} hasBudget={budget > 0} />
+                            {hasRollover ? (
+                              <div
+                                className="inline-flex items-center gap-1 justify-end w-full cursor-default"
+                                onMouseEnter={e => {
+                                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                                  setRolloverTooltip({ catName: cat.name, rollover, budget, actual, remaining, x: rect.right, y: rect.top, mode: cat.rollover as 'month' | 'year' })
+                                }}
+                                onMouseLeave={() => setRolloverTooltip(null)}
+                              >
+                                <RotateCcw className="w-3 h-3 text-[#9297a0]" />
+                                <RemainingCell remaining={remaining} hasBudget />
+                              </div>
+                            ) : (
+                              <RemainingCell remaining={budget - actual} hasBudget={budget > 0} />
+                            )}
                           </div>
                         </div>
                       )
@@ -645,6 +695,40 @@ export default function Budget() {
           </div>
         </div>
       </div>
+
+      {/* Rollover tooltip */}
+      {rolloverTooltip && (
+        <div
+          style={{ position: 'fixed', right: window.innerWidth - rolloverTooltip.x, top: rolloverTooltip.y - 8, transform: 'translateY(-100%)', zIndex: 60 }}
+          className="w-56 bg-[#1a1f2e] text-white rounded-[8px] p-3 shadow-xl pointer-events-none"
+        >
+          <div className="text-[13px] font-semibold mb-2.5">{rolloverTooltip.catName}</div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between gap-3">
+              <span className="text-[12px] text-[#9297a0]">
+                {rolloverTooltip.mode === 'year' ? 'Rollover from this year' : 'Rollover from last month'}
+              </span>
+              <span className={`text-[12px] font-medium flex-shrink-0 ${rolloverTooltip.rollover >= 0 ? 'text-[#27ae60]' : 'text-[#c0392b]'}`}>
+                {rolloverTooltip.rollover >= 0 ? '+' : ''}{formatMXNCompact(rolloverTooltip.rollover)}
+              </span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-[12px] text-[#9297a0]">Budget</span>
+              <span className="text-[12px] flex-shrink-0">{formatMXNCompact(rolloverTooltip.budget)}</span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-[12px] text-[#9297a0]">Actual</span>
+              <span className="text-[12px] flex-shrink-0">{formatMXNCompact(rolloverTooltip.actual)}</span>
+            </div>
+            <div className="flex justify-between gap-3 border-t border-[#2d3347] pt-1.5 mt-0.5">
+              <span className="text-[12px] font-semibold">Remaining</span>
+              <span className={`text-[12px] font-semibold flex-shrink-0 ${rolloverTooltip.remaining >= 0 ? 'text-[#27ae60]' : 'text-[#c0392b]'}`}>
+                {rolloverTooltip.remaining < 0 ? `-${formatMXNCompact(Math.abs(rolloverTooltip.remaining))}` : formatMXNCompact(rolloverTooltip.remaining)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Budget edit popover */}
       {popover && (

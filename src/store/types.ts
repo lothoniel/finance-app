@@ -4,6 +4,7 @@ export interface Category {
   icon: string // lucide icon name
   color: string
   budget?: number
+  rollover?: 'month' | 'year'
   categoryGroup?: string // e.g. 'Housing', 'Auto', 'Food & Dining'
   expenseType?: 'fixed' | 'variable'
 }

@@ -462,7 +462,36 @@ export default function Settings() {
             <div><label className={modalLabel}>Monthly Budget (optional)</label>
               <input type="number" min="0" step="1" value={editCat.budget ?? ''} placeholder="0"
                 onChange={(e) => setEditCat({ ...editCat, budget: e.target.value ? parseFloat(e.target.value) : undefined })}
-                className={modalInput} /></div>
+                className={modalInput} />
+              {editCat.budget && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <RotateCcw className="w-3 h-3 text-[#9297a0]" />
+                    <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">Roll over unspent budget</span>
+                  </div>
+                  <div className="flex bg-[#f0f2f5] dark:bg-[#252b3b] rounded-[8px] p-0.5 gap-0.5">
+                    {([undefined, 'month', 'year'] as const).map((mode) => (
+                      <button
+                        key={mode ?? 'off'}
+                        onClick={() => setEditCat({ ...editCat, rollover: mode })}
+                        className={`flex-1 py-1.5 rounded-[6px] text-[12px] font-medium transition-colors ${
+                          editCat.rollover === mode
+                            ? 'bg-white dark:bg-[#1e2330] text-[#181d26] dark:text-[#e8eaf0] shadow-sm'
+                            : 'text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0]'
+                        }`}
+                      >
+                        {mode === undefined ? 'Off' : mode === 'month' ? 'Month' : 'Year'}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-[11px] text-[#9297a0] mt-1">
+                    {!editCat.rollover && 'Each month starts fresh'}
+                    {editCat.rollover === 'month' && 'Unused budget from last month carries over'}
+                    {editCat.rollover === 'year' && 'Unused budget from all months this year carries over'}
+                  </div>
+                </div>
+              )}
+            </div>
             <div><label className={modalLabel}>Category Group (optional)</label>
               <input type="text" value={editCat.categoryGroup ?? ''} placeholder="e.g. Housing, Auto, Food & Dining"
                 onChange={(e) => setEditCat({ ...editCat, categoryGroup: e.target.value || undefined })}
