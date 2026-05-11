@@ -8,6 +8,7 @@ import { formatMXN, formatMXNCompact, formatDate, today } from '../lib/formatter
 import { calculateSettlement } from '../lib/settlement'
 import { sortByDateAsc, sortByDateDesc } from '../lib/filters'
 import { inputClass } from '../lib/styles'
+import { renderIcon } from '../lib/iconRenderer'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 
@@ -24,6 +25,7 @@ export default function SharedBalance() {
   const cashEntries = useStore((s) => s.cashEntries)
   const user1Name = useStore((s) => s.settings.user1Name)
   const user2Name = useStore((s) => s.settings.user2Name)
+  const categories = useStore((s) => s.settings.expenseCategories)
   const addCashEntry = useStore((s) => s.addCashEntry)
   const deleteCashEntry = useStore((s) => s.deleteCashEntry)
 
@@ -60,6 +62,8 @@ export default function SharedBalance() {
 
   const sharedExpenses = expensesSinceLastSettlement.filter((e) => e.shared)
   const recentShared = sortByDateDesc(sharedExpenses)
+  const user1Total = recentShared.filter(e => e.paidBy === 'user1').reduce((s, e) => s + e.amount, 0)
+  const user2Total = recentShared.filter(e => e.paidBy === 'user2').reduce((s, e) => s + e.amount, 0)
 
   function handleAddCash(e: React.FormEvent) {
     e.preventDefault()
@@ -164,7 +168,12 @@ export default function SharedBalance() {
       {/* Shared Expenses Since Last Settlement */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Shared Expenses Since Last Settlement</span>
+          <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">
+            Shared Expenses Since Last Settlement
+            {recentShared.length > 0 && (
+              <span className="ml-1.5 text-[12px] font-normal text-[#9297a0]">({recentShared.length})</span>
+            )}
+          </span>
           <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
         </div>
         <div className={`${CARD} overflow-hidden`}>
@@ -183,19 +192,54 @@ export default function SharedBalance() {
                 )}
                 {recentShared.map((e, i, arr) => {
                   const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
+                  const cat = categories.find(c => c.id === e.category)
                   return (
                     <tr key={e.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                       <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(e.date)}</td>
                       <td className={`px-4 py-3 text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{e.description}</td>
-                      <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{e.category}</td>
                       <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>
-                        {e.paidBy === 'user1' ? user1Name : user2Name}
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-[4px] flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: `${cat?.color ?? '#9297a0'}18` }}>
+                            {renderIcon(cat?.icon ?? 'Tag', 'w-3 h-3', cat?.color ?? '#9297a0')}
+                          </span>
+                          <span>{cat?.name ?? e.category}</span>
+                        </div>
                       </td>
-                      <td className={`px-4 py-3 text-right text-[13px] font-medium text-[#c0392b] ${border}`}>{formatMXN(e.amount)}</td>
+                      <td className={`px-4 py-3 ${border}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                          e.paidBy === 'user1'
+                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                            : 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-300'
+                        }`}>
+                          {e.paidBy === 'user1' ? user1Name : user2Name}
+                        </span>
+                      </td>
+                      <td className={`px-4 py-3 text-right ${border}`}>
+                        <span className={e.amount > 1000
+                          ? 'text-[13px] font-bold text-[#c0392b] bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full'
+                          : 'text-[13px] font-medium text-[#c0392b]'}>
+                          {formatMXN(e.amount)}
+                        </span>
+                      </td>
                     </tr>
                   )
                 })}
               </tbody>
+              {recentShared.length > 0 && (
+                <tfoot>
+                  <tr className="border-t-2 border-[#e8e8e8] dark:border-[#2d3347] bg-[#f8fafc] dark:bg-[#1a1f2e]">
+                    <td colSpan={3} className="px-4 py-2.5 text-[11px] font-semibold text-[#9297a0] uppercase tracking-wider">Totals</td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[11px] text-blue-600 dark:text-blue-300">{user1Name}: {formatMXN(user1Total)}</span>
+                        <span className="text-[11px] text-violet-600 dark:text-violet-300">{user2Name}: {formatMXN(user2Total)}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-[13px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMXN(settlement.totalShared)}</td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
