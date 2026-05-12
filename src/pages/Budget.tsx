@@ -206,6 +206,7 @@ export default function Budget() {
   const [rolloverTooltip, setRolloverTooltip] = useState<{
     catName: string; rollover: number; budget: number; actual: number; remaining: number; x: number; y: number; mode: 'month' | 'year'
   } | null>(null)
+  const [rolloverVisible, setRolloverVisible] = useState(true)
 
   const expenses = useStore(s => s.expenses)
   const paychecks = useStore(s => s.paychecks)
@@ -216,9 +217,31 @@ export default function Budget() {
 
   const scale = PERIOD_SCALE[periodMode] ?? 1
 
+  const todayDate = useMemo(() => new Date(), [])
+  const todayYear = todayDate.getFullYear()
+  const todayMonth = todayDate.getMonth() + 1
+
+  const isFuturePeriod = useMemo(() => {
+    if (periodMode !== 'month') return false
+    const y = periodValue.year ?? todayYear
+    const m = periodValue.month ?? 1
+    return y > todayYear || (y === todayYear && m > todayMonth)
+  }, [periodMode, periodValue, todayYear, todayMonth])
+
+  const isCurrentMonth = useMemo(() => {
+    if (periodMode !== 'month') return false
+    return (periodValue.year ?? todayYear) === todayYear && (periodValue.month ?? 1) === todayMonth
+  }, [periodMode, periodValue, todayYear, todayMonth])
+
+  const isInteractivePeriod = isFuturePeriod || isCurrentMonth
+
   function handlePeriodChange(mode: PeriodMode, value: PeriodValue) {
     setPeriodMode(mode)
     setPeriodValue(value)
+    const y = value.year ?? todayYear
+    const m = value.month ?? 1
+    const willBeFuture = mode === 'month' && (y > todayYear || (y === todayYear && m > todayMonth))
+    setRolloverVisible(!willBeFuture)
   }
 
   const filteredExpenses = useMemo(() => filterByPeriod(expenses, periodMode, periodValue), [expenses, periodMode, periodValue])
@@ -265,6 +288,7 @@ export default function Budget() {
 
   const rolloverByCategory = useMemo(() => {
     if (periodMode !== 'month') return {}
+    if (isInteractivePeriod && !rolloverVisible) return {}
     const result: Record<string, number> = {}
     const year = periodValue.year!
     const month = periodValue.month ?? 1
@@ -278,8 +302,9 @@ export default function Budget() {
           .reduce((s, e) => s + e.amount, 0)
         result[cat.id] = cat.budget - prevActual
       } else if (cat.rollover === 'year') {
+        const cap = year === todayYear ? Math.min(month, todayMonth) : month
         let balance = 0
-        for (let m = 1; m < month; m++) {
+        for (let m = 1; m < cap; m++) {
           const prefix = `${year}-${String(m).padStart(2, '0')}`
           const monthActual = expenses
             .filter(e => e.category === cat.id && e.date.startsWith(prefix))
@@ -290,7 +315,7 @@ export default function Budget() {
       }
     }
     return result
-  }, [periodMode, periodValue, categories, expenses])
+  }, [periodMode, periodValue, categories, expenses, isFuturePeriod, isCurrentMonth, rolloverVisible, todayYear, todayMonth])
 
   const actualByCategory = useMemo(() => {
     const map: Record<string, number> = {}
@@ -548,14 +573,15 @@ export default function Budget() {
                           <div className={`${COL} text-[13px]`}>
                             {hasRollover ? (
                               <div
-                                className="inline-flex items-center gap-1 justify-end w-full cursor-default"
+                                className={`inline-flex items-center gap-1 justify-end w-full ${isInteractivePeriod ? 'cursor-pointer' : 'cursor-default'}`}
+                                onClick={isInteractivePeriod ? (e => { e.stopPropagation(); setRolloverVisible(v => !v) }) : undefined}
                                 onMouseEnter={e => {
                                   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                                   setRolloverTooltip({ catName: cat.name, rollover, budget, actual, remaining, x: rect.right, y: rect.top, mode: cat.rollover as 'month' | 'year' })
                                 }}
                                 onMouseLeave={() => setRolloverTooltip(null)}
                               >
-                                <RotateCcw className="w-3 h-3 text-[#9297a0]" />
+                                <RotateCcw className={`w-3 h-3 ${!rolloverVisible && isFuturePeriod ? 'text-[#c8cdd5] dark:text-[#3d4357]' : 'text-[#9297a0]'}`} />
                                 <RemainingCell remaining={remaining} hasBudget />
                               </div>
                             ) : (
@@ -700,12 +726,12 @@ export default function Budget() {
       {rolloverTooltip && (
         <div
           style={{ position: 'fixed', right: window.innerWidth - rolloverTooltip.x, top: rolloverTooltip.y - 8, transform: 'translateY(-100%)', zIndex: 60 }}
-          className="w-56 bg-[#1a1f2e] text-white rounded-[8px] p-3 shadow-xl pointer-events-none"
+          className="w-56 bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] text-[#181d26] dark:text-[#e8eaf0] rounded-[8px] p-3 shadow-xl pointer-events-none"
         >
           <div className="text-[13px] font-semibold mb-2.5">{rolloverTooltip.catName}</div>
           <div className="space-y-1.5">
             <div className="flex justify-between gap-3">
-              <span className="text-[12px] text-[#9297a0]">
+              <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">
                 {rolloverTooltip.mode === 'year' ? 'Rollover from this year' : 'Rollover from last month'}
               </span>
               <span className={`text-[12px] font-medium flex-shrink-0 ${rolloverTooltip.rollover >= 0 ? 'text-[#27ae60]' : 'text-[#c0392b]'}`}>
@@ -713,14 +739,14 @@ export default function Budget() {
               </span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-[12px] text-[#9297a0]">Budget</span>
+              <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">Budget</span>
               <span className="text-[12px] flex-shrink-0">{formatMXNCompact(rolloverTooltip.budget)}</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-[12px] text-[#9297a0]">Actual</span>
+              <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">Actual</span>
               <span className="text-[12px] flex-shrink-0">{formatMXNCompact(rolloverTooltip.actual)}</span>
             </div>
-            <div className="flex justify-between gap-3 border-t border-[#2d3347] pt-1.5 mt-0.5">
+            <div className="flex justify-between gap-3 border-t border-[#f0f2f5] dark:border-[#2d3347] pt-1.5 mt-0.5">
               <span className="text-[12px] font-semibold">Remaining</span>
               <span className={`text-[12px] font-semibold flex-shrink-0 ${rolloverTooltip.remaining >= 0 ? 'text-[#27ae60]' : 'text-[#c0392b]'}`}>
                 {rolloverTooltip.remaining < 0 ? `-${formatMXNCompact(Math.abs(rolloverTooltip.remaining))}` : formatMXNCompact(rolloverTooltip.remaining)}
