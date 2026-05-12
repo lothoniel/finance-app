@@ -45,6 +45,7 @@ export const defaultSettings: AppSettings = {
     { name: 'Rental', icon: 'Building2', color: '#14B8A6' },
     { name: 'Others', icon: 'Tag', color: '#64748B' },
   ],
+  splitRatio: 0.5,
 }
 
 export const seedExpenses: Expense[] = [

@@ -327,7 +327,7 @@ export default function Reports() {
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
         {[
           { label: 'TOTAL INCOME', value: formatMXNCompact(kpiIncome), color: '#22c55e' },
-          { label: 'CARD CHARGES', value: formatMXNCompact(kpiExpenses), color: '#ef4444' },
+          { label: 'EXPENSES', value: formatMXNCompact(kpiExpenses), color: '#ef4444' },
           { label: 'NET CASH FLOW', value: formatMXNCompact(kpiSavings), color: kpiSavings >= 0 ? '#22c55e' : '#ef4444' },
           { label: 'SAVINGS RATE', value: `${kpiSavingsRate.toFixed(1)}%`, color: '#22c55e' },
         ].map(kpi => (

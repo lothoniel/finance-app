@@ -115,16 +115,23 @@ export default function Dashboard() {
     () => filterByPeriod(debtPayments, activeTab, periodValue),
     [debtPayments, activeTab, periodValue]
   )
+  const filteredInvestments = useMemo(
+    () => filterByPeriod(investmentMovements, activeTab, periodValue),
+    [investmentMovements, activeTab, periodValue]
+  )
 
   const periodIncome =
     filteredPaychecks.reduce((s, p) => s + p.mxnAmount, 0) +
     filteredTransfers.reduce((s, t) => s + t.amount, 0)
   const periodExpenses = filteredExpenses.reduce((s, e) => s + e.amount, 0)
   const periodDebt = filteredDebt.reduce((s, d) => s + d.amount, 0)
+  const periodInvestDeposits = filteredInvestments
+    .filter(m => m.type === 'DEPOSIT')
+    .reduce((s, m) => s + m.amount, 0)
   const periodNetFlow = periodIncome - periodExpenses - periodDebt
   const periodSavingsRate =
     periodIncome > 0
-      ? Math.max(((periodIncome - periodExpenses - periodDebt) / periodIncome) * 100, 0)
+      ? Math.min(100, Math.max(0, ((periodIncome - periodDebt - periodInvestDeposits) / periodIncome) * 100))
       : 0
 
   const totalPortfolioBalance = portfolios.reduce((s, p) => s + p.balance, 0)

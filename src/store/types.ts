@@ -17,6 +17,7 @@ export interface Expense {
   category: string
   paidBy: 'user1' | 'user2'
   shared: boolean
+  splitRatio?: number // user1's proportion (0–1); undefined falls back to settings default
   subCategory?: string
 }
 
@@ -142,4 +143,5 @@ export interface AppSettings {
   creditCards: CreditCard[]
   transferCategories: TransferCategory[]
   anthropicApiKey?: string
+  splitRatio: number // user1's proportion of shared expenses (0–1, default 0.5)
 }

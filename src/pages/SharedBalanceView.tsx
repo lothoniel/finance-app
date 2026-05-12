@@ -37,10 +37,17 @@ export default function SharedBalanceView() {
   const [paidByFilter, setPaidByFilter] = useState<'all' | 'user1' | 'user2'>('all')
 
   const snapshot = useMemo<BalanceSnapshot | null>(() => {
-    const hash = window.location.hash.slice(1)
-    if (!hash) return null
+    const raw = new URLSearchParams(window.location.search).get('d') ?? ''
+    if (!raw) return null
     try {
-      const json = LZString.decompressFromEncodedURIComponent(hash)
+      let json = LZString.decompressFromEncodedURIComponent(raw)
+      if (!json) {
+        try {
+          json = LZString.decompressFromEncodedURIComponent(decodeURIComponent(raw))
+        } catch {
+          // decodeURIComponent threw on malformed input — give up
+        }
+      }
       if (!json) return null
       return JSON.parse(json) as BalanceSnapshot
     } catch {
@@ -270,7 +277,7 @@ export default function SharedBalanceView() {
                     const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
                     const cat = categories.find(c => c.id === e.category)
                     return (
-                      <tr key={e.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
+                      <tr key={i} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                         <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(e.date)}</td>
                         <td className={`px-4 py-3 text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{e.description}</td>
                         <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>
@@ -329,8 +336,8 @@ export default function SharedBalanceView() {
               <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
             </div>
             <div className={`${CARD} divide-y divide-[#e8e8e8] dark:divide-[#2d3347]`}>
-              {sortByDateDesc(cashEntries).map((c) => (
-                <div key={c.id} className="flex items-center justify-between px-5 py-3">
+              {sortByDateDesc(cashEntries).map((c, i) => (
+                <div key={i} className="flex items-center justify-between px-5 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{c.note || 'Cash'}</p>
                     <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">
@@ -352,8 +359,8 @@ export default function SharedBalanceView() {
               <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
             </div>
             <div className={`${CARD} divide-y divide-[#e8e8e8] dark:divide-[#2d3347]`}>
-              {sortByDateDesc(snapshotSettlements).map((s) => (
-                <div key={s.id} className="flex items-center justify-between px-5 py-3">
+              {sortByDateDesc(snapshotSettlements).map((s, i) => (
+                <div key={i} className="flex items-center justify-between px-5 py-3">
                   <div>
                     <p className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{s.description || 'Settlement'}</p>
                     <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">

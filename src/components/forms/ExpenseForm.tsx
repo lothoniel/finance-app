@@ -21,6 +21,7 @@ export default function ExpenseForm({ open, onClose, expense, editRecurring }: E
   const categories = useStore((s) => s.settings.expenseCategories)
   const user1Name = useStore((s) => s.settings.user1Name)
   const user2Name = useStore((s) => s.settings.user2Name)
+  const splitRatio = useStore((s) => s.settings.splitRatio)
   const addExpense = useStore((s) => s.addExpense)
   const updateExpense = useStore((s) => s.updateExpense)
   const addRecurringExpense = useStore((s) => s.addRecurringExpense)
@@ -104,6 +105,7 @@ export default function ExpenseForm({ open, onClose, expense, editRecurring }: E
       subCategory: form.subCategory || undefined,
       paidBy: form.paidBy,
       shared: form.shared,
+      splitRatio: form.shared ? (expense?.splitRatio ?? splitRatio) : undefined,
     }
     if (expense) updateExpense(expense.id, data)
     else addExpense(data)

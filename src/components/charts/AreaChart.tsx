@@ -21,7 +21,7 @@ interface AreaChartProps {
 
 export default function AreaChart({ data, areas, xKey, height = 300, fillOpacity = 0.3 }: AreaChartProps) {
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} debounce={50}>
       <ReAreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
         <defs>
           {areas.map((area) => (

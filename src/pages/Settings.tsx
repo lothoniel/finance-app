@@ -1,15 +1,18 @@
 import { generateId } from '../lib/id'
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { Trash2, Plus, RotateCcw, Download, Upload, AlertTriangle, Pencil, Pause, Play } from 'lucide-react'
 import { useStore } from '../store'
 import type { Category, CreditCard, TransferCategory } from '../store/types'
 import SectionTitle from '../components/ui/SectionTitle'
 import Modal from '../components/ui/Modal'
+import SplitRatioModal from '../components/forms/SplitRatioModal'
 import { exportToExcel, exportToXML } from '../lib/exporters'
 import { renderIcon } from '../lib/iconRenderer'
 import { formatMXN } from '../lib/formatters'
 import IconPicker from '../components/ui/IconPicker'
 import { inputClass } from '../lib/styles'
+import { calculateSettlement } from '../lib/settlement'
+import { sortByDateAsc } from '../lib/filters'
 
 const COLOR_OPTIONS = [
   '#F59E0B', '#3B82F6', '#6366F1', '#64748B', '#10B981', '#8B5CF6',
@@ -25,10 +28,16 @@ export default function Settings() {
   const recurringExpenses = useStore((s) => s.recurringExpenses)
   const updateRecurringExpense = useStore((s) => s.updateRecurringExpense)
   const deleteRecurringExpense = useStore((s) => s.deleteRecurringExpense)
+  const updateSharedExpensesSplitRatio = useStore((s) => s.updateSharedExpensesSplitRatio)
+  const expenses = useStore((s) => s.expenses)
+  const settlements = useStore((s) => s.settlements)
+  const cashEntries = useStore((s) => s.cashEntries)
   const store = useStore()
 
   const [user1, setUser1] = useState(settings.user1Name)
   const [user2, setUser2] = useState(settings.user2Name)
+  const [splitUser1Pct, setSplitUser1Pct] = useState(Math.round(settings.splitRatio * 100))
+  const [splitModalOpen, setSplitModalOpen] = useState(false)
   const [newCatName, setNewCatName] = useState('')
   const [newCatIcon, setNewCatIcon] = useState('Tag')
   const [newCatColor, setNewCatColor] = useState('#181d26')
@@ -55,6 +64,32 @@ export default function Settings() {
 
   function saveNames() {
     updateSettings({ user1Name: user1, user2Name: user2 })
+  }
+
+  const lastSettlementDate = useMemo(() => {
+    if (settlements.length === 0) return null
+    const sorted = sortByDateAsc(settlements)
+    let lastZeroDate: string | null = null
+    for (const s of sorted) {
+      const expBefore = expenses.filter((e) => e.shared && e.date <= s.date)
+      const stlBefore = settlements.filter((st) => st.date <= s.date)
+      const ceBefore = cashEntries.filter((c) => c.date <= s.date)
+      if (calculateSettlement(expBefore, stlBefore, ceBefore).netSettlement < 1) {
+        lastZeroDate = s.date
+      }
+    }
+    return lastZeroDate
+  }, [settlements, expenses, cashEntries])
+
+  function handleSplitConfirm(scope: 'following' | 'current' | 'allTime') {
+    const newRatio = splitUser1Pct / 100
+    updateSettings({ splitRatio: newRatio })
+    if (scope === 'current') {
+      updateSharedExpensesSplitRatio(newRatio, lastSettlementDate ?? undefined)
+    } else if (scope === 'allTime') {
+      updateSharedExpensesSplitRatio(newRatio)
+    }
+    showStatus('success', 'Split ratio updated')
   }
 
   function addCategory() {
@@ -220,6 +255,54 @@ export default function Settings() {
               </div>
               <button onClick={saveNames} className="bg-[#181d26] text-white rounded-[8px] px-4 py-2 text-[13px] font-medium hover:bg-[#0d1218] transition-colors">
                 Save Names
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Shared Expenses Split */}
+        <div>
+          <SectionTitle>Shared Expenses Split</SectionTitle>
+          <div className={card}>
+            <div className="p-5">
+              <p className="text-[13px] text-[#41454d] dark:text-[#9297a0] mb-4">
+                Set how shared expenses are divided. The percentages must add up to 100%.
+              </p>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className={modalLabel}>{settings.user1Name} (%)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={splitUser1Pct}
+                    onChange={(e) => {
+                      const v = Math.min(99, Math.max(1, parseInt(e.target.value) || 50))
+                      setSplitUser1Pct(v)
+                    }}
+                    className={modalInput}
+                  />
+                </div>
+                <div>
+                  <label className={modalLabel}>{settings.user2Name} (%)</label>
+                  <input
+                    type="number"
+                    value={100 - splitUser1Pct}
+                    readOnly
+                    className={`${modalInput} opacity-60 cursor-not-allowed`}
+                  />
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (splitUser1Pct / 100 !== settings.splitRatio) {
+                    setSplitModalOpen(true)
+                  }
+                }}
+                disabled={splitUser1Pct / 100 === settings.splitRatio}
+                className="bg-[#181d26] text-white rounded-[8px] px-4 py-2 text-[13px] font-medium hover:bg-[#0d1218] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Save Split
               </button>
             </div>
           </div>
@@ -565,6 +648,16 @@ export default function Settings() {
           </div>
         )}
       </Modal>
+
+      <SplitRatioModal
+        open={splitModalOpen}
+        onClose={() => setSplitModalOpen(false)}
+        newRatio={splitUser1Pct / 100}
+        user1Name={settings.user1Name}
+        user2Name={settings.user2Name}
+        lastSettlementDate={lastSettlementDate}
+        onConfirm={handleSplitConfirm}
+      />
     </div>
   )
 }

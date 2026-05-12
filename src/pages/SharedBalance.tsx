@@ -118,6 +118,21 @@ export default function SharedBalance() {
   const chartTotal = displayedShared.reduce((s, e) => s + e.amount, 0)
   const maxChartValue = chartData[0]?.value ?? 1
 
+  async function copyToClipboard(text: string) {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text)
+      return
+    }
+    const el = document.createElement('textarea')
+    el.value = text
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+  }
+
   async function handleShare() {
     const snapshot = {
       v: 1,
@@ -126,15 +141,28 @@ export default function SharedBalance() {
       user2Name,
       splitRatio,
       lastSettlementDate,
-      expenses: expensesSinceLastSettlement,
-      cashEntries: cashEntriesSinceLastSettlement,
-      settlements: settlementsSinceLastSettlement,
-      categories,
+      expenses: expensesSinceLastSettlement.map(({ date, description, amount, category, paidBy, shared, splitRatio: sr }) => ({
+        date, description, amount, category, paidBy, shared,
+        ...(sr !== undefined ? { splitRatio: sr } : {}),
+      })),
+      cashEntries: cashEntriesSinceLastSettlement.map(({ date, amount, paidBy, note }) => ({ date, amount, paidBy, note })),
+      settlements: settlementsSinceLastSettlement.map(({ date, amount, paidBy, description }) => ({ date, amount, paidBy, description })),
+      categories: categories.map(({ id, name, icon, color }) => ({ id, name, icon, color })),
     }
     const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(snapshot))
     const origin = await resolveOrigin()
-    const url = `${origin}/shared-balance/view#${compressed}`
-    navigator.clipboard.writeText(url)
+    const url = `${origin}/shared-balance/view?d=${compressed}`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ url })
+      } catch {
+        // user cancelled
+      }
+      return
+    }
+
+    await copyToClipboard(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
