@@ -20,6 +20,10 @@ import type {
 
 const PURPLE = 'FF7C3AED'
 const WHITE = 'FFFFFFFF'
+const LIGHT_GRAY = 'FFF2F2F2'
+const LIGHT_PURPLE = 'FFF3F0FD'
+const GREEN_FILL = 'FFD4EDDA'
+const RED_FILL = 'FFFDE8E8'
 const MXN_FMT = '#,##0.00'
 const DATE_FMT = 'yyyy-mm-dd'
 const NUM_FMT = '0.00'
@@ -53,8 +57,11 @@ function triggerDownload(blob: Blob, filename: string) {
   const a = document.createElement('a')
   a.href = url
   a.download = filename
+  a.style.display = 'none'
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function parseLocalDate(s: string): Date {
@@ -79,7 +86,8 @@ function addDataSheet(
   wb: ExcelJS.Workbook,
   name: string,
   cols: ColDef[],
-  rows: CellValue[][]
+  rows: CellValue[][],
+  totalsColIndices?: number[]
 ) {
   const ws = wb.addWorksheet(name)
   ws.columns = cols.map((c) => ({ width: c.width }))
@@ -90,14 +98,39 @@ function addDataSheet(
   ws.views = [{ state: 'frozen', ySplit: 1, xSplit: 0 }]
   ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } }
 
-  for (const rowData of rows) {
+  rows.forEach((rowData, rowIdx) => {
     const row = ws.addRow(rowData)
+
+    if (rowIdx % 2 === 1) {
+      for (let c = 1; c <= cols.length; c++) {
+        row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_GRAY } }
+      }
+    }
+
     cols.forEach((col, i) => {
       if (!col.numFmt) return
       const cell = row.getCell(i + 1)
       if (cell.value !== null && cell.value !== undefined && cell.value !== '') {
         cell.numFmt = col.numFmt
       }
+    })
+  })
+
+  if (totalsColIndices && totalsColIndices.length > 0) {
+    const totalsData: CellValue[] = cols.map((_, colIdx) => {
+      if (colIdx === 0) return 'TOTAL'
+      if (!totalsColIndices.includes(colIdx)) return ''
+      return rows.reduce((sum, row) => sum + (typeof row[colIdx] === 'number' ? (row[colIdx] as number) : 0), 0)
+    })
+    const totalRow = ws.addRow(totalsData)
+    for (let c = 1; c <= cols.length; c++) {
+      const cell = totalRow.getCell(c)
+      cell.font = { bold: true }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_PURPLE } }
+    }
+    totalsColIndices.forEach((colIdx) => {
+      const col = cols[colIdx]
+      if (col.numFmt) totalRow.getCell(colIdx + 1).numFmt = col.numFmt
     })
   }
 }
@@ -244,6 +277,76 @@ function addSummarySheet(wb: ExcelJS.Workbook, data: ExportData) {
   }
 }
 
+function addMonthlySummarySheet(wb: ExcelJS.Workbook, data: ExportData) {
+  const monthSet = new Set<string>()
+  const collect = (items: { date: string }[]) => items.forEach((i) => monthSet.add(i.date.slice(0, 7)))
+  collect(data.expenses)
+  collect(data.paychecks)
+  collect(data.transfers)
+  collect(data.debtPayments)
+
+  const months = [...monthSet].sort()
+  if (months.length === 0) return
+
+  const ws = wb.addWorksheet('Monthly Summary')
+  ws.columns = [{ width: 12 }, { width: 16 }, { width: 16 }, { width: 18 }, { width: 14 }]
+
+  const headerRow = ws.addRow(['Month', 'Income', 'Expenses', 'Debt Payments', 'Net Flow'])
+  styleHeaderRow(headerRow)
+  ws.views = [{ state: 'frozen', ySplit: 1, xSplit: 0 }]
+  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 5 } }
+
+  const rowsData = months.map((month) => {
+    const income =
+      data.paychecks.filter((p) => p.date.startsWith(month)).reduce((s, p) => s + p.mxnAmount, 0) +
+      data.transfers.filter((t) => t.date.startsWith(month)).reduce((s, t) => s + t.amount, 0)
+    const expenses = data.expenses.filter((e) => e.date.startsWith(month)).reduce((s, e) => s + e.amount, 0)
+    const debt = data.debtPayments.filter((d) => d.date.startsWith(month)).reduce((s, d) => s + d.amount, 0)
+    const netFlow = income - expenses - debt
+    return [month, income, expenses, debt, netFlow] as CellValue[]
+  })
+
+  rowsData.forEach((rowData, rowIdx) => {
+    const row = ws.addRow(rowData)
+
+    if (rowIdx % 2 === 1) {
+      for (let c = 1; c <= 5; c++) {
+        row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_GRAY } }
+      }
+    }
+
+    for (let c = 2; c <= 5; c++) row.getCell(c).numFmt = MXN_FMT
+
+    const netFlowVal = rowData[4] as number
+    const netFlowCell = row.getCell(5)
+    if (netFlowVal > 0) {
+      netFlowCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GREEN_FILL } }
+    } else if (netFlowVal < 0) {
+      netFlowCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: RED_FILL } }
+    }
+  })
+
+  // Totals row
+  const totalIncome = rowsData.reduce((s, r) => s + (r[1] as number), 0)
+  const totalExpenses = rowsData.reduce((s, r) => s + (r[2] as number), 0)
+  const totalDebt = rowsData.reduce((s, r) => s + (r[3] as number), 0)
+  const totalNet = rowsData.reduce((s, r) => s + (r[4] as number), 0)
+
+  const totalRow = ws.addRow(['TOTAL', totalIncome, totalExpenses, totalDebt, totalNet])
+  for (let c = 1; c <= 5; c++) {
+    totalRow.getCell(c).font = { bold: true }
+    totalRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_PURPLE } }
+  }
+  for (let c = 2; c <= 5; c++) totalRow.getCell(c).numFmt = MXN_FMT
+
+  const totalNetCell = totalRow.getCell(5)
+  if (totalNet > 0) {
+    totalNetCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GREEN_FILL } }
+  } else if (totalNet < 0) {
+    totalNetCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: RED_FILL } }
+  }
+}
+
 export async function exportToExcel(data: ExportData): Promise<void> {
   const wb = new ExcelJS.Workbook()
   wb.creator = 'FinanceApp'
@@ -253,6 +356,7 @@ export async function exportToExcel(data: ExportData): Promise<void> {
   const portfolioMap = Object.fromEntries(data.portfolios.map((p) => [p.id, p.name]))
 
   addSummarySheet(wb, data)
+  addMonthlySummarySheet(wb, data)
 
   addDataSheet(wb, 'Expenses', [
     { header: 'Date',         width: 13, numFmt: DATE_FMT },
@@ -262,11 +366,10 @@ export async function exportToExcel(data: ExportData): Promise<void> {
     { header: 'Paid By',      width: 14 },
     { header: 'Shared',       width: 9 },
     { header: 'Amount',       width: 14, numFmt: MXN_FMT },
-    { header: 'ID',           width: 14 },
-  ], data.expenses.map((e) => [
+  ], sortByDateDesc(data.expenses).map((e) => [
     parseLocalDate(e.date), e.category, e.subCategory ?? '', e.description,
-    u(e.paidBy), e.shared ? 'Yes' : 'No', e.amount, e.id,
-  ]))
+    u(e.paidBy), e.shared ? 'Yes' : 'No', e.amount,
+  ]), [6])
 
   addDataSheet(wb, 'Paychecks', [
     { header: 'Date',          width: 13, numFmt: DATE_FMT },
@@ -274,29 +377,29 @@ export async function exportToExcel(data: ExportData): Promise<void> {
     { header: 'USD Amount',    width: 13, numFmt: MXN_FMT },
     { header: 'Exchange Rate', width: 15, numFmt: NUM_FMT },
     { header: 'Gross Amount',  width: 15, numFmt: MXN_FMT },
-  ], data.paychecks.map((p) => [
+  ], sortByDateDesc(data.paychecks).map((p) => [
     parseLocalDate(p.date), p.mxnAmount, p.usdAmount ?? null, p.exchangeRate ?? null, p.grossAmount ?? null,
-  ]))
+  ]), [1])
 
   addDataSheet(wb, 'Manual Taxes', [
     { header: 'Date',        width: 13, numFmt: DATE_FMT },
     { header: 'Description', width: 32 },
     { header: 'Amount',      width: 14, numFmt: MXN_FMT },
-  ], data.manualTaxes.map((t) => [parseLocalDate(t.date), t.description, t.amount]))
+  ], sortByDateDesc(data.manualTaxes).map((t) => [parseLocalDate(t.date), t.description, t.amount]), [2])
 
   addDataSheet(wb, 'Transfers', [
     { header: 'Date',        width: 13, numFmt: DATE_FMT },
     { header: 'Category',    width: 20 },
     { header: 'Description', width: 32 },
     { header: 'Amount',      width: 14, numFmt: MXN_FMT },
-  ], data.transfers.map((t) => [parseLocalDate(t.date), t.category, t.description, t.amount]))
+  ], sortByDateDesc(data.transfers).map((t) => [parseLocalDate(t.date), t.category, t.description, t.amount]), [3])
 
   addDataSheet(wb, 'Debt Payments', [
     { header: 'Date',        width: 13, numFmt: DATE_FMT },
     { header: 'Card',        width: 22 },
     { header: 'Description', width: 32 },
     { header: 'Amount',      width: 14, numFmt: MXN_FMT },
-  ], data.debtPayments.map((d) => [parseLocalDate(d.date), d.card, d.description, d.amount]))
+  ], sortByDateDesc(data.debtPayments).map((d) => [parseLocalDate(d.date), d.card, d.description, d.amount]), [3])
 
   addDataSheet(wb, 'Portfolios', [
     { header: 'Name',         width: 22 },
@@ -307,7 +410,7 @@ export async function exportToExcel(data: ExportData): Promise<void> {
     { header: 'Renews Date',  width: 14, numFmt: DATE_FMT },
   ], data.portfolios.map((p) => [
     p.name, p.type, p.apy, p.balance, parseLocalDate(p.updatedDate), parseLocalDate(p.renewsDate),
-  ]))
+  ]), [3])
 
   addDataSheet(wb, 'Investment Movements', [
     { header: 'Date',        width: 13, numFmt: DATE_FMT },
@@ -315,23 +418,23 @@ export async function exportToExcel(data: ExportData): Promise<void> {
     { header: 'Description', width: 32 },
     { header: 'Type',        width: 12 },
     { header: 'Amount',      width: 14, numFmt: MXN_FMT },
-  ], data.investmentMovements.map((m) => [
+  ], sortByDateDesc(data.investmentMovements).map((m) => [
     parseLocalDate(m.date), portfolioMap[m.portfolioId] ?? m.portfolioId, m.description, m.type, m.amount,
-  ]))
+  ]), [4])
 
   addDataSheet(wb, 'Cash Entries', [
     { header: 'Date',    width: 13, numFmt: DATE_FMT },
     { header: 'Paid By', width: 14 },
     { header: 'Amount',  width: 14, numFmt: MXN_FMT },
     { header: 'Note',    width: 34 },
-  ], data.cashEntries.map((c) => [parseLocalDate(c.date), u(c.paidBy), c.amount, c.note]))
+  ], sortByDateDesc(data.cashEntries).map((c) => [parseLocalDate(c.date), u(c.paidBy), c.amount, c.note]), [2])
 
   addDataSheet(wb, 'Settlements', [
     { header: 'Date',        width: 13, numFmt: DATE_FMT },
     { header: 'Amount',      width: 14, numFmt: MXN_FMT },
     { header: 'Paid By',     width: 14 },
     { header: 'Description', width: 32 },
-  ], data.settlements.map((s) => [parseLocalDate(s.date), s.amount, u(s.paidBy), s.description]))
+  ], sortByDateDesc(data.settlements).map((s) => [parseLocalDate(s.date), s.amount, u(s.paidBy), s.description]), [1])
 
   addDataSheet(wb, 'Mortgage Payments', [
     { header: 'Date',          width: 13, numFmt: DATE_FMT },
@@ -339,18 +442,18 @@ export async function exportToExcel(data: ExportData): Promise<void> {
     { header: 'Extra Capital', width: 15, numFmt: MXN_FMT },
     { header: 'Balance After', width: 15, numFmt: MXN_FMT },
     { header: 'Note',          width: 34 },
-  ], (data.mortgagePayments ?? []).map((p) => [
+  ], sortByDateDesc(data.mortgagePayments ?? []).map((p) => [
     parseLocalDate(p.date), p.totalPaid, p.extraCapital, p.balanceAfter, p.note ?? '',
-  ]))
+  ]), [1, 2])
 
   addDataSheet(wb, 'Mortgage Contributions', [
     { header: 'Date',        width: 13, numFmt: DATE_FMT },
     { header: 'By',          width: 16 },
     { header: 'Description', width: 32 },
     { header: 'Amount',      width: 14, numFmt: MXN_FMT },
-  ], (data.mortgageContributions ?? []).map((c) => [
+  ], sortByDateDesc(data.mortgageContributions ?? []).map((c) => [
     parseLocalDate(c.date), c.by, c.description, c.amount,
-  ]))
+  ]), [3])
 
   const buffer = await wb.xlsx.writeBuffer()
   triggerDownload(
