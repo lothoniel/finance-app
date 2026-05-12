@@ -6,6 +6,7 @@ import type { Category, CreditCard, TransferCategory } from '../store/types'
 import SectionTitle from '../components/ui/SectionTitle'
 import Modal from '../components/ui/Modal'
 import SplitRatioModal from '../components/forms/SplitRatioModal'
+import SidebarCustomizer from '../components/settings/SidebarCustomizer'
 import { exportToExcel, exportToXML } from '../lib/exporters'
 import { renderIcon } from '../lib/iconRenderer'
 import { formatMXN } from '../lib/formatters'
@@ -54,6 +55,7 @@ export default function Settings() {
   const [editCardOriginalName, setEditCardOriginalName] = useState<string>('')
   const [editTransferCat, setEditTransferCat] = useState<TransferCategory | null>(null)
   const [editTransferCatOriginalName, setEditTransferCatOriginalName] = useState<string>('')
+  const [sidebarCustomizerOpen, setSidebarCustomizerOpen] = useState(false)
 
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -481,6 +483,29 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Sidebar */}
+        <div>
+          <SectionTitle>Sidebar</SectionTitle>
+          <div className={card}>
+            <div className="p-5 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">Reorder pages, hide items, or switch to a flat layout.</p>
+                {settings.sidebarConfig && (
+                  <span className="inline-block mt-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#f0f2f5] dark:bg-[#252b3b] text-[#41454d] dark:text-[#9297a0]">
+                    Custom
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setSidebarCustomizerOpen(true)}
+                className="flex-shrink-0 border border-[#e8e8e8] dark:border-[#2d3347] text-[#181d26] dark:text-[#e8eaf0] rounded-[8px] px-4 py-2 text-[13px] font-medium hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors"
+              >
+                Customize Sidebar
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Data Management */}
         <div>
           <SectionTitle>Data Management</SectionTitle>
@@ -657,6 +682,13 @@ export default function Settings() {
         user2Name={settings.user2Name}
         lastSettlementDate={lastSettlementDate}
         onConfirm={handleSplitConfirm}
+      />
+
+      <SidebarCustomizer
+        open={sidebarCustomizerOpen}
+        onClose={() => setSidebarCustomizerOpen(false)}
+        currentConfig={settings.sidebarConfig}
+        onSave={(config) => updateSettings({ sidebarConfig: config })}
       />
     </div>
   )

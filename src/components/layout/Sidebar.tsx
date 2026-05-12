@@ -23,6 +23,7 @@ import {
 import { format, parseISO } from 'date-fns'
 import { useStore } from '../../store'
 import { filterByPeriod } from '../../lib/filters'
+import type { SidebarConfig } from '../../store/types'
 
 interface NavItem {
   to: string
@@ -39,6 +40,85 @@ interface SidebarProps {
   onToggle: () => void
 }
 
+const DEFAULT_NAV_GROUPS: { label: string; items: Omit<NavItem, 'badge'>[] }[] = [
+  {
+    label: 'Overview',
+    items: [
+      { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+      { to: '/net-worth', label: 'Net Worth', icon: Landmark },
+      { to: '/reports', label: 'Reports', icon: FileText },
+    ],
+  },
+  {
+    label: 'Money',
+    items: [
+      { to: '/expenses', label: 'Expenses', icon: CreditCard },
+      { to: '/budget', label: 'Budget', icon: Wallet },
+      { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
+      { to: '/income', label: 'Income', icon: DollarSign },
+      { to: '/cash-flow', label: 'Cash Flow', icon: TrendingUp },
+    ],
+  },
+  {
+    label: 'Planning',
+    items: [
+      { to: '/portfolio', label: 'Investments', icon: BarChart2 },
+      { to: '/debt', label: 'Debt', icon: BadgeAlert },
+      { to: '/mortgage', label: 'Mortgage', icon: Home },
+      { to: '/shared-balance', label: 'Shared Balance', icon: Users },
+    ],
+  },
+]
+
+const SETTINGS_ITEM: Omit<NavItem, 'badge'> = { to: '/settings', label: 'Settings', icon: Settings }
+
+function buildNavGroups(
+  config: SidebarConfig | undefined,
+  overBudgetBadge: string | undefined,
+): { label: string; showLabel: boolean; items: NavItem[] }[] {
+  const allItems = DEFAULT_NAV_GROUPS.flatMap((g) => g.items)
+
+  const resolveItem = (path: string): NavItem | null => {
+    const base = allItems.find((i) => i.to === path)
+    if (!base) return null
+    return {
+      ...base,
+      badge: path === '/expenses' ? overBudgetBadge : undefined,
+    }
+  }
+
+  const showLabels = config ? config.showGroupLabels : true
+
+  if (!config) {
+    return [
+      ...DEFAULT_NAV_GROUPS.map((g) => ({
+        label: g.label,
+        showLabel: true,
+        items: g.items.map((i) => ({
+          ...i,
+          badge: i.to === '/expenses' ? overBudgetBadge : undefined,
+        })),
+      })),
+      { label: 'System', showLabel: true, items: [{ ...SETTINGS_ITEM }] },
+    ]
+  }
+
+  const result = config.groups
+    .map((gc) => {
+      const items = gc.items
+        .filter((ic) => !ic.hidden)
+        .map((ic) => resolveItem(ic.path))
+        .filter((i): i is NavItem => i !== null)
+      return { label: gc.label, showLabel: showLabels, items }
+    })
+    .filter((g) => g.items.length > 0)
+
+  // Always append Settings
+  result.push({ label: 'System', showLabel: showLabels, items: [{ ...SETTINGS_ITEM }] })
+
+  return result
+}
+
 export default function Sidebar({ open, onClose, desktopOpen, onToggle }: SidebarProps) {
   const user1Name = useStore((s) => s.settings.user1Name)
   const importedBackupDate = useStore((s) => s.importedBackupDate)
@@ -46,6 +126,8 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
   const updateSettings = useStore((s) => s.updateSettings)
   const expenses = useStore((s) => s.expenses)
   const expenseCategories = useStore((s) => s.settings.expenseCategories)
+  const sidebarConfig = useStore((s) => s.settings.sidebarConfig)
+
   const backupLabel = importedBackupDate
     ? `Backup ${format(parseISO(importedBackupDate), 'MMM d')}`
     : 'No backup'
@@ -63,41 +145,11 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
     }).length
   }, [expenses, expenseCategories])
 
-  const navGroups: { label: string; items: NavItem[] }[] = [
-    {
-      label: 'Overview',
-      items: [
-        { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-        { to: '/net-worth', label: 'Net Worth', icon: Landmark },
-        { to: '/reports', label: 'Reports', icon: FileText },
-      ],
-    },
-    {
-      label: 'Money',
-      items: [
-        { to: '/expenses', label: 'Expenses', icon: CreditCard, badge: overBudgetCount > 0 ? (`${overBudgetCount} over` as const) : undefined },
-        { to: '/budget', label: 'Budget', icon: Wallet },
-        { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
-        { to: '/income', label: 'Income', icon: DollarSign },
-        { to: '/cash-flow', label: 'Cash Flow', icon: TrendingUp },
-      ],
-    },
-    {
-      label: 'Planning',
-      items: [
-        { to: '/portfolio', label: 'Investments', icon: BarChart2 },
-        { to: '/debt', label: 'Debt', icon: BadgeAlert },
-        { to: '/mortgage', label: 'Mortgage', icon: Home },
-        { to: '/shared-balance', label: 'Shared Balance', icon: Users },
-      ],
-    },
-    {
-      label: 'System',
-      items: [
-        { to: '/settings', label: 'Settings', icon: Settings },
-      ],
-    },
-  ]
+  const overBudgetBadge = overBudgetCount > 0 ? (`${overBudgetCount} over` as const) : undefined
+  const navGroups = useMemo(
+    () => buildNavGroups(sidebarConfig, overBudgetBadge),
+    [sidebarConfig, overBudgetBadge],
+  )
 
   return (
     <>
@@ -141,9 +193,11 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
         <nav className={`flex-1 py-5 overflow-y-auto space-y-5 ${desktopOpen ? 'px-3' : 'lg:px-2 px-3'}`}>
           {navGroups.map((group) => (
             <div key={group.label}>
-              <p className={`text-[10px] font-semibold uppercase text-[#41454d]/60 dark:text-[#9297a0]/60 px-3 mb-1 tracking-wider whitespace-nowrap transition-opacity duration-200 ${desktopOpen ? 'opacity-100' : 'lg:opacity-0 lg:h-0 lg:overflow-hidden'}`}>
-                {group.label}
-              </p>
+              {group.showLabel && (
+                <p className={`text-[10px] font-semibold uppercase text-[#41454d]/60 dark:text-[#9297a0]/60 px-3 mb-1 tracking-wider whitespace-nowrap transition-opacity duration-200 ${desktopOpen ? 'opacity-100' : 'lg:opacity-0 lg:h-0 lg:overflow-hidden'}`}>
+                  {group.label}
+                </p>
+              )}
               <div className="space-y-0.5">
                 {group.items.map(({ to, label, icon: Icon, end, badge }) => (
                   <NavLink

@@ -135,6 +135,21 @@ export interface RecurringExpense {
   status: 'active' | 'paused'
 }
 
+export interface SidebarItemConfig {
+  path: string
+  hidden: boolean
+}
+
+export interface SidebarGroupConfig {
+  label: string
+  items: SidebarItemConfig[]
+}
+
+export interface SidebarConfig {
+  groups: SidebarGroupConfig[]
+  showGroupLabels: boolean
+}
+
 export interface AppSettings {
   user1Name: string
   user2Name: string
@@ -144,4 +159,5 @@ export interface AppSettings {
   transferCategories: TransferCategory[]
   anthropicApiKey?: string
   splitRatio: number // user1's proportion of shared expenses (0–1, default 0.5)
+  sidebarConfig?: SidebarConfig
 }
