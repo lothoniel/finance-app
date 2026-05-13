@@ -25,6 +25,7 @@ export default function PortfolioPage() {
   const portfolios = useStore((s) => s.portfolios)
   const investmentMovements = useStore((s) => s.investmentMovements)
   const deleteInvestmentMovement = useStore((s) => s.deleteInvestmentMovement)
+  const updatePortfolio = useStore((s) => s.updatePortfolio)
 
   const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: filteredMovements } = usePeriodFilter(investmentMovements)
 
@@ -43,7 +44,9 @@ export default function PortfolioPage() {
     for (const p of portfolios) {
       const gains = investmentMovements.filter((m) => m.portfolioId === p.id && m.type === 'GAIN').reduce((s, m) => s + m.amount, 0)
       const deposits = investmentMovements.filter((m) => m.portfolioId === p.id && m.type === 'DEPOSIT').reduce((s, m) => s + m.amount, 0)
-      result[p.id] = deposits > 0 ? (gains / deposits * 100).toFixed(2) + '%' : '—'
+      const transfersIn = investmentMovements.filter((m) => m.type === 'TRANSFER' && m.destinationPortfolioId === p.id).reduce((s, m) => s + m.amount, 0)
+      const basis = deposits + transfersIn
+      result[p.id] = basis > 0 ? (gains / basis * 100).toFixed(2) + '%' : '—'
     }
     return result
   }, [portfolios, investmentMovements])
@@ -59,6 +62,22 @@ export default function PortfolioPage() {
     () => sortByDateDesc(filteredMovements),
     [filteredMovements]
   )
+
+  function handleDeleteMovement(m: InvestmentMovement) {
+    if (m.type === 'TRANSFER') {
+      const src = portfolios.find((p) => p.id === m.portfolioId)
+      const dst = m.destinationPortfolioId ? portfolios.find((p) => p.id === m.destinationPortfolioId) : undefined
+      if (src) updatePortfolio(src.id, { balance: src.balance + m.amount })
+      if (dst) updatePortfolio(dst.id, { balance: dst.balance - m.amount })
+    } else {
+      const portfolio = portfolios.find((p) => p.id === m.portfolioId)
+      if (portfolio) {
+        const delta = m.type === 'WITHDRAWAL' ? m.amount : -m.amount
+        updatePortfolio(portfolio.id, { balance: portfolio.balance + delta })
+      }
+    }
+    deleteInvestmentMovement(m.id)
+  }
 
   return (
     <div className="p-6 max-w-[1400px]">
@@ -202,23 +221,30 @@ export default function PortfolioPage() {
                 )}
                 {sortedMovements.map((m, i, arr) => {
                   const portfolio = portfolios.find((p) => p.id === m.portfolioId)
+                  const destPortfolio = m.type === 'TRANSFER' && m.destinationPortfolioId
+                    ? portfolios.find((p) => p.id === m.destinationPortfolioId)
+                    : null
                   const amtColor = m.type === 'GAIN' ? '#1a7a3c' : m.type === 'WITHDRAWAL' ? '#c0392b' : '#333840'
+                  const amtSign = m.type === 'WITHDRAWAL' ? '-' : m.type === 'TRANSFER' ? '' : '+'
                   const border = i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''
                   return (
                     <tr key={m.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                       <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(m.date)}</td>
-                      <td className={`px-4 py-[11px] text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{portfolio?.name ?? m.portfolioId}</td>
+                      <td className={`px-4 py-[11px] text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>
+                        {portfolio?.name ?? m.portfolioId}
+                        {destPortfolio && <span className="text-[#9297a0]"> → {destPortfolio.name}</span>}
+                      </td>
                       <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{m.description}</td>
                       <td className={`px-4 py-[11px] ${border}`}><Badge type={m.type.toLowerCase()} /></td>
                       <td className={`px-4 py-[11px] text-right text-[13px] font-medium ${border}`} style={{ color: amtColor }}>
-                        {m.type === 'WITHDRAWAL' ? '-' : '+'}{formatMXN(m.amount)}
+                        {amtSign}{formatMXN(m.amount)}
                       </td>
                       <td className={`px-4 py-[11px] ${border}`}>
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={(e) => { e.stopPropagation(); setEditMovement(m); setMovementModal(true) }} className="p-1.5 rounded-[6px] text-[#41454d] hover:text-[#181d26] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] dark:hover:text-[#e8eaf0] transition-colors">
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); deleteInvestmentMovement(m.id) }} className="p-1.5 rounded-[6px] text-[#41454d] hover:text-[#c0392b] hover:bg-[#fdecea] transition-colors">
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteMovement(m) }} className="p-1.5 rounded-[6px] text-[#41454d] hover:text-[#c0392b] hover:bg-[#fdecea] transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>

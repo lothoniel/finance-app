@@ -68,8 +68,9 @@ export interface InvestmentMovement {
   date: string
   portfolioId: string
   description: string
-  type: 'DEPOSIT' | 'GAIN' | 'WITHDRAWAL'
+  type: 'DEPOSIT' | 'GAIN' | 'WITHDRAWAL' | 'TRANSFER'
   amount: number
+  destinationPortfolioId?: string
 }
 
 export interface Settlement {
