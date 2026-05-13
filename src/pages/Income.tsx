@@ -1,18 +1,21 @@
 import { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, Search } from 'lucide-react'
 import { useStore } from '../store'
-import KpiCard from '../components/ui/KpiCard'
-import PeriodSelector from '../components/ui/PeriodSelector'
 import Badge from '../components/ui/Badge'
+import AreaChart from '../components/charts/AreaChart'
 import BarChart from '../components/charts/BarChart'
 import LineChart from '../components/charts/LineChart'
+import PeriodSelector from '../components/ui/PeriodSelector'
 import PaycheckForm from '../components/forms/PaycheckForm'
 import ManualTaxForm from '../components/forms/ManualTaxForm'
 import TransferForm from '../components/forms/TransferForm'
-import { filterByPeriod } from '../lib/filters'
+import { filterByPeriod, sortByDateAsc, sortByDateDesc } from '../lib/filters'
 import { formatMXN, formatMXNCompact, formatDate, formatShortMonth } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { Paycheck, Transfer } from '../store/types'
+
+const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
+const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] uppercase mb-4'
 
 export default function Income() {
   const [paycheckModal, setPaycheckModal] = useState(false)
@@ -43,6 +46,29 @@ export default function Income() {
   const rentalTotal = filteredTransfers.filter((t) => t.category === 'Rental').reduce((s, t) => s + t.amount, 0)
   const othersTotal = filteredTransfers.filter((t) => t.category === 'Others').reduce((s, t) => s + t.amount, 0)
 
+  // Income Trend — last 7 months across all data (not period-filtered)
+  const incomeTrendData = useMemo(() => {
+    const byMonth: Record<string, { paycheck: number; transfers: number }> = {}
+    paychecks.forEach((p) => {
+      const m = p.date.slice(0, 7)
+      if (!byMonth[m]) byMonth[m] = { paycheck: 0, transfers: 0 }
+      byMonth[m].paycheck += p.mxnAmount
+    })
+    transfers.forEach((t) => {
+      const m = t.date.slice(0, 7)
+      if (!byMonth[m]) byMonth[m] = { paycheck: 0, transfers: 0 }
+      byMonth[m].transfers += t.amount
+    })
+    return Object.entries(byMonth)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([month, data]) => ({
+        name: formatShortMonth(month + '-01'),
+        Paycheck: data.paycheck,
+        Transfers: data.transfers,
+      }))
+  }, [paychecks, transfers])
+
   const barData = useMemo(() => {
     const byMonth: Record<string, number> = {}
     filteredPaychecks.forEach((p) => {
@@ -64,73 +90,90 @@ export default function Income() {
   }, [filteredPaychecks, filteredTaxes])
 
   const rateChartData = useMemo(() => {
-    return paychecks
-      .filter((p) => p.exchangeRate != null)
-      .sort((a, b) => a.date.localeCompare(b.date))
+    return sortByDateAsc(paychecks.filter((p) => p.exchangeRate != null))
       .map((p) => ({ month: formatShortMonth(p.date), Rate: p.exchangeRate as number }))
   }, [paychecks])
 
   const displayedTransfers = useMemo(() => {
-    return [...filteredTransfers]
-      .filter((t) => {
-        const matchSearch = t.description.toLowerCase().includes(searchTransfer.toLowerCase())
-        const matchCat = filterCat === 'all' || t.category === filterCat
-        return matchSearch && matchCat
-      })
-      .sort((a, b) => b.date.localeCompare(a.date))
+    return sortByDateDesc(filteredTransfers.filter((t) => {
+      const matchSearch = t.description.toLowerCase().includes(searchTransfer.toLowerCase())
+      const matchCat = filterCat === 'all' || t.category === filterCat
+      return matchSearch && matchCat
+    }))
   }, [filteredTransfers, searchTransfer, filterCat])
 
   return (
-    <div className="space-y-6">
-      {/* Controls */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} />
-        <div className="flex gap-2 flex-wrap">
+    <div className="p-6 max-w-[1400px]">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Income</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} />
           <button
             onClick={() => setTaxModal(true)}
-            className="flex items-center gap-2 border border-[#7C3AED] text-[#7C3AED] rounded-full px-4 py-2 text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] text-[#41454d] dark:text-[#9297a0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            Add Tax
+            <Plus className="w-3.5 h-3.5" />Add Tax
           </button>
           <button
             onClick={() => { setEditTransfer(undefined); setTransferModal(true) }}
-            className="flex items-center gap-2 border border-[#7C3AED] text-[#7C3AED] rounded-full px-4 py-2 text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] text-[#41454d] dark:text-[#9297a0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            Add Transfer
+            <Plus className="w-3.5 h-3.5" />Transfer
           </button>
           <button
             onClick={() => { setEditPaycheck(undefined); setPaycheckModal(true) }}
-            className="flex items-center gap-2 bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            Add Paycheck
+            <Plus className="w-3.5 h-3.5" />Paycheck
           </button>
         </div>
       </div>
 
-      {/* Primary KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KpiCard title="Gross Income" value={formatMXNCompact(grossIncome)} accent="#22C55E" />
-        <KpiCard title="Net Income" value={formatMXNCompact(netIncome - totalTaxes)} subtitle={`−${formatMXNCompact(totalTaxes)} taxes`} accent="#7C3AED" />
-        <KpiCard title="Transfers Received" value={formatMXNCompact(totalReceived)} accent="#3B82F6" />
+      {/* KPI Strip */}
+      <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
+        {[
+          { label: 'GROSS INCOME', value: formatMXNCompact(grossIncome), color: '#22c55e' },
+          { label: 'NET INCOME', value: formatMXNCompact(netIncome - totalTaxes), sub: totalTaxes > 0 ? `−${formatMXNCompact(totalTaxes)} taxes` : undefined, color: '#22c55e' },
+          { label: 'TRANSFERS', value: formatMXNCompact(totalReceived), color: '#3b82f6' },
+        ].map((kpi) => (
+          <div key={kpi.label} className="flex-1 px-6 py-4">
+            <div className="text-[22px] font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+            <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
+            {kpi.sub && <div className="text-[11px] text-[#9297a0] mt-0.5">{kpi.sub}</div>}
+          </div>
+        ))}
       </div>
 
-      {/* Charts */}
+      {/* Income Trend */}
+      {incomeTrendData.length > 0 && (
+        <div className={`${CARD} mb-5`}>
+          <div className="p-5">
+            <div className={SECTION_LABEL}>Income Trend — Last 7 Months</div>
+            <AreaChart
+              data={incomeTrendData}
+              xKey="name"
+              areas={[
+                { key: 'Paycheck', name: 'Paycheck', color: '#22c55e' },
+                { key: 'Transfers', name: 'Transfers', color: '#3b82f6' },
+              ]}
+              height={240}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Income vs Taxes + Rate Trend */}
       {(barData.length > 0 || rateChartData.length >= 2) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
           {barData.length > 0 && (
-            <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="w-0.5 h-4 rounded-full bg-[#7C3AED]" />
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Income vs Taxes</p>
-              </div>
+            <div className={`${CARD} p-5`}>
+              <div className={SECTION_LABEL}>Income vs Taxes</div>
               <BarChart
                 data={barData}
                 bars={[
-                  { key: 'Income', color: '#22C55E', name: 'Income' },
-                  { key: 'Tax', color: '#EF4444', name: 'Taxes' },
+                  { key: 'Income', color: '#22c55e', name: 'Income' },
+                  { key: 'Tax', color: '#ef4444', name: 'Taxes' },
                 ]}
                 xKey="month"
                 height={220}
@@ -138,16 +181,13 @@ export default function Income() {
             </div>
           )}
           {rateChartData.length >= 2 && (
-            <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl p-5 border border-gray-200 dark:border-[#2D3448] shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="w-0.5 h-4 rounded-full bg-[#7C3AED]" />
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">USD/MXN Rate Trend</p>
-              </div>
+            <div className={`${CARD} p-5`}>
+              <div className={SECTION_LABEL}>USD/MXN Rate Trend</div>
               <LineChart
                 data={rateChartData}
-                lines={[{ key: 'Rate', color: '#7C3AED', name: 'USD/MXN Rate' }]}
+                lines={[{ key: 'Rate', color: '#3b82f6', name: 'USD/MXN Rate' }]}
                 xKey="month"
-                height={200}
+                height={220}
               />
             </div>
           )}
@@ -155,199 +195,179 @@ export default function Income() {
       )}
 
       {/* Paychecks */}
-      <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2D3448] flex items-center gap-2">
-          <span className="w-0.5 h-4 rounded-full bg-[#7C3AED]" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Paychecks</h3>
+      <div className={`${CARD} mb-5`}>
+        <div className="p-5 pb-0">
+          <div className={SECTION_LABEL}>Paychecks</div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800/50">
-              <tr className="text-xs text-gray-500 dark:text-gray-400">
-                <th className="text-left px-5 py-3 font-medium">Date</th>
-                <th className="text-right px-5 py-3 font-medium">USD</th>
-                <th className="text-right px-5 py-3 font-medium">Rate</th>
-                <th className="text-right px-5 py-3 font-medium">MXN</th>
-                <th className="px-5 py-3" />
+          <table className="w-full">
+            <thead>
+              <tr>
+                {['Date', 'USD', 'Rate', 'MXN', ''].map((h, i) => (
+                  <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${['USD', 'Rate', 'MXN'].includes(h) ? 'text-right' : 'text-left'}`}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-[#2D3448]">
+            <tbody>
               {filteredPaychecks.length === 0 && (
-                <tr><td colSpan={5} className="text-center py-8 text-gray-400 text-sm">No paychecks in this period</td></tr>
+                <tr><td colSpan={5} className="text-center py-8 text-[13px] text-[#9297a0]">No paychecks in this period</td></tr>
               )}
-              {[...filteredPaychecks].sort((a, b) => b.date.localeCompare(a.date)).map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                  <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{formatDate(p.date)}</td>
-                  <td className="px-5 py-3 text-right text-gray-600 dark:text-gray-400">
-                    {p.usdAmount != null ? `$${p.usdAmount.toLocaleString()}` : '—'}
-                  </td>
-                  <td className="px-5 py-3 text-right text-gray-600 dark:text-gray-400">
-                    {p.exchangeRate != null ? p.exchangeRate.toFixed(2) : '—'}
-                  </td>
-                  <td className="px-5 py-3 text-right font-bold text-gray-900 dark:text-white">
-                    {formatMXN(p.mxnAmount)}
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => { setEditPaycheck(p); setPaycheckModal(true) }}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-[#7C3AED] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => deletePaycheck(p.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {sortByDateDesc(filteredPaychecks).map((p, i, arr) => {
+                const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
+                return (
+                  <tr key={p.id} className="group hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
+                    <td className={`px-4 py-3 text-[13px] text-[#9297a0] ${border}`}>{formatDate(p.date)}</td>
+                    <td className={`px-4 py-3 text-right text-[13px] text-[#9297a0] ${border}`}>
+                      {p.usdAmount != null ? `$${p.usdAmount.toLocaleString()}` : '—'}
+                    </td>
+                    <td className={`px-4 py-3 text-right text-[13px] text-[#9297a0] ${border}`}>
+                      {p.exchangeRate != null ? p.exchangeRate.toFixed(2) : '—'}
+                    </td>
+                    <td className={`px-4 py-3 text-right text-[13px] font-semibold text-[#22c55e] ${border}`}>
+                      {formatMXN(p.mxnAmount)}
+                    </td>
+                    <td className={`px-4 py-3 ${border}`}>
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setEditPaycheck(p); setPaycheckModal(true) }} className="p-1.5 rounded-[6px] text-[#9297a0] hover:text-[#181d26] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] dark:hover:text-[#e8eaf0] transition-colors">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => deletePaycheck(p.id)} className="p-1.5 rounded-[6px] text-[#9297a0] hover:text-[#ef4444] hover:bg-[#fdecea] transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* Manual Taxes */}
-      <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-[#2D3448] flex items-center gap-2">
-          <span className="w-0.5 h-4 rounded-full bg-[#7C3AED]" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Manual Taxes</h3>
+      <div className={`${CARD} mb-5`}>
+        <div className="p-5 pb-0">
+          <div className={SECTION_LABEL}>Manual Taxes</div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800/50">
-              <tr className="text-xs text-gray-500 dark:text-gray-400">
-                <th className="text-left px-5 py-3 font-medium">Date</th>
-                <th className="text-left px-5 py-3 font-medium">Description</th>
-                <th className="text-right px-5 py-3 font-medium">Amount</th>
-                <th className="px-5 py-3" />
+          <table className="w-full">
+            <thead>
+              <tr>
+                {['Date', 'Description', 'Amount', ''].map((h, i) => (
+                  <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-[#2D3448]">
+            <tbody>
               {filteredTaxes.length === 0 && (
-                <tr><td colSpan={4} className="text-center py-8 text-gray-400 text-sm">No tax records in this period</td></tr>
+                <tr><td colSpan={4} className="text-center py-8 text-[13px] text-[#9297a0]">No tax records in this period</td></tr>
               )}
-              {[...filteredTaxes].sort((a, b) => b.date.localeCompare(a.date)).map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                  <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{formatDate(t.date)}</td>
-                  <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{t.description}</td>
-                  <td className="px-5 py-3 text-right text-red-500 font-semibold">-{formatMXN(t.amount)}</td>
-                  <td className="px-5 py-3">
-                    <button
-                      onClick={() => deleteManualTax(t.id)}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors float-right"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Transfers */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <span className="w-0.5 h-4 rounded-full bg-[#7C3AED]" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Transfers</h3>
-        </div>
-
-        {/* Mini transfer breakdown */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: 'Household', value: householdTotal, accent: '#7C3AED' },
-            { label: 'Rental', value: rentalTotal, accent: '#22C55E' },
-            { label: 'Others', value: othersTotal, accent: '#F59E0B' },
-            { label: 'Total', value: totalReceived, accent: '#3B82F6' },
-          ].map(({ label, value, accent }) => (
-            <div
-              key={label}
-              className="bg-white dark:bg-[#1A1F2E] rounded-xl p-3 border border-gray-200 dark:border-[#2D3448] shadow-sm"
-              style={{ borderLeftColor: accent, borderLeftWidth: 3 }}
-            >
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">{formatMXNCompact(value)}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search transfers..."
-              value={searchTransfer}
-              onChange={(e) => setSearchTransfer(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-[#2D3448] rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
-            />
-          </div>
-          <select
-            value={filterCat}
-            onChange={(e) => setFilterCat(e.target.value)}
-            className="border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
-          >
-            <option value="all">All Categories</option>
-            {transferCategories.map((c) => (
-              <option key={c.name} value={c.name}>{c.name}</option>
-            ))}
-          </select>
-          <span className="text-sm text-gray-400 ml-auto tabular-nums">
-            {displayedTransfers.length} {displayedTransfers.length === 1 ? 'transfer' : 'transfers'}
-          </span>
-        </div>
-
-        <div className="bg-white dark:bg-[#1A1F2E] rounded-2xl border border-gray-200 dark:border-[#2D3448] shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
-                <tr className="text-xs text-gray-500 dark:text-gray-400">
-                  <th className="text-left px-5 py-3 font-medium">Date</th>
-                  <th className="text-left px-5 py-3 font-medium">Category</th>
-                  <th className="text-left px-5 py-3 font-medium">Description</th>
-                  <th className="text-right px-5 py-3 font-medium">Amount</th>
-                  <th className="px-5 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-[#2D3448]">
-                {displayedTransfers.length === 0 && (
-                  <tr><td colSpan={5} className="text-center py-8 text-gray-400 text-sm">No transfers found</td></tr>
-                )}
-                {displayedTransfers.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                    <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{formatDate(t.date)}</td>
-                    <td className="px-5 py-3">
-                      <Badge type={t.category.toLowerCase()} label={t.category} />
-                    </td>
-                    <td className="px-5 py-3 text-gray-700 dark:text-gray-300">{t.description}</td>
-                    <td className="px-5 py-3 text-right font-semibold text-green-600">{formatMXN(t.amount)}</td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => { setEditTransfer(t); setTransferModal(true) }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#7C3AED] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => deleteTransfer(t.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
+              {sortByDateDesc(filteredTaxes).map((t, i, arr) => {
+                const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
+                return (
+                  <tr key={t.id} className="group hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
+                    <td className={`px-4 py-3 text-[13px] text-[#9297a0] ${border}`}>{formatDate(t.date)}</td>
+                    <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{t.description}</td>
+                    <td className={`px-4 py-3 text-right text-[13px] font-medium text-[#ef4444] ${border}`}>−{formatMXN(t.amount)}</td>
+                    <td className={`px-4 py-3 ${border}`}>
+                      <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => deleteManualTax(t.id)} className="p-1.5 rounded-[6px] text-[#9297a0] hover:text-[#ef4444] hover:bg-[#fdecea] transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Transfers Received */}
+      <div className={CARD}>
+        <div className="p-5 pb-0">
+          <div className={SECTION_LABEL}>Transfers Received</div>
+        </div>
+
+        {/* Breakdown tiles */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5 pb-5">
+          {[
+            { label: 'Household', value: householdTotal, color: '#6366f1' },
+            { label: 'Rental', value: rentalTotal, color: '#14b8a6' },
+            { label: 'Others', value: othersTotal, color: '#f59e0b' },
+            { label: 'Total', value: totalReceived, color: '#22c55e' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="bg-[#f8fafc] dark:bg-[#252b3b] rounded-[8px] px-4 py-3" style={{ borderLeft: `3px solid ${color}` }}>
+              <p className="text-[11px] font-semibold uppercase mb-1 text-[#9297a0]">{label}</p>
+              <p className="text-[17px] font-bold tabular-nums" style={{ color }}>{formatMXNCompact(value)}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-3 flex-wrap px-5 pb-4 border-b border-[#e8e8e8] dark:border-[#2d3347]">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9297a0]" />
+            <input
+              type="text"
+              placeholder="Search transfers..."
+              value={searchTransfer}
+              onChange={(e) => setSearchTransfer(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] text-[13px] bg-white dark:bg-[#252b3b] text-[#181d26] dark:text-[#e8eaf0] focus:outline-none focus:border-[#181d26]"
+            />
           </div>
+          <select
+            value={filterCat}
+            onChange={(e) => setFilterCat(e.target.value)}
+            className="border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] px-3 py-2 text-[13px] bg-white dark:bg-[#252b3b] text-[#181d26] dark:text-[#e8eaf0]"
+          >
+            <option value="all">All Categories</option>
+            {transferCategories.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+          </select>
+          <span className="text-[12px] text-[#9297a0] ml-auto tabular-nums">
+            {displayedTransfers.length} {displayedTransfers.length === 1 ? 'transfer' : 'transfers'}
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                {['Date', 'Category', 'Description', 'Amount', ''].map((h, i) => (
+                  <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {displayedTransfers.length === 0 && (
+                <tr><td colSpan={5} className="text-center py-8 text-[13px] text-[#9297a0]">No transfers found</td></tr>
+              )}
+              {displayedTransfers.map((t, i, arr) => {
+                const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
+                return (
+                  <tr key={t.id} className="group hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
+                    <td className={`px-4 py-3 text-[13px] text-[#9297a0] whitespace-nowrap ${border}`}>{formatDate(t.date)}</td>
+                    <td className={`px-4 py-3 ${border}`}>
+                      <Badge type={t.category.toLowerCase()} label={t.category} />
+                    </td>
+                    <td className={`px-4 py-3 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{t.description}</td>
+                    <td className={`px-4 py-3 text-right text-[13px] font-semibold text-[#22c55e] ${border}`}>{formatMXN(t.amount)}</td>
+                    <td className={`px-4 py-3 ${border}`}>
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setEditTransfer(t); setTransferModal(true) }} className="p-1.5 rounded-[6px] text-[#9297a0] hover:text-[#181d26] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] dark:hover:text-[#e8eaf0] transition-colors">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => deleteTransfer(t.id)} className="p-1.5 rounded-[6px] text-[#9297a0] hover:text-[#ef4444] hover:bg-[#fdecea] transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 

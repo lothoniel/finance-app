@@ -4,6 +4,7 @@ import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { Portfolio } from '../../store/types'
 import { today } from '../../lib/formatters'
+import { inputClass } from '../../lib/styles'
 
 interface PortfolioFormProps {
   open: boolean
@@ -11,30 +12,20 @@ interface PortfolioFormProps {
   portfolio?: Portfolio
 }
 
+const label = 'block text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] mb-1'
+const cancelBtn = 'flex-1 border border-[#e8e8e8] dark:border-[#2d3347] text-[#181d26] dark:text-[#e8eaf0] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors'
+const submitBtn = 'flex-1 bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors'
+
 export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFormProps) {
   const addPortfolio = useStore((s) => s.addPortfolio)
   const updatePortfolio = useStore((s) => s.updatePortfolio)
   const addInvestmentMovement = useStore((s) => s.addInvestmentMovement)
 
-  const [form, setForm] = useState({
-    name: '',
-    type: '',
-    apy: '',
-    balance: '',
-    updatedDate: today(),
-    renewsDate: today(),
-  })
+  const [form, setForm] = useState({ name: '', type: '', apy: '', balance: '', updatedDate: today(), renewsDate: today() })
 
   useEffect(() => {
     if (portfolio) {
-      setForm({
-        name: portfolio.name,
-        type: portfolio.type,
-        apy: String(portfolio.apy),
-        balance: String(portfolio.balance),
-        updatedDate: portfolio.updatedDate,
-        renewsDate: portfolio.renewsDate,
-      })
+      setForm({ name: portfolio.name, type: portfolio.type, apy: String(portfolio.apy), balance: String(portfolio.balance), updatedDate: portfolio.updatedDate, renewsDate: portfolio.renewsDate })
     } else {
       setForm({ name: '', type: '', apy: '', balance: '', updatedDate: today(), renewsDate: today() })
     }
@@ -70,99 +61,40 @@ export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFor
     onClose()
   }
 
-  const inputClass =
-    'w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]'
-  const labelClass = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
-
   return (
     <Modal open={open} onClose={onClose} title={portfolio ? 'Edit Portfolio' : 'Add Portfolio'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className={labelClass}>Name</label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-            placeholder="e.g. Banorte NTEDIG"
-            className={inputClass}
-          />
+          <label className={label}>Name</label>
+          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="e.g. Banorte NTEDIG" className={inputClass} />
         </div>
         <div>
-          <label className={labelClass}>Type</label>
-          <input
-            type="text"
-            value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
-            required
-            placeholder="e.g. NTEDIG, 28DIAS"
-            className={inputClass}
-          />
+          <label className={label}>Type</label>
+          <input type="text" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} required placeholder="e.g. NTEDIG, 28DIAS" className={inputClass} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelClass}>APY (%)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.apy}
-              onChange={(e) => setForm({ ...form, apy: e.target.value })}
-              required
-              placeholder="10.5"
-              className={inputClass}
-            />
+            <label className={label}>APY (%)</label>
+            <input type="number" min="0" step="0.01" value={form.apy} onChange={(e) => setForm({ ...form, apy: e.target.value })} required placeholder="10.5" className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Balance (MXN)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.balance}
-              onChange={(e) => setForm({ ...form, balance: e.target.value })}
-              required
-              placeholder="0.00"
-              className={inputClass}
-            />
+            <label className={label}>Balance (MXN)</label>
+            <input type="number" min="0" step="0.01" value={form.balance} onChange={(e) => setForm({ ...form, balance: e.target.value })} required placeholder="0.00" className={inputClass} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelClass}>Updated Date</label>
-            <input
-              type="date"
-              value={form.updatedDate}
-              onChange={(e) => setForm({ ...form, updatedDate: e.target.value })}
-              required
-              className={inputClass}
-            />
+            <label className={label}>Updated Date</label>
+            <input type="date" value={form.updatedDate} onChange={(e) => setForm({ ...form, updatedDate: e.target.value })} required className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Renews Date</label>
-            <input
-              type="date"
-              value={form.renewsDate}
-              onChange={(e) => setForm({ ...form, renewsDate: e.target.value })}
-              required
-              className={inputClass}
-            />
+            <label className={label}>Renews Date</label>
+            <input type="date" value={form.renewsDate} onChange={(e) => setForm({ ...form, renewsDate: e.target.value })} required className={inputClass} />
           </div>
         </div>
         <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
-          >
-            {portfolio ? 'Save Changes' : 'Add Portfolio'}
-          </button>
+          <button type="button" onClick={onClose} className={cancelBtn}>Cancel</button>
+          <button type="submit" className={submitBtn}>{portfolio ? 'Save Changes' : 'Add Portfolio'}</button>
         </div>
       </form>
     </Modal>

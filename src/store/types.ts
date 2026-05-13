@@ -4,6 +4,9 @@ export interface Category {
   icon: string // lucide icon name
   color: string
   budget?: number
+  rollover?: 'month' | 'year'
+  categoryGroup?: string // e.g. 'Housing', 'Auto', 'Food & Dining'
+  expenseType?: 'fixed' | 'variable'
 }
 
 export interface Expense {
@@ -14,6 +17,7 @@ export interface Expense {
   category: string
   paidBy: 'user1' | 'user2'
   shared: boolean
+  splitRatio?: number // user1's proportion (0–1); undefined falls back to settings default
   subCategory?: string
 }
 
@@ -64,8 +68,9 @@ export interface InvestmentMovement {
   date: string
   portfolioId: string
   description: string
-  type: 'DEPOSIT' | 'GAIN' | 'WITHDRAWAL'
+  type: 'DEPOSIT' | 'GAIN' | 'WITHDRAWAL' | 'TRANSFER'
   amount: number
+  destinationPortfolioId?: string
 }
 
 export interface Settlement {
@@ -121,6 +126,31 @@ export interface MortgageContribution {
   amount: number
 }
 
+export interface RecurringExpense {
+  id: string
+  name: string
+  amount: number
+  category: string
+  frequency: 'monthly' | 'bimonthly' | 'annual'
+  lastDate: string // YYYY-MM-DD — next date is calculated from this
+  status: 'active' | 'paused'
+}
+
+export interface SidebarItemConfig {
+  path: string
+  hidden: boolean
+}
+
+export interface SidebarGroupConfig {
+  label: string
+  items: SidebarItemConfig[]
+}
+
+export interface SidebarConfig {
+  groups: SidebarGroupConfig[]
+  showGroupLabels: boolean
+}
+
 export interface AppSettings {
   user1Name: string
   user2Name: string
@@ -129,4 +159,6 @@ export interface AppSettings {
   creditCards: CreditCard[]
   transferCategories: TransferCategory[]
   anthropicApiKey?: string
+  splitRatio: number // user1's proportion of shared expenses (0–1, default 0.5)
+  sidebarConfig?: SidebarConfig
 }

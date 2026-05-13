@@ -15,6 +15,7 @@ import type {
   MortgageConfig,
   MortgagePayment,
   MortgageContribution,
+  RecurringExpense,
 } from './types'
 
 interface AppState {
@@ -31,6 +32,7 @@ interface AppState {
   mortgageConfig: MortgageConfig
   mortgagePayments: MortgagePayment[]
   mortgageContributions: MortgageContribution[]
+  recurringExpenses: RecurringExpense[]
   importedBackupDate: string | null
   // Actions
   updateSettings: (s: Partial<AppSettings>) => void
@@ -55,6 +57,7 @@ interface AppState {
   updateInvestmentMovement: (id: string, m: Partial<InvestmentMovement>) => void
   deleteInvestmentMovement: (id: string) => void
   addSettlement: (s: Settlement) => void
+  deleteSettlement: (id: string) => void
   addCashEntry: (c: CashEntry) => void
   deleteCashEntry: (id: string) => void
   updateMortgageConfig: (c: Partial<MortgageConfig>) => void
@@ -64,6 +67,10 @@ interface AppState {
   addMortgageContribution: (c: MortgageContribution) => void
   updateMortgageContribution: (id: string, c: Partial<MortgageContribution>) => void
   deleteMortgageContribution: (id: string) => void
+  addRecurringExpense: (r: RecurringExpense) => void
+  updateRecurringExpense: (id: string, r: Partial<RecurringExpense>) => void
+  deleteRecurringExpense: (id: string) => void
+  updateSharedExpensesSplitRatio: (ratio: number, fromDate?: string) => void
   importData: (data: Partial<AppState>) => void
   resetToDefaults: () => void
 }
@@ -74,6 +81,7 @@ export const useStore = create<AppState>()(
       ...seedData,
       cashEntries: [],
       mortgageContributions: [],
+      recurringExpenses: [],
       importedBackupDate: null,
 
       updateSettings: (s) =>
@@ -156,6 +164,9 @@ export const useStore = create<AppState>()(
       addSettlement: (s) =>
         set((state) => ({ settlements: [...state.settlements, s] })),
 
+      deleteSettlement: (id) =>
+        set((state) => ({ settlements: state.settlements.filter((s) => s.id !== id) })),
+
       addCashEntry: (c) =>
         set((state) => ({ cashEntries: [...state.cashEntries, c] })),
 
@@ -187,6 +198,24 @@ export const useStore = create<AppState>()(
       deleteMortgageContribution: (id) =>
         set((state) => ({ mortgageContributions: state.mortgageContributions.filter((x) => x.id !== id) })),
 
+      addRecurringExpense: (r) =>
+        set((state) => ({ recurringExpenses: [...state.recurringExpenses, r] })),
+
+      updateRecurringExpense: (id, r) =>
+        set((state) => ({
+          recurringExpenses: state.recurringExpenses.map((x) => (x.id === id ? { ...x, ...r } : x)),
+        })),
+
+      deleteRecurringExpense: (id) =>
+        set((state) => ({ recurringExpenses: state.recurringExpenses.filter((x) => x.id !== id) })),
+
+      updateSharedExpensesSplitRatio: (ratio, fromDate) =>
+        set((state) => ({
+          expenses: state.expenses.map((e) =>
+            e.shared && (!fromDate || e.date >= fromDate) ? { ...e, splitRatio: ratio } : e
+          ),
+        })),
+
       importData: (data) =>
         set((state) => ({
           ...state,
@@ -206,7 +235,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'finance-app-v1',
-      version: 9,
+      version: 12,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>
         const settings = (state.settings ?? {}) as Record<string, unknown>
@@ -297,6 +326,35 @@ export const useStore = create<AppState>()(
             { id: 'mc-034', date: '2026-04-01', by: 'Renta', description: 'Abono a capital de la Renta Abr', amount: 16000 },
             { id: 'mc-035', date: '2026-04-01', by: 'Papa',  description: 'Abono Mar 26', amount: 10666 },
           ]
+        }
+        if (version < 10) {
+          // Fix minimumPayment: was set to total Pago Manual (26500) which includes
+          // Seguros BANORTE (~717.16) + Admin (299). Only the P+I portion should be stored
+          // so that autoExtraCapital and monthsRemaining calculations are correct.
+          // Correct P+I = 26192.69 - 717.16 - 299 = 25176.53 (240-month schedule at 9.51%)
+          const mc = state.mortgageConfig as Record<string, unknown> | undefined
+          if (mc) {
+            mc.minimumPayment = 25176.53
+            mc.startDate = '2025-04-04'
+            mc.termMonths = 240
+            mc.principal = 2700000
+            mc.interestRate = 9.51
+          }
+        }
+        if (version < 11) {
+          if (!state.recurringExpenses) {
+            state.recurringExpenses = []
+          }
+        }
+        if (version < 12) {
+          if (typeof settings.splitRatio !== 'number') {
+            settings.splitRatio = 0.5
+          }
+          if (Array.isArray(state.expenses)) {
+            state.expenses = (state.expenses as Record<string, unknown>[]).map((e) =>
+              e.shared && e.splitRatio === undefined ? { ...e, splitRatio: 0.5 } : e
+            )
+          }
         }
         state.settings = settings
         return state

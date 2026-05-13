@@ -1,6 +1,6 @@
-import { Sun, Moon, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import { useStore } from '../../store'
+import { Menu, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
+import { useStore } from '../../store'
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -22,57 +22,37 @@ const routeTitles: Record<string, string> = {
 
 export default function TopBar({ onMenuClick, onDesktopMenuClick, desktopSidebarOpen }: TopBarProps) {
   const { pathname } = useLocation()
+  const title = routeTitles[pathname] ?? 'Finance App'
   const theme = useStore((s) => s.settings.theme)
   const updateSettings = useStore((s) => s.updateSettings)
 
-  const title = routeTitles[pathname] ?? 'Finance App'
-
-  function toggleTheme() {
-    const newTheme = theme === 'light' ? 'dark' : 'light'
-    updateSettings({ theme: newTheme })
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }
-
   return (
-    <header className="h-16 flex items-center justify-between px-6 bg-white dark:bg-[#1A1F2E] border-b border-gray-200 dark:border-[#2D3448] sticky top-0 z-10">
-      <div className="flex items-center gap-4">
-        {/* Mobile hamburger */}
+    <header className="h-14 flex items-center justify-between px-6 bg-white dark:bg-[#1e2330] border-b border-[#e8e8e8] dark:border-[#2d3347] sticky top-0 z-10">
+      <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="lg:hidden p-2 rounded-[8px] text-[#41454d] dark:text-[#9297a0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-4 h-4" />
         </button>
-        {/* Desktop sidebar toggle */}
         <button
           onClick={onDesktopMenuClick}
-          className="hidden lg:flex p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="hidden lg:flex p-2 rounded-[8px] text-[#41454d] dark:text-[#9297a0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors"
           aria-label="Toggle sidebar"
         >
           {desktopSidebarOpen
-            ? <PanelLeftClose className="w-5 h-5" />
-            : <PanelLeftOpen className="w-5 h-5" />
+            ? <PanelLeftClose className="w-4 h-4" />
+            : <PanelLeftOpen className="w-4 h-4" />
           }
         </button>
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {title}
-        </h1>
+        <h1 className="text-[15px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{title}</h1>
       </div>
-
       <button
-        onClick={toggleTheme}
-        className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        aria-label="Toggle theme"
+        onClick={() => updateSettings({ theme: theme === 'dark' ? 'light' : 'dark' })}
+        className="p-2 rounded-[8px] text-[#41454d] dark:text-[#9297a0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors"
+        aria-label="Toggle dark mode"
       >
-        {theme === 'light' ? (
-          <Moon className="w-5 h-5" />
-        ) : (
-          <Sun className="w-5 h-5" />
-        )}
+        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
     </header>
   )

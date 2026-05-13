@@ -1,0 +1,352 @@
+/* ========================================
+   FINANCEAPP DESIGN TOKENS
+   Airtable Editorial System
+   Ready to copy into your project
+   ======================================== */
+
+/* CSS VARIABLES */
+:root {
+  /* Primary & Neutrals */
+  --primary: #181d26;
+  --primary-active: #0d1218;
+  --ink: #181d26;
+  --body: #333840;
+  --muted: #41454d;
+  --hairline: #dddddd;
+  --canvas: #ffffff;
+  --surface-soft: #f8fafc;
+  --surface-strong: #e0e2e6;
+  --surface-dark: #181d26;
+
+  /* Signature Cards */
+  --sig-coral: #aa2d00;
+  --sig-forest: #0a2e0e;
+  --sig-cream: #f5e9d4;
+  --sig-peach: #fcab79;
+  --sig-mint: #a8d8c4;
+  --sig-yellow: #f4d35e;
+  --sig-mustard: #d9a441;
+
+  /* Semantic */
+  --link: #1b61c9;
+  --success: #006400;
+  --danger: #d32f2f;
+
+  /* Typography */
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter Display", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+
+  /* Spacing */
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  --spacing-section: 96px;
+
+  /* Rounding */
+  --radius-xs: 2px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+}
+
+/* ========================================
+   TAILWIND CONFIG (if using Tailwind)
+   ======================================== */
+/*
+module.exports = {
+  theme: {
+    colors: {
+      primary: '#181d26',
+      'primary-active': '#0d1218',
+      ink: '#181d26',
+      body: '#333840',
+      muted: '#41454d',
+      hairline: '#dddddd',
+      canvas: '#ffffff',
+      'surface-soft': '#f8fafc',
+      'surface-strong': '#e0e2e6',
+      'surface-dark': '#181d26',
+      'sig-coral': '#aa2d00',
+      'sig-forest': '#0a2e0e',
+      'sig-cream': '#f5e9d4',
+      'sig-peach': '#fcab79',
+      'sig-mint': '#a8d8c4',
+      'sig-yellow': '#f4d35e',
+      'sig-mustard': '#d9a441',
+      link: '#1b61c9',
+      success: '#006400',
+      danger: '#d32f2f',
+    },
+    spacing: {
+      'xxs': '4px',
+      'xs': '8px',
+      'sm': '12px',
+      'md': '16px',
+      'lg': '24px',
+      'xl': '32px',
+      'xxl': '48px',
+      'section': '96px',
+    },
+    borderRadius: {
+      'xs': '2px',
+      'sm': '6px',
+      'md': '10px',
+      'lg': '12px',
+      'pill': '9999px',
+    },
+  }
+}
+*/
+
+/* ========================================
+   STYLED-COMPONENTS (if using styled-components)
+   ======================================== */
+/*
+export const tokens = {
+  colors: {
+    primary: '#181d26',
+    primaryActive: '#0d1218',
+    ink: '#181d26',
+    body: '#333840',
+    muted: '#41454d',
+    hairline: '#dddddd',
+    canvas: '#ffffff',
+    surfaceSoft: '#f8fafc',
+    surfaceStrong: '#e0e2e6',
+    surfaceDark: '#181d26',
+    sigCoral: '#aa2d00',
+    sigForest: '#0a2e0e',
+    sigCream: '#f5e9d4',
+    sigPeach: '#fcab79',
+    sigMint: '#a8d8c4',
+    sigYellow: '#f4d35e',
+    sigMustard: '#d9a441',
+    link: '#1b61c9',
+    success: '#006400',
+    danger: '#d32f2f',
+  },
+  spacing: {
+    xxs: '4px',
+    xs: '8px',
+    sm: '12px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+    xxl: '48px',
+    section: '96px',
+  },
+  radius: {
+    xs: '2px',
+    sm: '6px',
+    md: '10px',
+    lg: '12px',
+    pill: '9999px',
+  },
+  fonts: {
+    display: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter Display", sans-serif',
+    body: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif',
+  },
+};
+*/
+
+/* ========================================
+   COMPONENT EXAMPLES
+   ======================================== */
+
+/* Primary Button */
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-active);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background-color: var(--canvas);
+  color: var(--ink);
+  padding: 12px 24px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--surface-soft);
+  border-color: var(--body);
+}
+
+/* Metric Card */
+.metric-card {
+  background-color: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-left: 4px solid var(--sig-mint);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.metric-card.coral { border-left-color: var(--sig-coral); }
+.metric-card.forest { border-left-color: var(--sig-forest); }
+.metric-card.mint { border-left-color: var(--sig-mint); }
+.metric-card.mustard { border-left-color: var(--sig-mustard); }
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.metric-value {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: var(--spacing-xs);
+}
+
+.metric-caption {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Insight Card */
+.insight-card {
+  background-color: var(--sig-cream);
+  border-left: 4px solid var(--sig-mustard);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.insight-card.coral { border-left-color: var(--sig-coral); }
+.insight-card.mint { border-left-color: var(--sig-mint); }
+.insight-card.mustard { border-left-color: var(--sig-mustard); }
+
+.insight-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.7;
+  margin-bottom: var(--spacing-xs);
+  letter-spacing: 0.5px;
+}
+
+.insight-text {
+  font-size: 14px;
+  color: var(--body);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* Signature Band (Hero) */
+.signature-band {
+  background-color: var(--sig-forest);
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xxl);
+  margin-bottom: var(--spacing-section);
+}
+
+.signature-band h2 {
+  font-size: 32px;
+  font-weight: 400;
+  font-family: var(--font-display);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.2;
+}
+
+.signature-band p {
+  font-size: 14px;
+  opacity: 0.95;
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Typography Hierarchy */
+h1 {
+  font-size: 40px;
+  font-weight: 400;
+  font-family: var(--font-display);
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 32px;
+  font-weight: 400;
+  font-family: var(--font-display);
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: 24px;
+  font-weight: 400;
+  font-family: var(--font-display);
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  color: var(--ink);
+  padding-left: var(--spacing-md);
+  border-left: 3px solid var(--primary);
+  margin-bottom: var(--spacing-lg);
+}
+
+p {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--body);
+  line-height: 1.5;
+}
+
+.caption {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.35;
+  letter-spacing: 0.16px;
+}
+
+/* Grid Utilities */
+.grid-1 { display: grid; grid-template-columns: 1fr; gap: var(--spacing-lg); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--spacing-lg); }
+.grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--spacing-md); }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .grid-5 { grid-template-columns: repeat(3, 1fr); }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+  .grid-5, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  h1 { font-size: 28px; }
+  h2 { font-size: 24px; }
+}

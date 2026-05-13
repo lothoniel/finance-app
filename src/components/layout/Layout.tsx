@@ -1,35 +1,33 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { useStore } from '../../store'
+import { Menu } from 'lucide-react'
 import Sidebar from './Sidebar'
-import TopBar from './TopBar'
 import QuickAdd from '../ui/QuickAdd'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true)
-  const theme = useStore((s) => s.settings.theme)
-
-  // Apply theme class on mount and when theme changes
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [theme])
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-[#0F1117]">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} desktopOpen={desktopSidebarOpen} />
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--surface-soft)' }}>
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        desktopOpen={desktopSidebarOpen}
+        onToggle={() => setDesktopSidebarOpen((v) => !v)}
+      />
 
-      <div className={`${desktopSidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} transition-[margin] duration-300 flex flex-col min-h-screen`}>
-        <TopBar
-          onMenuClick={() => setSidebarOpen(true)}
-          onDesktopMenuClick={() => setDesktopSidebarOpen((v) => !v)}
-          desktopSidebarOpen={desktopSidebarOpen}
-        />
-        <main className="flex-1 p-4 md:p-6">
+      {/* Mobile menu button — only visible on small screens */}
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="lg:hidden fixed top-3 left-3 z-20 p-2 bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] text-[#41454d] dark:text-[#9297a0] shadow-sm"
+        aria-label="Open menu"
+      >
+        <Menu className="w-4 h-4" />
+      </button>
+
+      <div className={`${desktopSidebarOpen ? 'lg:ml-[220px]' : 'lg:ml-[56px]'} transition-[margin] duration-300 min-h-screen`}>
+        <main className="p-4 md:p-6">
           <Outlet />
         </main>
       </div>

@@ -10,12 +10,19 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "certs": "mkdir -p certs && mkcert -cert-file certs/cert.pem -key-file certs/key.pem $(ipconfig getifaddr en0) localhost 127.0.0.1",
+    "deploy": "docker compose up --build -d",
+    "deploy:https": "npm run certs && docker compose up --build -d"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "date-fns": "^4.1.0",
     "exceljs": "^4.4.0",
     "lucide-react": "^1.7.0",
+    "lz-string": "^1.5.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.2",
@@ -31,6 +38,7 @@
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.27",
     "eslint": "^9.39.4",

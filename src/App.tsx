@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useStore } from './store'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
 import CashFlow from './pages/CashFlow'
@@ -8,9 +10,20 @@ import DebtPayment from './pages/DebtPayment'
 import MortgagePage from './pages/Mortgage'
 import Portfolio from './pages/Portfolio'
 import SharedBalance from './pages/SharedBalance'
+import SharedBalanceView from './pages/SharedBalanceView'
 import Settings from './pages/Settings'
+import NetWorth from './pages/NetWorth'
+import Reports from './pages/Reports'
+import Budget from './pages/Budget'
+import Transactions from './pages/Transactions'
 
 export default function App() {
+  const theme = useStore((s) => s.settings.theme)
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+  }, [theme])
+
   return (
     <BrowserRouter>
       <Routes>
@@ -24,7 +37,12 @@ export default function App() {
           <Route path="portfolio" element={<Portfolio />} />
           <Route path="shared-balance" element={<SharedBalance />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="net-worth" element={<NetWorth />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="budget" element={<Budget />} />
+          <Route path="transactions" element={<Transactions />} />
         </Route>
+        <Route path="/shared-balance/view" element={<SharedBalanceView />} />
       </Routes>
     </BrowserRouter>
   )

@@ -4,6 +4,7 @@ import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { MortgageContribution } from '../../store/types'
 import { today } from '../../lib/formatters'
+import { inputClass } from '../../lib/styles'
 
 interface Props {
   open: boolean
@@ -12,6 +13,9 @@ interface Props {
 }
 
 const empty = () => ({ date: today(), by: '', description: '', amount: '' })
+const label = 'block text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] mb-1'
+const cancelBtn = 'flex-1 border border-[#e8e8e8] dark:border-[#2d3347] text-[#181d26] dark:text-[#e8eaf0] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors'
+const submitBtn = 'flex-1 bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors'
 
 export default function MortgageContributionForm({ open, onClose, contribution }: Props) {
   const addMortgageContribution = useStore((s) => s.addMortgageContribution)
@@ -22,18 +26,12 @@ export default function MortgageContributionForm({ open, onClose, contribution }
 
   useEffect(() => {
     if (contribution) {
-      setForm({
-        date: contribution.date,
-        by: contribution.by,
-        description: contribution.description,
-        amount: String(contribution.amount),
-      })
+      setForm({ date: contribution.date, by: contribution.by, description: contribution.description, amount: String(contribution.amount) })
     } else {
       setForm(empty())
     }
   }, [contribution, open])
 
-  // Unique names from past contributions for datalist suggestions
   const nameSuggestions = [...new Set(allContributions.map((c) => c.by))].filter(Boolean).sort()
 
   function handleSubmit(e: React.FormEvent) {
@@ -45,87 +43,36 @@ export default function MortgageContributionForm({ open, onClose, contribution }
       description: form.description.trim(),
       amount: parseFloat(form.amount) || 0,
     }
-    if (contribution) {
-      updateMortgageContribution(contribution.id, data)
-    } else {
-      addMortgageContribution(data)
-    }
+    if (contribution) updateMortgageContribution(contribution.id, data)
+    else addMortgageContribution(data)
     onClose()
   }
-
-  const inputClass =
-    'w-full border border-gray-200 dark:border-[#2D3448] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]'
 
   return (
     <Modal open={open} onClose={onClose} title={contribution ? 'Edit Contribution' : 'Add Contribution'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-            required
-            className={inputClass}
-          />
+          <label className={label}>Date</label>
+          <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required className={inputClass} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">By</label>
-          <input
-            type="text"
-            list="contribution-name-suggestions"
-            value={form.by}
-            onChange={(e) => setForm({ ...form, by: e.target.value })}
-            required
-            placeholder="e.g. Jorge, Caro, Papa"
-            className={inputClass}
-          />
+          <label className={label}>By</label>
+          <input type="text" list="contribution-name-suggestions" value={form.by} onChange={(e) => setForm({ ...form, by: e.target.value })} required placeholder="e.g. Jorge, Caro, Papa" className={inputClass} />
           <datalist id="contribution-name-suggestions">
             {nameSuggestions.map((n) => <option key={n} value={n} />)}
           </datalist>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-          <input
-            type="text"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            required
-            placeholder="e.g. Mensualidad May 25, Enganche, Abono a capital"
-            className={inputClass}
-          />
+          <label className={label}>Description</label>
+          <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder="e.g. Mensualidad May 25" className={inputClass} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (MXN)</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.amount}
-            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-            required
-            placeholder="0.00"
-            className={inputClass}
-          />
+          <label className={label}>Amount (MXN)</label>
+          <input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required placeholder="0.00" className={inputClass} />
         </div>
-
         <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#6d28d9] transition-colors"
-          >
-            {contribution ? 'Save Changes' : 'Add Contribution'}
-          </button>
+          <button type="button" onClick={onClose} className={cancelBtn}>Cancel</button>
+          <button type="submit" className={submitBtn}>{contribution ? 'Save Changes' : 'Add Contribution'}</button>
         </div>
       </form>
     </Modal>

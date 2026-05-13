@@ -5,6 +5,7 @@ import { useStore } from '../../store'
 import { generateId } from '../../lib/id'
 import { today } from '../../lib/formatters'
 import { extractTransactionsFromScreenshots } from '../../lib/localOcr'
+import { inputClass, primaryBtn, secondaryBtn } from '../../lib/styles'
 import type { Expense } from '../../store/types'
 
 interface Props {
@@ -32,9 +33,6 @@ interface ReviewRow {
 }
 
 type Step = 'upload' | 'loading' | 'review' | 'done'
-
-const inputClass =
-  'w-full border border-gray-200 dark:border-[#2D3448] rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#7C3AED]'
 
 export default function ScreenshotImportModal({ open, onClose }: Props) {
   const categories = useStore((s) => s.settings.expenseCategories)
@@ -230,17 +228,17 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
             onClick={() => fileRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
+            className={`border-2 border-dashed rounded-[12px] p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
               dragging
-                ? 'border-[#7C3AED] bg-purple-50 dark:bg-purple-900/10'
-                : 'border-gray-200 dark:border-[#2D3448] hover:border-[#7C3AED] hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                ? 'border-[#181d26] bg-[#f0f2f5]'
+                : 'border-[#e8e8e8] hover:border-[#181d26] hover:bg-[#f8fafc]'
             }`}
           >
-            <Camera className="w-8 h-8 text-gray-400" />
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-              <span className="font-medium text-[#7C3AED]">Click to select</span> or drag and drop screenshots
+            <Camera className="w-8 h-8 text-[#41454d]" />
+            <p className="text-[13px] text-[#41454d] text-center">
+              <span className="font-medium text-[#181d26]">Click to select</span> or drag and drop screenshots
             </p>
-            <p className="text-xs text-gray-400">PNG, JPG — multiple files supported</p>
+            <p className="text-[11px] text-[#41454d]">PNG, JPG — multiple files supported</p>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
               onChange={(e) => e.target.files && addFiles(e.target.files)} />
           </div>
@@ -271,12 +269,11 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
           )}
 
           <div className="flex gap-3 pt-2">
-            <button onClick={handleClose}
-              className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <button onClick={handleClose} className={`flex-1 ${secondaryBtn}`}>
               Cancel
             </button>
             <button onClick={extract} disabled={images.length === 0}
-              className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#6d28d9] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              className={`flex-1 ${primaryBtn} disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2`}>
               <Upload className="w-4 h-4" />
               Extract Transactions
             </button>
@@ -287,9 +284,9 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
       {/* ── Loading ── */}
       {step === 'loading' && (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <Loader2 className="w-8 h-8 text-[#7C3AED] animate-spin" />
-          <p className="text-sm text-gray-600 dark:text-gray-400">{progressMsg || 'Starting OCR…'}</p>
-          <p className="text-xs text-gray-400">This may take a few seconds per image</p>
+          <Loader2 className="w-8 h-8 text-[#181d26] animate-spin" />
+          <p className="text-[13px] text-[#41454d]">{progressMsg || 'Starting OCR…'}</p>
+          <p className="text-[11px] text-[#41454d]">This may take a few seconds per image</p>
         </div>
       )}
 
@@ -311,8 +308,8 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                   <button
                     key={i}
                     onClick={() => setActiveImage(i)}
-                    className={`w-10 h-14 rounded-lg overflow-hidden border-2 transition-colors ${
-                      activeImage === i ? 'border-[#7C3AED]' : 'border-transparent hover:border-gray-300'
+                    className={`w-10 h-14 rounded-[6px] overflow-hidden border-2 transition-colors ${
+                      activeImage === i ? 'border-[#181d26]' : 'border-transparent hover:border-[#e8e8e8]'
                     }`}
                   >
                     <img src={img.preview} alt="" className="w-full h-full object-cover" />
@@ -325,13 +322,13 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
           {/* Right: editable transaction list — only the list inner div scrolls */}
           <div className="flex-1 flex flex-col gap-3 min-w-0 overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-[13px] font-medium text-[#181d26]">
                 {rows.length} transaction{rows.length !== 1 ? 's' : ''} found
               </span>
-              <div className="flex gap-2 text-xs text-gray-500">
-                <button onClick={() => toggleAll(true)} className="hover:text-[#7C3AED]">Select all</button>
+              <div className="flex gap-2 text-[11px] text-[#41454d]">
+                <button onClick={() => toggleAll(true)} className="hover:text-[#181d26]">Select all</button>
                 <span>·</span>
-                <button onClick={() => toggleAll(false)} className="hover:text-[#7C3AED]">None</button>
+                <button onClick={() => toggleAll(false)} className="hover:text-[#181d26]">None</button>
               </div>
             </div>
 
@@ -339,14 +336,14 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
               {rows.map((row) => (
                 <div
                   key={row.key}
-                  className={`rounded-xl border p-3 space-y-2 transition-colors ${
+                  className={`rounded-[8px] border p-3 space-y-2 transition-colors ${
                     row.include
-                      ? 'border-[#7C3AED]/30 bg-purple-50/50 dark:bg-purple-900/10'
-                      : 'border-gray-200 dark:border-[#2D3448] opacity-50'
+                      ? 'border-[#181d26]/20 bg-[#f8fafc]'
+                      : 'border-[#e8e8e8] opacity-50'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <button onClick={() => updateRow(row.key, { include: !row.include })} className="text-[#7C3AED] shrink-0">
+                    <button onClick={() => updateRow(row.key, { include: !row.include })} className="text-[#181d26] shrink-0">
                       {row.include ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-gray-400" />}
                     </button>
                     <input
@@ -404,12 +401,12 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                       <option value="user1">{user1Name}</option>
                       <option value="user2">{user2Name}</option>
                     </select>
-                    <label className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                    <label className="flex items-center gap-1.5 text-[13px] text-[#41454d] cursor-pointer">
                       <input
                         type="checkbox"
                         checked={row.shared}
                         onChange={(e) => updateRow(row.key, { shared: e.target.checked })}
-                        className="w-3.5 h-3.5 rounded border-gray-300 text-[#7C3AED] focus:ring-[#7C3AED]"
+                        className="w-3.5 h-3.5 rounded border-[#e8e8e8] accent-[#181d26]"
                       />
                       Shared
                     </label>
@@ -418,20 +415,19 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
               ))}
             </div>
 
-            <div className="flex gap-3 pt-1 border-t border-gray-100 dark:border-[#2D3448]">
+            <div className="flex gap-3 pt-1 border-t border-[#e8e8e8]">
               <button onClick={addEmptyRow}
-                className="flex items-center gap-1.5 border border-dashed border-gray-300 dark:border-[#2D3448] text-gray-500 dark:text-gray-400 rounded-full px-3 py-2 text-sm font-medium hover:border-[#7C3AED] hover:text-[#7C3AED] transition-colors shrink-0">
+                className="flex items-center gap-1.5 border border-dashed border-[#e8e8e8] text-[#41454d] rounded-[8px] px-3 py-2 text-[13px] font-medium hover:border-[#181d26] hover:text-[#181d26] transition-colors shrink-0">
                 <Plus className="w-3.5 h-3.5" />
                 Add row
               </button>
-              <button onClick={handleClose}
-                className="border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <button onClick={handleClose} className={secondaryBtn}>
                 Cancel
               </button>
               <button
                 onClick={handleAddSelected}
                 disabled={selectedCount === 0}
-                className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#6d28d9] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className={`flex-1 ${primaryBtn} disabled:opacity-40 disabled:cursor-not-allowed`}
               >
                 Add {selectedCount} selected
               </button>
@@ -443,24 +439,22 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
       {/* ── Done ── */}
       {step === 'done' && (
         <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-          <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-2xl">
+          <div className="w-12 h-12 rounded-[12px] bg-[#eef8f4] flex items-center justify-center text-2xl text-[#2e7d65]">
             ✓
           </div>
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="font-medium text-[#181d26]">
               {addedCount === 0 ? 'No expenses added' : `${addedCount} expense${addedCount > 1 ? 's' : ''} added`}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-[13px] text-[#41454d] mt-1">
               {addedCount > 0 ? 'They are now visible in your expense list.' : 'No transactions were selected.'}
             </p>
           </div>
           <div className="flex gap-3 w-full">
-            <button onClick={reset}
-              className="flex-1 border border-gray-200 dark:border-[#2D3448] text-gray-700 dark:text-gray-300 rounded-full px-4 py-2.5 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <button onClick={reset} className={`flex-1 ${secondaryBtn}`}>
               Import More
             </button>
-            <button onClick={handleClose}
-              className="flex-1 bg-[#7C3AED] text-white rounded-full px-4 py-2.5 text-sm font-medium hover:bg-[#6d28d9] transition-colors">
+            <button onClick={handleClose} className={`flex-1 ${primaryBtn}`}>
               Done
             </button>
           </div>

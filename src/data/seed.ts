@@ -10,6 +10,7 @@ import type {
   Settlement,
   MortgageConfig,
   MortgagePayment,
+  RecurringExpense,
 } from '../store/types'
 
 export const defaultSettings: AppSettings = {
@@ -44,6 +45,7 @@ export const defaultSettings: AppSettings = {
     { name: 'Rental', icon: 'Building2', color: '#14B8A6' },
     { name: 'Others', icon: 'Tag', color: '#64748B' },
   ],
+  splitRatio: 0.5,
 }
 
 export const seedExpenses: Expense[] = [
@@ -546,24 +548,30 @@ export const seedInvestmentMovements: InvestmentMovement[] = [
   },
 ]
 
+export const seedRecurringExpenses: RecurringExpense[] = [
+  { id: 'rec-001', name: 'Netflix', amount: 299, category: 'subscriptions', frequency: 'monthly', lastDate: '2026-04-15', status: 'active' },
+  { id: 'rec-002', name: 'Spotify', amount: 99, category: 'subscriptions', frequency: 'monthly', lastDate: '2026-04-10', status: 'active' },
+  { id: 'rec-003', name: 'Luz CFE', amount: 1200, category: 'luz', frequency: 'bimonthly', lastDate: '2026-03-20', status: 'active' },
+  { id: 'rec-004', name: 'Agua', amount: 433, category: 'agua', frequency: 'bimonthly', lastDate: '2026-04-01', status: 'active' },
+  { id: 'rec-005', name: 'Gym', amount: 899, category: 'personal', frequency: 'monthly', lastDate: '2026-04-01', status: 'active' },
+  { id: 'rec-006', name: 'Amazon Prime', amount: 169, category: 'subscriptions', frequency: 'monthly', lastDate: '2026-04-22', status: 'paused' },
+  { id: 'rec-007', name: 'Seguro Auto', amount: 3200, category: 'misc-casa', frequency: 'monthly', lastDate: '2026-04-08', status: 'active' },
+  { id: 'rec-008', name: 'Seguro Gastos', amount: 1900, category: 'medicos', frequency: 'monthly', lastDate: '2026-04-25', status: 'active' },
+]
+
 export const seedSettlements: Settlement[] = []
 
 export const mortgageConfig: MortgageConfig = {
-  principal: 1500000,
-  interestRate: 10.5,
-  termMonths: 180,
-  startDate: '2024-01-01',
-  minimumPayment: 16500,
+  principal: 2700000,
+  interestRate: 9.51,
+  termMonths: 240,
+  startDate: '2025-04-04',
+  // P+I only — does NOT include Seguros BANORTE (~717.16) or Admin (299)
+  // Total Pago Manual = 26192.69 = 25176.53 + 717.16 + 299
+  minimumPayment: 25176.53,
 }
 
-export const seedMortgagePayments: MortgagePayment[] = [
-  { id: 'mort-001', date: '2024-02-01', totalPaid: 16500, extraCapital: 0, balanceAfter: 1496843.75 },
-  { id: 'mort-002', date: '2024-03-01', totalPaid: 16500, extraCapital: 0, balanceAfter: 1493659.66 },
-  { id: 'mort-003', date: '2024-04-01', totalPaid: 26500, extraCapital: 10000, balanceAfter: 1480133.78, note: 'Extra from savings' },
-  { id: 'mort-004', date: '2024-05-01', totalPaid: 16500, extraCapital: 0, balanceAfter: 1476816.40 },
-  { id: 'mort-005', date: '2024-06-01', totalPaid: 16500, extraCapital: 0, balanceAfter: 1473470.34 },
-  { id: 'mort-006', date: '2024-07-01', totalPaid: 36500, extraCapital: 20000, balanceAfter: 1450476.23, note: 'Annual bonus' },
-]
+export const seedMortgagePayments: MortgagePayment[] = []
 
 export const seedData = {
   settings: defaultSettings,
@@ -575,6 +583,7 @@ export const seedData = {
   portfolios: seedPortfolios,
   investmentMovements: seedInvestmentMovements,
   settlements: seedSettlements,
+  recurringExpenses: seedRecurringExpenses,
   mortgageConfig,
   mortgagePayments: seedMortgagePayments,
 }

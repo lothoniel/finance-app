@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinanceApp Design System — Color & Tokens Guide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+      background: #f5f5f5;
+      color: #181d26;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 40px;
+      font-weight: 400;
+      margin-bottom: 12px;
+      color: #181d26;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #41454d;
+      margin-bottom: 48px;
+      max-width: 600px;
+    }
+
+    .section {
+      margin-bottom: 48px;
+      background: white;
+      border-radius: 8px;
+      padding: 32px;
+      border: 1px solid #dddddd;
+    }
+
+    .section h2 {
+      font-size: 24px;
+      font-weight: 400;
+      margin-bottom: 24px;
+      color: #181d26;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #dddddd;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .color-swatch {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #dddddd;
+    }
+
+    .color-sample {
+      height: 80px;
+      width: 100%;
+    }
+
+    .color-info {
+      padding: 12px;
+      background: #f8fafc;
+      font-size: 12px;
+    }
+
+    .color-name {
+      font-weight: 600;
+      color: #181d26;
+      margin-bottom: 4px;
+    }
+
+    .color-hex {
+      font-family: monospace;
+      font-size: 11px;
+      color: #41454d;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .comparison-card {
+      background: white;
+      border: 1px solid #dddddd;
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .comparison-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .old {
+      border-left: 4px solid #d32f2f;
+    }
+
+    .new {
+      border-left: 4px solid #006400;
+    }
+
+    .metric-example {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .metric-card {
+      background: white;
+      border: 1px solid #dddddd;
+      border-left: 4px solid;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .metric-card.coral { border-left-color: #aa2d00; }
+    .metric-card.forest { border-left-color: #0a2e0e; }
+    .metric-card.mint { border-left-color: #a8d8c4; }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #41454d;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 400;
+      color: #181d26;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .metric-caption {
+      font-size: 12px;
+      color: #41454d;
+    }
+
+    .hero-band {
+      background: #0a2e0e;
+      color: white;
+      border-radius: 8px;
+      padding: 32px;
+      margin: 20px 0;
+    }
+
+    .hero-band h3 {
+      font-size: 24px;
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+
+    .hero-band p {
+      font-size: 14px;
+      opacity: 0.95;
+      margin-bottom: 20px;
+    }
+
+    .insight-example {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .insight-card {
+      background: #f5e9d4;
+      border-left: 4px solid #d9a441;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .insight-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #181d26;
+      opacity: 0.7;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .insight-text {
+      font-size: 13px;
+      color: #333840;
+      line-height: 1.4;
+    }
+
+    .typography-example {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+
+    .type-h1 { font-size: 40px; font-weight: 400; margin-bottom: 16px; }
+    .type-h2 { font-size: 32px; font-weight: 400; margin-bottom: 16px; }
+    .type-h3 { font-size: 24px; font-weight: 400; margin-bottom: 16px; }
+    .type-label { font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+    .type-body { font-size: 14px; font-weight: 400; margin-bottom: 8px; }
+    .type-caption { font-size: 13px; font-weight: 500; }
+
+    .key-points {
+      background: #f8fafc;
+      border-left: 4px solid #181d26;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .key-points ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .key-points li {
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .key-points li:before {
+      content: "✓ ";
+      font-weight: 600;
+      color: #006400;
+      margin-right: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .comparison { grid-template-columns: 1fr; }
+      .metric-example { grid-template-columns: 1fr; }
+      .insight-example { grid-template-columns: 1fr; }
+      h1 { font-size: 28px; }
+      .section { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>FinanceApp Design System</h1>
+    <p class="subtitle">Airtable Editorial Design System applied to personal finance. All colors, typography, and component patterns documented here.</p>
+
+    <!-- PRIMARY COLORS -->
+    <div class="section">
+      <h2>Primary & Neutral Colors</h2>
+      <p style="margin-bottom: 20px;">These form the backbone of every page. Start with these before adding accent colors.</p>
+      <div class="color-grid">
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #181d26;"></div>
+          <div class="color-info">
+            <div class="color-name">Primary</div>
+            <div class="color-hex">#181d26</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">CTAs, h1/h2</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #0d1218;"></div>
+          <div class="color-info">
+            <div class="color-name">Primary Active</div>
+            <div class="color-hex">#0d1218</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Hover/press</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #ffffff; border: 1px solid #333;"></div>
+          <div class="color-info">
+            <div class="color-name">Canvas</div>
+            <div class="color-hex">#ffffff</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Page bg</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #f8fafc;"></div>
+          <div class="color-info">
+            <div class="color-name">Surface Soft</div>
+            <div class="color-hex">#f8fafc</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Card bg</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #dddddd;"></div>
+          <div class="color-info">
+            <div class="color-name">Hairline</div>
+            <div class="color-hex">#dddddd</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Borders</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #333840;"></div>
+          <div class="color-info">
+            <div class="color-name">Body</div>
+            <div class="color-hex">#333840</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Body text</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="key-points">
+        <ul>
+          <li><strong>Never use purple or blue for primary buttons.</strong> Near-black (#181d26) conveys trust.</li>
+          <li><strong>Whitespace is intentional.</strong> 96px section padding, 24px card gutters.</li>
+          <li><strong>No gradients on hero sections.</strong> Clean white canvas builds confidence.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SIGNATURE COLORS -->
+    <div class="section">
+      <h2>Signature Card Colors</h2>
+      <p style="margin-bottom: 20px;">These are your "voltage moments" — use sparingly to break monotony and guide attention. They carry full-bleed cards, hero bands, or metric accents.</p>
+      <div class="color-grid">
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #aa2d00;"></div>
+          <div class="color-info">
+            <div class="color-name">Coral</div>
+            <div class="color-hex">#aa2d00</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Income, alerts</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #0a2e0e;"></div>
+          <div class="color-info">
+            <div class="color-name">Forest</div>
+            <div class="color-hex">#0a2e0e</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Hero band</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #f5e9d4;"></div>
+          <div class="color-info">
+            <div class="color-name">Cream</div>
+            <div class="color-hex">#f5e9d4</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Insights</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #a8d8c4;"></div>
+          <div class="color-info">
+            <div class="color-name">Mint</div>
+            <div class="color-hex">#a8d8c4</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Assets, gains</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #d9a441;"></div>
+          <div class="color-info">
+            <div class="color-name">Mustard</div>
+            <div class="color-hex">#d9a441</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Recommendations</div>
+          </div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-sample" style="background: #006400;"></div>
+          <div class="color-info">
+            <div class="color-name">Success</div>
+            <div class="color-hex">#006400</div>
+            <div style="font-size: 10px; margin-top: 4px; color: #41454d;">Positive values</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="key-points">
+        <ul>
+          <li><strong>Use signature cards to punctuate long scroll.</strong> White → forest hero → white → insights → white.</li>
+          <li><strong>Each metric card gets a left-border accent:</strong> coral for income, mint for investments, mustard for debt.</li>
+          <li><strong>Don't overuse.</strong> Too many colors feel chaotic. Stick to the palette.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- TYPOGRAPHY -->
+    <div class="section">
+      <h2>Typography Hierarchy</h2>
+      <p style="margin-bottom: 20px;">Haas Grotesk (or Inter fallback). Emphasis comes from size and color, never from weight. Display type is always 400, never bold.</p>
+      
+      <div class="typography-example">
+        <div class="type-h1">40px Display · Weight 400</div>
+        <div style="font-size: 12px; color: #41454d; margin-bottom: 16px;">Page h1 · Hero headline</div>
+
+        <div class="type-h2">32px Display · Weight 400</div>
+        <div style="font-size: 12px; color: #41454d; margin-bottom: 16px;">Section headline</div>
+
+        <div class="type-h3">24px Display · Weight 400</div>
+        <div style="font-size: 12px; color: #41454d; margin-bottom: 16px;">Subsection title</div>
+
+        <div class="type-label">11px Label · Weight 600</div>
+        <div style="font-size: 12px; color: #41454d; margin-bottom: 16px;">Metric label, uppercase</div>
+
+        <div class="type-body">14px Body · Weight 400</div>
+        <div style="font-size: 12px; color: #41454d; margin-bottom: 16px;">Running text, default</div>
+
+        <div class="type-caption">13px Caption · Weight 500</div>
+        <div style="font-size: 12px; color: #41454d; margin-bottom: 16px;">Meta text, captions</div>
+      </div>
+
+      <div class="key-points">
+        <ul>
+          <li><strong>Never use weight 700 or 800.</strong> Display is 400, buttons/labels are 500.</li>
+          <li><strong>14px is the default body size.</strong> Never smaller than 13px in interface.</li>
+          <li><strong>Emphasis comes from color contrast, not weight.</strong> Use signature colors to highlight.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- COMPONENTS -->
+    <div class="section">
+      <h2>Component Patterns</h2>
+      
+      <h3 style="font-size: 18px; font-weight: 500; margin-top: 24px; margin-bottom: 16px;">Metric Card (Left Border Accent)</h3>
+      <div class="metric-example">
+        <div class="metric-card coral">
+          <div class="metric-label">Monthly Income</div>
+          <div class="metric-value">$165.4k</div>
+          <div class="metric-caption">Income + Transfers</div>
+        </div>
+        <div class="metric-card forest">
+          <div class="metric-label">Savings Rate</div>
+          <div class="metric-value">59.2%</div>
+          <div class="metric-caption">Of gross income</div>
+        </div>
+        <div class="metric-card mint">
+          <div class="metric-label">Investments</div>
+          <div class="metric-value">$6.7M</div>
+          <div class="metric-caption">Portfolio balance</div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: #41454d;">No shadow. 1px hairline border + 4px left accent. 24px padding. 12px border-radius.</p>
+
+      <h3 style="font-size: 18px; font-weight: 500; margin-top: 24px; margin-bottom: 16px;">Hero Signature Band</h3>
+      <div class="hero-band">
+        <h3>Your Money This Month</h3>
+        <p>April 2026 · Fully reconciled through today</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+          <div>
+            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Net Flow</div>
+            <div style="font-size: 24px; font-weight: 500;">$98.3k</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Income</div>
+            <div style="font-size: 24px; font-weight: 500;">$84.9k</div>
+          </div>
+          <div>
+            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Outflows</div>
+            <div style="font-size: 24px; font-weight: 500;">$143.4k</div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: #41454d;">Forest green background (#0a2e0e), white text. 40px padding. 8px border-radius. Use for narrative structure breaks.</p>
+
+      <h3 style="font-size: 18px; font-weight: 500; margin-top: 24px; margin-bottom: 16px;">Insight Card (Actionable Alert)</h3>
+      <div class="insight-example">
+        <div class="insight-card" style="border-left-color: #aa2d00;">
+          <div class="insight-label">↑ Spending Alert</div>
+          <div class="insight-text">Salidas increased 34.6%. Consider reviewing subscriptions.</div>
+        </div>
+        <div class="insight-card" style="border-left-color: #a8d8c4;">
+          <div class="insight-label">✓ Investment Growth</div>
+          <div class="insight-text">Portfolio gained $21.5k this month. On track for 12% annual return.</div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: #41454d;">Cream background (#f5e9d4), colored left border (4px), 20px padding, 8px border-radius. Guide users to next actions.</p>
+    </div>
+
+    <!-- BEFORE & AFTER -->
+    <div class="section">
+      <h2>Before & After: Key Changes</h2>
+      
+      <div class="comparison">
+        <div class="comparison-card old">
+          <h3>❌ Before (Current)</h3>
+          <ul style="list-style: none; margin: 0; padding: 0;">
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">Purple accent buttons</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">Mixed typography weights</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">Dense layout, no breathing room</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">10+ elements per viewport</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">No narrative structure</li>
+            <li style="padding: 8px 0;">Chaotic color palette</li>
+          </ul>
+        </div>
+
+        <div class="comparison-card new">
+          <h3>✓ After (New)</h3>
+          <ul style="list-style: none; margin: 0; padding: 0;">
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">Near-black primary CTA</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">Strict 40/32/24/18/14/13px hierarchy</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">96px section padding, whitespace-first</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">3 sections max, intentional focus</li>
+            <li style="padding: 8px 0; border-bottom: 1px solid #ddd;">Story-driven: hero → breakdown → insights</li>
+            <li style="padding: 8px 0;">5 signature colors + semantics</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPACING -->
+    <div class="section">
+      <h2>Spacing & Layout</h2>
+      <div style="margin: 20px 0;">
+        <p><strong>Base Unit:</strong> 4px (all spacing snaps to 4-multiples)</p>
+        <p style="margin-top: 12px;"><strong>Spacing Scale:</strong></p>
+        <ul style="list-style: none; margin: 12px 0; padding: 0; font-family: monospace; font-size: 13px;">
+          <li>--spacing-xxs: 4px</li>
+          <li>--spacing-xs: 8px</li>
+          <li>--spacing-sm: 12px</li>
+          <li>--spacing-md: 16px</li>
+          <li>--spacing-lg: 24px (card padding)</li>
+          <li>--spacing-xl: 32px (feature card padding)</li>
+          <li>--spacing-xxl: 48px (signature card padding)</li>
+          <li style="font-weight: 600;">--spacing-section: 96px ← Universal vertical rhythm</li>
+        </ul>
+      </div>
+
+      <div style="margin: 20px 0;">
+        <p><strong>Border Radius:</strong></p>
+        <ul style="list-style: none; margin: 12px 0; padding: 0; font-family: monospace; font-size: 13px;">
+          <li>--radius-xs: 2px (legal buttons)</li>
+          <li>--radius-sm: 6px (inputs)</li>
+          <li>--radius-md: 10px (content cards)</li>
+          <li style="font-weight: 600;">--radius-lg: 12px ← CTAs, signature cards</li>
+          <li>--radius-pill: 9999px (pricing only)</li>
+        </ul>
+      </div>
+
+      <div class="key-points">
+        <ul>
+          <li><strong>Every section has 96px top + bottom padding.</strong> This is universal.</li>
+          <li><strong>Cards have 24px internal padding (lg) or 32px (xl).</strong> Gutters between cards are 24px.</li>
+          <li><strong>Hero sections need breathing room.</strong> 96px+ above and below headlines.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- IMPLEMENTATION -->
+    <div class="section">
+      <h2>How to Implement</h2>
+      <ol style="margin-left: 20px; line-height: 1.8;">
+        <li>Copy <code style="background: #f8fafc; padding: 2px 6px; border-radius: 3px;">design-tokens.css</code> into your project</li>
+        <li>Use CSS variables: <code style="background: #f8fafc; padding: 2px 6px; border-radius: 3px;">background: var(--sig-forest);</code></li>
+        <li>Build components using the patterns above (MetricCard, InsightCard, etc.)</li>
+        <li>Test responsive at 1024px, 768px, and 375px breakpoints</li>
+        <li>Apply same tokens to all pages (not just dashboard)</li>
+      </ol>
+    </div>
+
+    <div style="text-align: center; margin-top: 48px; padding-top: 24px; border-top: 1px solid #dddddd;">
+      <p style="font-size: 13px; color: #41454d;">
+        Design system guide · FinanceApp · April 2026<br>
+        See <strong>CLAUDE_CODE_HANDOFF.md</strong> for full specifications
+      </p>
+    </div>
+  </div>
+</body>
+</html>

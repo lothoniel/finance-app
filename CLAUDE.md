@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Commands
 
 ```bash
@@ -50,3 +48,4 @@ npx vitest run src/__tests__/lib/settlement.test.ts
 - `src/lib/settlement.ts` — shared balance calculation logic (unit tested)
 
 **Tests:** Vitest + jsdom + Testing Library. Tests are in `src/__tests__/` and cover pure utility functions (`settlement`, `filters`, `formatters`). Setup file: `src/test/setup.ts`.
+

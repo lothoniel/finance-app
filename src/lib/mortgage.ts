@@ -1,3 +1,4 @@
+import { sortByDateAsc } from './filters'
 import type { MortgageConfig, MortgagePayment } from '../store/types'
 
 /** Months remaining given current balance, annual rate, and monthly payment */
@@ -49,12 +50,12 @@ export function buildBalanceSeries(
   config: MortgageConfig,
   payments: MortgagePayment[]
 ): BalancePoint[] {
-  const { principal, interestRate, termMonths, startDate, minimumPayment } = config
+  const { principal, interestRate, termMonths, startDate } = config
   const r = interestRate / 100 / 12
-  const payment = Math.max(minimumPayment, calcMonthlyPayment(principal, interestRate, termMonths))
+  const payment = calcMonthlyPayment(principal, interestRate, termMonths)
 
   // Sort payments by date
-  const sorted = [...payments].sort((a, b) => a.date.localeCompare(b.date))
+  const sorted = sortByDateAsc(payments)
 
   const start = new Date(startDate)
   const points: BalancePoint[] = []
