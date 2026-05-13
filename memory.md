@@ -59,5 +59,10 @@ Active development. No backend. Design system overhaul in progress across all pa
 - **Table style standardized**: DebtPayment and Mortgage Payment History updated — header text `#9297a0`, padding `py-2.5`, row dividers `border-[#f4f5f7]`. Mortgage Extra Capital color changed from orange `#e8874a` to green `#1a7a3c`, row highlight removed.
 - **Portfolio buttons**: removed `+` text prefix from "Movement" and "Portfolio" action buttons (icon already conveys add action).
 
+## Infrastructure Added (2026-05-12)
+- **Docker deployment**: app is containerized and served via nginx. `npm run deploy` rebuilds image and restarts container (HTTP, port 8080). LAN IP: `192.168.0.245` (may change with DHCP — check with `ipconfig getifaddr en0`). Access at `http://192.168.0.245:8080`.
+- **HTTPS deferred**: `npm run deploy:https` exists but requires `mkcert -install` (one-time Mac password prompt) + `mkcert -cert-file certs/cert.pem ...` first. nginx.conf is currently HTTP-only. HTTPS needed for SharedBalance share button (clipboard API). mkcert CA was created but not trusted in keychain yet — re-run `mkcert -install` and enter password.
+- **Scripts**: `deploy` = plain rebuild; `deploy:https` = rebuild with cert generation; `certs` = generate mkcert certs for current LAN IP + localhost.
+
 ## Features Added (2026-05-07)
 - **Dashboard Spending Trends chart**: now period-aware. Monthly = last 7 months ending at selected month; Quarterly = 3 months of selected quarter; Yearly = all 12 months of selected year. Top 7 categories (was 6) recalculated from visible months. Chart title updates dynamically. Section renamed "Spending Trends".
