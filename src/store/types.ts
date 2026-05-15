@@ -151,6 +151,9 @@ export interface SidebarConfig {
   showGroupLabels: boolean
 }
 
+export type Language = 'en' | 'es'
+export type CurrencyDisplay = 'MXN' | 'USD'
+
 export interface AppSettings {
   user1Name: string
   user2Name: string
@@ -161,4 +164,6 @@ export interface AppSettings {
   anthropicApiKey?: string
   splitRatio: number // user1's proportion of shared expenses (0–1, default 0.5)
   sidebarConfig?: SidebarConfig
+  language: Language
+  currencyDisplay: CurrencyDisplay
 }

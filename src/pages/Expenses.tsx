@@ -1,35 +1,36 @@
 import { useState, useMemo } from 'react'
 import { Plus, Search, Pencil, Trash2, Camera } from 'lucide-react'
 import { addMonths, parseISO } from 'date-fns'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import DonutChart from '../components/charts/DonutChart'
 import ExpenseForm from '../components/forms/ExpenseForm'
 import ScreenshotImportModal from '../components/forms/ScreenshotImportModal'
 import PeriodSelector from '../components/ui/PeriodSelector'
-import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
+import { formatMoney, formatMoneyCompact, formatDate } from '../lib/formatters'
 import { sortByDateDesc } from '../lib/filters'
 import { PERIOD_SCALE } from '../lib/constants'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
-import type { Expense, RecurringExpense } from '../store/types'
+import type { Expense, RecurringExpense, Language } from '../store/types'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] uppercase mb-4'
 
 type BottomTab = 'transactions' | 'recurring'
 
-const FREQ_LABEL: Record<string, string> = { monthly: 'Monthly', bimonthly: 'Bimonthly', annual: 'Annual' }
 const FREQ_MONTHS: Record<string, number> = { monthly: 1, bimonthly: 2, annual: 12 }
 
-function calcNextDate(lastDate: string, frequency: string): string {
+function calcNextDate(lastDate: string, frequency: string, language: Language): string {
   try {
     const next = addMonths(parseISO(lastDate), FREQ_MONTHS[frequency] ?? 1)
-    return formatDate(next.toISOString().slice(0, 10))
+    return formatDate(next.toISOString().slice(0, 10), language)
   } catch {
     return '—'
   }
 }
 
 export default function Expenses() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState<'all' | 'shared' | 'personal'>('all')
@@ -39,6 +40,8 @@ export default function Expenses() {
   const [editRecurring, setEditRecurring] = useState<RecurringExpense | undefined>()
   const [importModal, setImportModal] = useState(false)
 
+  const language = useStore((s) => s.settings.language)
+  const currency = useStore((s) => s.settings.currencyDisplay)
   const expenses = useStore((s) => s.expenses)
   const categories = useStore((s) => s.settings.expenseCategories)
   const recurringExpenses = useStore((s) => s.recurringExpenses)
@@ -119,20 +122,20 @@ export default function Expenses() {
     <div className="p-6 max-w-[1400px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Expenses</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('expenses.title')}</h1>
         <div className="flex items-center gap-3 flex-wrap">
           <PeriodSelector mode={mode} value={value} modes={['month', 'quarter', 'year', 'all', 'range']} onChange={onChange} />
           <button
             onClick={() => setImportModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] text-[#41454d] dark:text-[#9297a0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors"
           >
-            <Camera className="w-3.5 h-3.5" />Import
+            <Camera className="w-3.5 h-3.5" />{t('expenses.import')}
           </button>
           <button
             onClick={openAddExpense}
             className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />Add Expense
+            <Plus className="w-3.5 h-3.5" />{t('expenses.addExpense')}
           </button>
         </div>
       </div>
@@ -140,10 +143,10 @@ export default function Expenses() {
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
         {[
-          { label: 'TOTAL EXPENSES', value: formatMXNCompact(total), color: '#ef4444' },
-          { label: 'TOP CATEGORY', value: topCategory.name, color: '#181d26' },
-          { label: 'TOP AMOUNT', value: formatMXNCompact(topCategory.total), color: '#ef4444' },
-          { label: 'ACTIVE CATEGORIES', value: `${activeCategories} active`, color: '#22c55e' },
+          { label: t('expenses.kpis.total'), value: formatMoneyCompact(total, currency), color: '#ef4444' },
+          { label: t('expenses.kpis.topCategory'), value: topCategory.name, color: '#181d26' },
+          { label: t('expenses.kpis.topAmount'), value: formatMoneyCompact(topCategory.total, currency), color: '#ef4444' },
+          { label: t('expenses.kpis.activeCategories'), value: t('expenses.kpis.activeCount', { count: activeCategories }), color: '#22c55e' },
         ].map((kpi) => (
           <div key={kpi.label} className="flex-1 px-6 py-4">
             <div className="text-[22px] font-bold dark:text-[#e8eaf0]" style={{ color: kpi.color }}>{kpi.value}</div>
@@ -157,11 +160,11 @@ export default function Expenses() {
         {/* Spending by Category */}
         <div className={CARD}>
           <div className="p-5">
-            <div className={SECTION_LABEL}>Spending by Category</div>
+            <div className={SECTION_LABEL}>{t('expenses.sections.spendingByCategory')}</div>
             {donutData.length > 0 ? (
-              <DonutChart data={donutData} centerLabel="Total" centerValue={formatMXNCompact(total)} height={180} />
+              <DonutChart data={donutData} centerLabel={t('expenses.sections.donutTotal')} centerValue={formatMoneyCompact(total, currency)} height={180} />
             ) : (
-              <p className="text-[13px] text-[#9297a0] py-8 text-center">No expenses for this period</p>
+              <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('expenses.empty.noExpensesPeriod')}</p>
             )}
           </div>
         </div>
@@ -169,7 +172,7 @@ export default function Expenses() {
         {/* Category Breakdown */}
         <div className={CARD}>
           <div className="p-5">
-            <div className={SECTION_LABEL}>Category Breakdown</div>
+            <div className={SECTION_LABEL}>{t('expenses.sections.categoryBreakdown')}</div>
             {donutData.length > 0 ? (
               <div className="space-y-3">
                 {donutData.map((d) => (
@@ -180,7 +183,7 @@ export default function Expenses() {
                         <span className="text-[13px] text-[#333840] dark:text-[#c4c8d0] truncate">{d.name}</span>
                       </div>
                       <span className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] ml-2 flex-shrink-0">
-                        {formatMXNCompact(d.value)}
+                        {formatMoneyCompact(d.value, currency)}
                       </span>
                     </div>
                     <div className="h-1.5 bg-[#f4f5f7] dark:bg-[#252a38] rounded-full overflow-hidden">
@@ -190,7 +193,7 @@ export default function Expenses() {
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] text-[#9297a0] py-8 text-center">No data for this period</p>
+              <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('expenses.empty.noDataPeriod')}</p>
             )}
           </div>
         </div>
@@ -200,7 +203,7 @@ export default function Expenses() {
       {budgetCats.length > 0 && (
         <div className={`${CARD} mb-5`}>
           <div className="p-5">
-            <div className={SECTION_LABEL}>Category Budgets</div>
+            <div className={SECTION_LABEL}>{t('expenses.sections.categoryBudgets')}</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               {budgetCats.map((c) => {
                 const actual = catTotals[c.id] ?? 0
@@ -216,16 +219,18 @@ export default function Expenses() {
                         <span className="text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0]">{c.name}</span>
                       </div>
                       <span className="text-[13px] font-semibold" style={{ color: over ? '#ef4444' : '#41454d' }}>
-                        {formatMXNCompact(actual)} / {formatMXNCompact(budget)}
+                        {formatMoneyCompact(actual, currency)} / {formatMoneyCompact(budget, currency)}
                       </span>
                     </div>
                     <div className="h-1.5 bg-[#f4f5f7] dark:bg-[#252a38] rounded-full overflow-hidden mb-1.5">
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: over ? '#ef4444' : c.color }} />
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-[#9297a0]">{pct.toFixed(0)}% used</span>
+                      <span className="text-[#9297a0]">{t('dashboard.budget.percentUsed', { pct: pct.toFixed(0) })}</span>
                       <span style={{ color: over ? '#ef4444' : '#22c55e' }}>
-                        {over ? `${formatMXNCompact(diff)} over` : `${formatMXNCompact(diff)} left`}
+                        {over
+                          ? t('dashboard.budget.over', { amount: formatMoneyCompact(diff, currency) })
+                          : t('dashboard.budget.left', { amount: formatMoneyCompact(diff, currency) })}
                       </span>
                     </div>
                   </div>
@@ -240,17 +245,17 @@ export default function Expenses() {
       <div className={CARD}>
         {/* Tab bar */}
         <div className="flex border-b border-[#e8e8e8] dark:border-[#2d3347]">
-          {(['transactions', 'recurring'] as BottomTab[]).map((t) => (
+          {(['transactions', 'recurring'] as BottomTab[]).map((tab) => (
             <button
-              key={t}
-              onClick={() => setBottomTab(t)}
+              key={tab}
+              onClick={() => setBottomTab(tab)}
               className={`px-4 py-2.5 text-[14px] font-medium capitalize transition-colors border-b-2 -mb-px ${
-                bottomTab === t
+                bottomTab === tab
                   ? 'border-[#181d26] dark:border-[#e8eaf0] text-[#181d26] dark:text-[#e8eaf0]'
                   : 'border-transparent text-[#6b7280] hover:text-[#374151] dark:hover:text-[#9297a0]'
               }`}
             >
-              {t === 'transactions' ? 'Transactions' : 'Recurring'}
+              {t(`expenses.tabs.${tab}`)}
             </button>
           ))}
         </div>
@@ -262,17 +267,17 @@ export default function Expenses() {
             <div className="flex items-center gap-3 flex-wrap p-4 border-b border-[#e8e8e8] dark:border-[#2d3347]">
               {/* Type filter */}
               <div className="flex bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full p-1 gap-1">
-                {(['all', 'shared', 'personal'] as const).map((t) => (
+                {(['all', 'shared', 'personal'] as const).map((tf) => (
                   <button
-                    key={t}
-                    onClick={() => setTypeFilter(t)}
-                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors capitalize ${
-                      typeFilter === t
+                    key={tf}
+                    onClick={() => setTypeFilter(tf)}
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+                      typeFilter === tf
                         ? 'bg-white dark:bg-[#1e2330] text-[#181d26] dark:text-[#e8eaf0] shadow-sm'
                         : 'text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0]'
                     }`}
                   >
-                    {t}
+                    {t(`expenses.filters.${tf}`)}
                   </button>
                 ))}
               </div>
@@ -280,7 +285,7 @@ export default function Expenses() {
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9297a0]" />
                 <input
                   type="text"
-                  placeholder="Search expenses..."
+                  placeholder={t('expenses.filters.searchPlaceholder')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] text-[13px] bg-white dark:bg-[#252b3b] text-[#181d26] dark:text-[#e8eaf0] focus:outline-none focus:border-[#181d26]"
@@ -291,11 +296,13 @@ export default function Expenses() {
                 onChange={(e) => setCatFilter(e.target.value)}
                 className="border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] px-3 py-2 text-[13px] bg-white dark:bg-[#252b3b] text-[#181d26] dark:text-[#e8eaf0]"
               >
-                <option value="all">All Categories</option>
+                <option value="all">{t('expenses.filters.allCategories')}</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <span className="text-[12px] text-[#9297a0] ml-auto tabular-nums">
-                {displayed.length} {displayed.length === 1 ? 'expense' : 'expenses'}
+                {displayed.length === 1
+                  ? t('expenses.filters.expenseOne', { count: displayed.length })
+                  : t('expenses.filters.expenseOther', { count: displayed.length })}
               </span>
             </div>
 
@@ -304,19 +311,26 @@ export default function Expenses() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    {['Date', 'Category', 'Description', 'Type', 'Amount', ''].map((h, i) => (
+                    {[
+                      { key: 'date', label: t('expenses.table.date') },
+                      { key: 'category', label: t('expenses.table.category') },
+                      { key: 'description', label: t('expenses.table.description') },
+                      { key: 'type', label: t('expenses.table.type') },
+                      { key: 'amount', label: t('expenses.table.amount') },
+                      { key: 'actions', label: '' },
+                    ].map((h) => (
                       <th
-                        key={i}
-                        className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}
+                        key={h.key}
+                        className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.key === 'amount' ? 'text-right' : 'text-left'}`}
                       >
-                        {h}
+                        {h.label}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {displayed.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#9297a0]">No expenses found</td></tr>
+                    <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#9297a0]">{t('expenses.empty.noExpensesFound')}</td></tr>
                   )}
                   {displayed.map((e, i) => {
                     const cat = categories.find((c) => c.id === e.category)
@@ -324,7 +338,7 @@ export default function Expenses() {
                     const border = isLast ? '' : 'border-b border-[#f4f5f7] dark:border-[#252a38]'
                     return (
                       <tr key={e.id} className="group hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
-                        <td className={`px-4 py-3 text-[13px] text-[#9297a0] whitespace-nowrap ${border}`}>{formatDate(e.date)}</td>
+                        <td className={`px-4 py-3 text-[13px] text-[#9297a0] whitespace-nowrap ${border}`}>{formatDate(e.date, language)}</td>
                         <td className={`px-4 py-3 ${border}`}>
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat?.color ?? '#9297a0' }} />
@@ -338,10 +352,10 @@ export default function Expenses() {
                               ? 'bg-[#eff6ff] dark:bg-[#1e3a5f] text-[#3b82f6]'
                               : 'bg-[#f4f5f7] dark:bg-[#252b3b] text-[#9297a0]'
                           }`}>
-                            {e.shared ? 'shared' : 'personal'}
+                            {e.shared ? t('expenses.badges.shared') : t('expenses.badges.personal')}
                           </span>
                         </td>
-                        <td className={`px-4 py-3 text-right text-[13px] font-semibold text-[#ef4444] ${border}`}>{formatMXN(e.amount)}</td>
+                        <td className={`px-4 py-3 text-right text-[13px] font-semibold text-[#ef4444] ${border}`}>{formatMoney(e.amount, currency)}</td>
                         <td className={`px-4 py-3 ${border}`}>
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
@@ -373,19 +387,26 @@ export default function Expenses() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {['Name', 'Frequency', 'Next Date', 'Amount', 'Status', ''].map((h, i) => (
+                  {[
+                    { key: 'name', label: t('expenses.table.name') },
+                    { key: 'frequency', label: t('expenses.table.frequency') },
+                    { key: 'nextDate', label: t('expenses.table.nextDate') },
+                    { key: 'amount', label: t('expenses.table.amount') },
+                    { key: 'status', label: t('expenses.table.status') },
+                    { key: 'actions', label: '' },
+                  ].map((h) => (
                     <th
-                      key={i}
-                      className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}
+                      key={h.key}
+                      className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.key === 'amount' ? 'text-right' : 'text-left'}`}
                     >
-                      {h}
+                      {h.label}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {recurringExpenses.length === 0 && (
-                  <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#9297a0]">No recurring expenses yet</td></tr>
+                  <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#9297a0]">{t('expenses.empty.noRecurringYet')}</td></tr>
                 )}
                 {recurringExpenses.map((r, i) => {
                   const isLast = i === recurringExpenses.length - 1
@@ -393,16 +414,16 @@ export default function Expenses() {
                   return (
                     <tr key={r.id} className="group hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                       <td className={`px-4 py-3 text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{r.name}</td>
-                      <td className={`px-4 py-3 text-[13px] text-[#9297a0] ${border}`}>{FREQ_LABEL[r.frequency]}</td>
-                      <td className={`px-4 py-3 text-[13px] text-[#9297a0] ${border}`}>{calcNextDate(r.lastDate, r.frequency)}</td>
-                      <td className={`px-4 py-3 text-right text-[13px] font-semibold text-[#ef4444] ${border}`}>{formatMXN(r.amount)}</td>
+                      <td className={`px-4 py-3 text-[13px] text-[#9297a0] ${border}`}>{t(`expenses.frequency.${r.frequency}`)}</td>
+                      <td className={`px-4 py-3 text-[13px] text-[#9297a0] ${border}`}>{calcNextDate(r.lastDate, r.frequency, language)}</td>
+                      <td className={`px-4 py-3 text-right text-[13px] font-semibold text-[#ef4444] ${border}`}>{formatMoney(r.amount, currency)}</td>
                       <td className={`px-4 py-3 ${border}`}>
                         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
                           r.status === 'active'
                             ? 'bg-[#f0fdf4] dark:bg-[#14532d]/30 text-[#22c55e]'
                             : 'bg-[#f4f5f7] dark:bg-[#252b3b] text-[#9297a0]'
                         }`}>
-                          {r.status === 'active' ? 'Active' : 'Paused'}
+                          {r.status === 'active' ? t('expenses.badges.active') : t('expenses.badges.paused')}
                         </span>
                       </td>
                       <td className={`px-4 py-3 ${border}`}>

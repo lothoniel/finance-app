@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { addMonths, parseISO } from 'date-fns'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import { filterByPeriod, sortByDateDesc, type PeriodMode, type PeriodValue } from '../lib/filters'
-import { formatMXNCompact, formatShortMonth, formatDate } from '../lib/formatters'
+import { formatMoneyCompact, formatShortMonth, formatDate } from '../lib/formatters'
 import { PERIOD_SCALE } from '../lib/constants'
 import StackedBarChart from '../components/charts/StackedBarChart'
 
@@ -50,10 +51,10 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-const TAB_MODES: { label: string; mode: PeriodMode }[] = [
-  { label: 'Monthly', mode: 'month' },
-  { label: 'Quarterly', mode: 'quarter' },
-  { label: 'Yearly', mode: 'year' },
+const TAB_MODES: { key: 'monthly' | 'quarterly' | 'yearly'; mode: PeriodMode }[] = [
+  { key: 'monthly', mode: 'month' },
+  { key: 'quarterly', mode: 'quarter' },
+  { key: 'yearly', mode: 'year' },
 ]
 
 const FREQ_MONTHS: Record<string, number> = { monthly: 1, bimonthly: 2, annual: 12 }
@@ -61,9 +62,12 @@ const FREQ_MONTHS: Record<string, number> = { monthly: 1, bimonthly: 2, annual: 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 
 export default function Dashboard() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<PeriodMode>('month')
   const [periodValue, setPeriodValue] = useState<PeriodValue>(currentMonth)
 
+  const language = useStore((s) => s.settings.language)
+  const currency = useStore((s) => s.settings.currencyDisplay)
   const expenses = useStore((s) => s.expenses)
   const paychecks = useStore((s) => s.paychecks)
   const transfers = useStore((s) => s.transfers)
@@ -222,10 +226,14 @@ export default function Dashboard() {
   }, [activeTab, periodValue])
 
   const chartTitle = useMemo(() => {
-    if (activeTab === 'quarter') return `Category Breakdown — Q${periodValue.quarter ?? 1} ${periodValue.year}`
-    if (activeTab === 'year') return `Category Breakdown — ${periodValue.year}`
-    return 'Category Breakdown — Last 7 Months'
-  }, [activeTab, periodValue])
+    if (activeTab === 'quarter') {
+      return t('dashboard.trends.categoryBreakdownQuarter', { quarter: periodValue.quarter ?? 1, year: periodValue.year })
+    }
+    if (activeTab === 'year') {
+      return t('dashboard.trends.categoryBreakdownYear', { year: periodValue.year })
+    }
+    return t('dashboard.trends.categoryBreakdownLast7')
+  }, [activeTab, periodValue, t])
 
   // Stacked bar chart: period-aware months × top 7 categories
   const { stackedChartData, chartCategories } = useMemo(() => {
@@ -249,7 +257,7 @@ export default function Dashboard() {
     const stackedChartData = chartMonths.map(({ year, month }) => {
       const monthExp = filterByPeriod(expenses, 'month', { year, month })
       const row: Record<string, unknown> = {
-        month: formatShortMonth(`${year}-${String(month).padStart(2, '0')}-01`),
+        month: formatShortMonth(`${year}-${String(month).padStart(2, '0')}-01`, language),
       }
       topCats.forEach((name) => {
         row[name] = monthExp
@@ -259,7 +267,7 @@ export default function Dashboard() {
       return row
     })
     return { stackedChartData, chartCategories }
-  }, [chartMonths, expenses, categoryNameById, categoryColorByName])
+  }, [chartMonths, expenses, categoryNameById, categoryColorByName, language])
 
   // Recent activity
   const recentActivity = useMemo(() => {
@@ -274,9 +282,9 @@ export default function Dashboard() {
       ...paychecks.map((p) => ({
         id: p.id,
         date: p.date,
-        description: 'Paycheck',
+        description: t('dashboard.recurring.paycheck'),
         amount: p.mxnAmount,
-        sub: 'Paycheck',
+        sub: t('dashboard.recurring.paycheck'),
       })),
       ...transfers.map((t) => ({
         id: t.id,
@@ -294,7 +302,7 @@ export default function Dashboard() {
       })),
     ]
     return sortByDateDesc(all).slice(0, 6)
-  }, [expenses, paychecks, transfers, debtPayments, categoryNameById])
+  }, [expenses, paychecks, transfers, debtPayments, categoryNameById, t])
 
   // Budget status (period-filtered)
   const budgetStatus = useMemo(
@@ -320,8 +328,7 @@ export default function Dashboard() {
   const topCategory = categoryTotals[0]?.[0] ?? '—'
   const topCategoryPct =
     categoryTotals[0] ? ((categoryTotals[0][1] / (periodExpenses || 1)) * 100).toFixed(0) : '0'
-  const periodLabel =
-    activeTab === 'month' ? 'month' : activeTab === 'quarter' ? 'quarter' : 'year'
+  const periodLabel = t(`dashboard.periods.${activeTab === 'month' ? 'month' : activeTab === 'quarter' ? 'quarter' : 'year'}`)
 
   // Savings Rate SVG donut (r=28, circumference ≈ 175.9)
   const RADIUS = 28
@@ -332,9 +339,9 @@ export default function Dashboard() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Dashboard</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('nav.items.dashboard')}</h1>
         <div className="flex bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full p-0.5">
-          {TAB_MODES.map(({ label, mode }) => (
+          {TAB_MODES.map(({ key, mode }) => (
             <button
               key={mode}
               onClick={() => handleTabChange(mode)}
@@ -344,7 +351,7 @@ export default function Dashboard() {
                   : 'text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0]'
               }`}
             >
-              {label}
+              {t(`dashboard.tabs.${key}`)}
             </button>
           ))}
         </div>
@@ -353,11 +360,11 @@ export default function Dashboard() {
       {/* KPI strip */}
       <div className="flex items-center gap-6 flex-wrap mb-8">
         {[
-          { label: 'Net Flow', value: formatMXNCompact(periodNetFlow), color: periodNetFlow >= 0 ? '#16a34a' : '#dc2626' },
-          { label: 'Income', value: formatMXNCompact(periodIncome), color: undefined },
-          { label: 'Expenses', value: formatMXNCompact(periodExpenses), color: '#dc2626' },
-          { label: 'Debt Paid', value: formatMXNCompact(periodDebt), color: '#ea580c' },
-          { label: 'Savings Rate', value: `${periodSavingsRate.toFixed(1)}%`, color: undefined },
+          { label: t('dashboard.kpis.netFlow'), value: formatMoneyCompact(periodNetFlow, currency), color: periodNetFlow >= 0 ? '#16a34a' : '#dc2626' },
+          { label: t('dashboard.kpis.income'), value: formatMoneyCompact(periodIncome, currency), color: undefined },
+          { label: t('dashboard.kpis.expenses'), value: formatMoneyCompact(periodExpenses, currency), color: '#dc2626' },
+          { label: t('dashboard.kpis.debtPaid'), value: formatMoneyCompact(periodDebt, currency), color: '#ea580c' },
+          { label: t('dashboard.kpis.savingsRate'), value: `${periodSavingsRate.toFixed(1)}%`, color: undefined },
         ].map(({ label, value, color }, i, arr) => (
           <div key={label} className="flex items-center gap-6">
             <div>
@@ -386,24 +393,24 @@ export default function Dashboard() {
 
           {/* Portfolio & Wealth */}
           <div>
-            <SectionTitle>Portfolio &amp; Wealth</SectionTitle>
+            <SectionTitle>{t('dashboard.portfolio.title')}</SectionTitle>
             <div className={`${CARD} grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#e8e8e8] dark:divide-[#2d3347]`}>
               <div className="p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">Net Worth</p>
-                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMXNCompact(netWorth)}</p>
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Assets – liabilities</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">{t('dashboard.portfolio.netWorth')}</p>
+                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMoneyCompact(netWorth, currency)}</p>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">{t('dashboard.portfolio.netWorthHint')}</p>
                 <Sparkline values={investmentSparkline} color="#2e7d65" />
               </div>
               <div className="p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">Investments</p>
-                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMXNCompact(totalPortfolioBalance)}</p>
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Total portfolio</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">{t('dashboard.portfolio.investments')}</p>
+                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMoneyCompact(totalPortfolioBalance, currency)}</p>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">{t('dashboard.portfolio.investmentsHint')}</p>
                 <Sparkline values={investmentSparkline} color="#2e7d65" />
               </div>
               <div className="p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">Debt Ratio</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">{t('dashboard.portfolio.debtRatio')}</p>
                 <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{debtToIncomeRaw.toFixed(1)}%</p>
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Debt-to-income</p>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">{t('dashboard.portfolio.debtRatioHint')}</p>
                 <Sparkline values={debtRatioSparkline} color="#aa2d00" />
               </div>
             </div>
@@ -411,13 +418,13 @@ export default function Dashboard() {
 
           {/* Spending Trends */}
           <div>
-            <SectionTitle>Spending Trends</SectionTitle>
+            <SectionTitle>{t('dashboard.trends.title')}</SectionTitle>
             <div className={`${CARD} p-5`}>
               <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">
                 {chartTitle}
               </p>
               {chartCategories.length === 0 ? (
-                <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">No expense data yet.</p>
+                <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('dashboard.trends.empty')}</p>
               ) : (
                 <StackedBarChart
                   data={stackedChartData}
@@ -431,16 +438,16 @@ export default function Dashboard() {
 
           {/* Spending Breakdown */}
           <div>
-            <SectionTitle>Spending Breakdown</SectionTitle>
+            <SectionTitle>{t('dashboard.breakdown.title')}</SectionTitle>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {/* By Category */}
               <div className={`${CARD} p-5`}>
                 <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">
-                  By Category
+                  {t('dashboard.breakdown.byCategory')}
                 </p>
                 {categoryTotals.length === 0 ? (
                   <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">
-                    No expenses in this period.
+                    {t('dashboard.breakdown.empty')}
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -449,7 +456,7 @@ export default function Dashboard() {
                         <div className="flex justify-between mb-1">
                           <span className="text-[13px] text-[#333840] dark:text-[#c4c8d0]">{cat}</span>
                           <span className="text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0]">
-                            {formatMXNCompact(total)}
+                            {formatMoneyCompact(total, currency)}
                           </span>
                         </div>
                         <div className="h-2 bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full overflow-hidden">
@@ -470,7 +477,7 @@ export default function Dashboard() {
               {/* Recent Activity */}
               <div className={`${CARD} overflow-hidden`}>
                 <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] px-5 pt-5 pb-3">
-                  Recent Activity
+                  {t('dashboard.breakdown.recentActivity')}
                 </p>
                 <table className="w-full">
                   <tbody>
@@ -487,7 +494,7 @@ export default function Dashboard() {
                             {item.description}
                           </p>
                           <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">
-                            {item.sub} · {formatDate(item.date)}
+                            {item.sub} · {formatDate(item.date, language)}
                           </p>
                         </td>
                         <td
@@ -499,7 +506,7 @@ export default function Dashboard() {
                           style={{ color: item.amount >= 0 ? '#1a7a3c' : '#c0392b' }}
                         >
                           {item.amount >= 0 ? '+' : ''}
-                          {formatMXNCompact(item.amount)}
+                          {formatMoneyCompact(item.amount, currency)}
                         </td>
                       </tr>
                     ))}
@@ -514,14 +521,14 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] whitespace-nowrap">
-                  Budget Status
+                  {t('dashboard.budget.title')}
                 </span>
                 <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
                 <Link
                   to="/budget"
                   className="text-[12px] text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0] whitespace-nowrap"
                 >
-                  View all →
+                  {t('dashboard.budget.viewAll')}
                 </Link>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -540,7 +547,7 @@ export default function Dashboard() {
                           </span>
                         </div>
                         <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">
-                          {formatMXNCompact(item.spent)} / {formatMXNCompact(item.budget)}
+                          {formatMoneyCompact(item.spent, currency)} / {formatMoneyCompact(item.budget, currency)}
                         </span>
                       </div>
                       <div className="h-1.5 bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full overflow-hidden mb-1.5">
@@ -554,15 +561,15 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] text-[#41454d] dark:text-[#9297a0]">
-                          {Math.min(item.pct, 100).toFixed(0)}% used
+                          {t('dashboard.budget.percentUsed', { pct: Math.min(item.pct, 100).toFixed(0) })}
                         </span>
                         <span
                           className="text-[11px] font-medium"
                           style={{ color: isOver ? '#ef4444' : '#1a7a3c' }}
                         >
                           {isOver
-                            ? `${formatMXNCompact(item.spent - item.budget)} over`
-                            : `${formatMXNCompact(item.budget - item.spent)} left`}
+                            ? t('dashboard.budget.over', { amount: formatMoneyCompact(item.spent - item.budget, currency) })
+                            : t('dashboard.budget.left', { amount: formatMoneyCompact(item.budget - item.spent, currency) })}
                         </span>
                       </div>
                     </div>
@@ -574,18 +581,18 @@ export default function Dashboard() {
 
           {/* Insights */}
           <div>
-            <SectionTitle>Insights</SectionTitle>
+            <SectionTitle>{t('dashboard.insights.title')}</SectionTitle>
             <div className="space-y-3">
               <div
                 className="rounded-[8px] p-4"
                 style={{ borderLeft: '3px solid #c0392b', backgroundColor: '#fff5f5' }}
               >
                 <p className="text-[11px] font-semibold uppercase tracking-[0.4px] mb-1" style={{ color: '#c0392b' }}>
-                  Spending Alert
+                  {t('dashboard.insights.spendingAlertLabel')}
                 </p>
                 <p className="text-[13px] text-[#333840] leading-relaxed">
-                  {topCategory} accounts for {topCategoryPct}% of your {periodLabel} expenses
-                  {categoryTotals[0] ? ` (${formatMXNCompact(categoryTotals[0][1])})` : ''}.
+                  {t('dashboard.insights.spendingAlertBody', { category: topCategory, pct: topCategoryPct, period: periodLabel })}
+                  {categoryTotals[0] ? t('dashboard.insights.spendingAlertAmount', { amount: formatMoneyCompact(categoryTotals[0][1], currency) }) : ''}.
                 </p>
               </div>
 
@@ -594,10 +601,10 @@ export default function Dashboard() {
                 style={{ borderLeft: '3px solid #2e7d65', backgroundColor: '#f0faf6' }}
               >
                 <p className="text-[11px] font-semibold uppercase tracking-[0.4px] mb-1" style={{ color: '#2e7d65' }}>
-                  Savings Rate
+                  {t('dashboard.insights.savingsAlertLabel')}
                 </p>
                 <p className="text-[13px] text-[#333840] leading-relaxed">
-                  You're retaining {periodSavingsRate.toFixed(1)}% of income this {periodLabel}.
+                  {t('dashboard.insights.savingsAlertBody', { rate: periodSavingsRate.toFixed(1), period: periodLabel })}
                 </p>
               </div>
 
@@ -606,11 +613,11 @@ export default function Dashboard() {
                 style={{ borderLeft: '3px solid #c8912a', backgroundColor: '#fffbef' }}
               >
                 <p className="text-[11px] font-semibold uppercase tracking-[0.4px] mb-1" style={{ color: '#c8912a' }}>
-                  Debt Load
+                  {t('dashboard.insights.debtAlertLabel')}
                 </p>
                 <p className="text-[13px] text-[#333840] leading-relaxed">
-                  Debt payments represent {debtToIncomeRaw.toFixed(1)}% of income this month
-                  {debtToIncomeRaw > 36 ? ' — above the recommended 36% threshold.' : '.'}
+                  {t('dashboard.insights.debtAlertBody', { rate: debtToIncomeRaw.toFixed(1) })}
+                  {debtToIncomeRaw > 36 ? t('dashboard.insights.debtAlertOver') : '.'}
                 </p>
               </div>
             </div>
@@ -622,14 +629,14 @@ export default function Dashboard() {
           {/* Financial Snapshot */}
           <div className={`${CARD} p-5`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
-              Financial Snapshot
+              {t('dashboard.snapshot.title')}
             </p>
             <div className="divide-y divide-[#e8e8e8] dark:divide-[#2d3347]">
               {[
-                { label: 'Net Worth', value: formatMXNCompact(netWorth), color: '#2e7d65' },
-                { label: 'Investments', value: formatMXNCompact(totalPortfolioBalance), color: '#2e7d65' },
-                { label: 'Cash', value: '—', color: undefined },
-                { label: 'Total Debt', value: `-${formatMXNCompact(periodDebt)}`, color: '#c0392b' },
+                { label: t('dashboard.snapshot.netWorth'), value: formatMoneyCompact(netWorth, currency), color: '#2e7d65' },
+                { label: t('dashboard.snapshot.investments'), value: formatMoneyCompact(totalPortfolioBalance, currency), color: '#2e7d65' },
+                { label: t('dashboard.snapshot.cash'), value: '—', color: undefined },
+                { label: t('dashboard.snapshot.totalDebt'), value: `-${formatMoneyCompact(periodDebt, currency)}`, color: '#c0392b' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
                   <span className="text-[13px] text-[#41454d] dark:text-[#9297a0]">{label}</span>
@@ -647,7 +654,7 @@ export default function Dashboard() {
           {/* Savings Rate donut */}
           <div className={`${CARD} p-5`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
-              Savings Rate
+              {t('dashboard.savings.title')}
             </p>
             <div className="flex flex-col items-center">
               <svg width="80" height="80" viewBox="0 0 80 80">
@@ -683,7 +690,7 @@ export default function Dashboard() {
                 </text>
               </svg>
               <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-2 text-center">
-                of income retained
+                {t('dashboard.savings.ofIncome')}
               </p>
             </div>
           </div>
@@ -691,17 +698,17 @@ export default function Dashboard() {
           {/* Upcoming Recurring */}
           <div className={`${CARD} p-5`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
-              Upcoming Recurring
+              {t('dashboard.recurring.title')}
             </p>
             {upcomingRecurring.length === 0 ? (
-              <p className="text-[13px] text-[#9297a0]">No recurring expenses set.</p>
+              <p className="text-[13px] text-[#9297a0]">{t('dashboard.recurring.empty')}</p>
             ) : (
               <div className="space-y-2.5">
                 {upcomingRecurring.map(({ name, amount }) => (
                   <div key={name} className="flex items-center justify-between">
                     <span className="text-[13px] text-[#333840] dark:text-[#c4c8d0]">{name}</span>
                     <span className="text-[13px] font-medium" style={{ color: '#aa2d00' }}>
-                      {formatMXNCompact(amount)}
+                      {formatMoneyCompact(amount, currency)}
                     </span>
                   </div>
                 ))}

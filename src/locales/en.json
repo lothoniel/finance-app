@@ -1,0 +1,316 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loading": "Loading…",
+    "noBackup": "No backup",
+    "backupOn": "Backup {{date}}",
+    "toggleSidebar": "Toggle sidebar",
+    "toggleDarkMode": "Toggle dark mode",
+    "openMenu": "Open menu"
+  },
+  "nav": {
+    "groups": {
+      "overview": "Overview",
+      "money": "Money",
+      "planning": "Planning",
+      "system": "System"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "netWorth": "Net Worth",
+      "reports": "Reports",
+      "expenses": "Expenses",
+      "budget": "Budget",
+      "transactions": "Transactions",
+      "income": "Income",
+      "cashFlow": "Cash Flow",
+      "investments": "Investments",
+      "debt": "Debt",
+      "mortgage": "Mortgage",
+      "sharedBalance": "Shared Balance",
+      "settings": "Settings"
+    },
+    "badges": {
+      "new": "NEW",
+      "over": "{{count}} over"
+    }
+  },
+  "settings": {
+    "sections": {
+      "preferences": "Preferences",
+      "userNames": "User Names",
+      "split": "Shared Expenses Split",
+      "recurring": "Recurring Expenses",
+      "categories": "Transaction Categories",
+      "expenseCategories": "Expense Categories",
+      "creditCards": "Credit Cards",
+      "transferCategories": "Transfer Categories",
+      "sidebar": "Sidebar",
+      "data": "Data Management"
+    },
+    "preferences": {
+      "language": "Language",
+      "languageHint": "Choose the language for the app interface.",
+      "currency": "Currency Display",
+      "currencyHint": "Switches the currency symbol and number formatting. Stored amounts are unchanged."
+    },
+    "users": {
+      "user1": "User 1",
+      "user2": "User 2",
+      "saveNames": "Save Names"
+    },
+    "split": {
+      "intro": "Set how shared expenses are divided. The percentages must add up to 100%.",
+      "percentLabel": "{{name}} (%)",
+      "saveSplit": "Save Split",
+      "updated": "Split ratio updated"
+    },
+    "recurring": {
+      "empty": "No recurring expenses set up yet",
+      "active": "ACTIVE",
+      "paused": "PAUSED",
+      "pause": "Pause",
+      "resume": "Resume"
+    },
+    "categories": {
+      "resetDefaults": "Reset to Defaults",
+      "namePlaceholder": "Category name",
+      "cardNamePlaceholder": "Card name",
+      "transferCatPlaceholder": "Category name",
+      "editCategory": "Edit Category",
+      "editCard": "Edit Credit Card",
+      "editTransferCat": "Edit Transfer Category",
+      "name": "Name",
+      "icon": "Icon",
+      "color": "Color",
+      "monthlyBudget": "Monthly Budget (optional)",
+      "rolloverTitle": "Roll over unspent budget",
+      "rolloverOff": "Off",
+      "rolloverMonth": "Month",
+      "rolloverYear": "Year",
+      "rolloverOffHint": "Each month starts fresh",
+      "rolloverMonthHint": "Unused budget from last month carries over",
+      "rolloverYearHint": "Unused budget from all months this year carries over",
+      "categoryGroup": "Category Group (optional)",
+      "categoryGroupPlaceholder": "e.g. Housing, Auto, Food & Dining",
+      "expenseType": "Expense Type",
+      "fixed": "fixed",
+      "variable": "variable"
+    },
+    "sidebar": {
+      "intro": "Reorder pages, hide items, or switch to a flat layout.",
+      "custom": "Custom",
+      "customize": "Customize Sidebar"
+    },
+    "data": {
+      "exportJSON": "Export JSON",
+      "exportExcel": "Export Excel",
+      "exportXML": "Export XML",
+      "importJSON": "Import JSON",
+      "clear": "Clear All Data",
+      "confirmClear": "Click again to confirm",
+      "jsonExported": "JSON exported successfully",
+      "excelExported": "Excel exported",
+      "xmlExported": "XML exported",
+      "imported": "Data imported successfully",
+      "invalidJson": "Invalid JSON file"
+    }
+  },
+  "dashboard": {
+    "tabs": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "periods": {
+      "month": "month",
+      "quarter": "quarter",
+      "year": "year"
+    },
+    "kpis": {
+      "netFlow": "Net Flow",
+      "income": "Income",
+      "expenses": "Expenses",
+      "debtPaid": "Debt Paid",
+      "savingsRate": "Savings Rate"
+    },
+    "portfolio": {
+      "title": "Portfolio & Wealth",
+      "netWorth": "Net Worth",
+      "netWorthHint": "Assets – liabilities",
+      "investments": "Investments",
+      "investmentsHint": "Total portfolio",
+      "debtRatio": "Debt Ratio",
+      "debtRatioHint": "Debt-to-income"
+    },
+    "trends": {
+      "title": "Spending Trends",
+      "empty": "No expense data yet.",
+      "categoryBreakdownQuarter": "Category Breakdown — Q{{quarter}} {{year}}",
+      "categoryBreakdownYear": "Category Breakdown — {{year}}",
+      "categoryBreakdownLast7": "Category Breakdown — Last 7 Months"
+    },
+    "breakdown": {
+      "title": "Spending Breakdown",
+      "byCategory": "By Category",
+      "empty": "No expenses in this period.",
+      "recentActivity": "Recent Activity"
+    },
+    "budget": {
+      "title": "Budget Status",
+      "viewAll": "View all →",
+      "percentUsed": "{{pct}}% used",
+      "over": "{{amount}} over",
+      "left": "{{amount}} left"
+    },
+    "insights": {
+      "title": "Insights",
+      "spendingAlertLabel": "Spending Alert",
+      "spendingAlertBody": "{{category}} accounts for {{pct}}% of your {{period}} expenses",
+      "spendingAlertAmount": " ({{amount}})",
+      "savingsAlertLabel": "Savings Rate",
+      "savingsAlertBody": "You're retaining {{rate}}% of income this {{period}}.",
+      "debtAlertLabel": "Debt Load",
+      "debtAlertBody": "Debt payments represent {{rate}}% of income this month",
+      "debtAlertOver": " — above the recommended 36% threshold."
+    },
+    "snapshot": {
+      "title": "Financial Snapshot",
+      "netWorth": "Net Worth",
+      "investments": "Investments",
+      "cash": "Cash",
+      "totalDebt": "Total Debt"
+    },
+    "savings": {
+      "title": "Savings Rate",
+      "ofIncome": "of income retained"
+    },
+    "recurring": {
+      "title": "Upcoming Recurring",
+      "empty": "No recurring expenses set.",
+      "paycheck": "Paycheck"
+    }
+  },
+  "periodSelector": {
+    "modes": {
+      "month": "Month",
+      "quarter": "Quarter",
+      "year": "Year",
+      "range": "Range",
+      "all": "All Time"
+    },
+    "allTime": "All Time",
+    "quarterShort": "Q{{quarter}} {{year}}"
+  },
+  "expenses": {
+    "title": "Expenses",
+    "addExpense": "Add Expense",
+    "saveChanges": "Save Changes",
+    "import": "Import",
+    "kpis": {
+      "total": "TOTAL EXPENSES",
+      "topCategory": "TOP CATEGORY",
+      "topAmount": "TOP AMOUNT",
+      "activeCategories": "ACTIVE CATEGORIES",
+      "activeCount": "{{count}} active"
+    },
+    "sections": {
+      "spendingByCategory": "Spending by Category",
+      "categoryBreakdown": "Category Breakdown",
+      "categoryBudgets": "Category Budgets",
+      "donutTotal": "Total"
+    },
+    "empty": {
+      "noExpensesPeriod": "No expenses for this period",
+      "noDataPeriod": "No data for this period",
+      "noExpensesFound": "No expenses found",
+      "noRecurringYet": "No recurring expenses yet"
+    },
+    "tabs": {
+      "transactions": "Transactions",
+      "recurring": "Recurring"
+    },
+    "filters": {
+      "all": "All",
+      "shared": "Shared",
+      "personal": "Personal",
+      "searchPlaceholder": "Search expenses...",
+      "allCategories": "All Categories",
+      "expenseOne": "{{count}} expense",
+      "expenseOther": "{{count}} expenses"
+    },
+    "table": {
+      "date": "Date",
+      "category": "Category",
+      "description": "Description",
+      "type": "Type",
+      "amount": "Amount",
+      "name": "Name",
+      "frequency": "Frequency",
+      "nextDate": "Next Date",
+      "status": "Status"
+    },
+    "badges": {
+      "shared": "shared",
+      "personal": "personal",
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "frequency": {
+      "monthly": "Monthly",
+      "bimonthly": "Bimonthly",
+      "annual": "Annual"
+    },
+    "form": {
+      "editRecurring": "Edit Recurring",
+      "editExpense": "Edit Expense",
+      "date": "Date",
+      "description": "Description",
+      "descriptionPlaceholder": "e.g. CFE Febrero",
+      "amount": "Amount",
+      "amountPlaceholder": "0.00",
+      "category": "Category",
+      "subCategory": "Sub-category",
+      "optional": "(optional)",
+      "subCategoryPlaceholder": "e.g. Cancun Trip",
+      "paidBy": "Paid By",
+      "sharedExpense": "Shared expense",
+      "recurringExpense": "Recurring expense",
+      "frequencyLabel": "Frequency",
+      "statusLabel": "Status",
+      "statusActive": "Active",
+      "statusPaused": "Paused"
+    }
+  },
+  "transactions": {
+    "kpis": {
+      "totalEntries": "TOTAL ENTRIES",
+      "income": "INCOME",
+      "expenses": "EXPENSES"
+    },
+    "searchPlaceholder": "Search by name, category...",
+    "filters": {
+      "all": "All",
+      "income": "Income",
+      "expenses": "Expenses",
+      "shared": "Shared",
+      "personal": "Personal",
+      "debt": "Debt"
+    },
+    "types": {
+      "income": "income",
+      "shared": "shared",
+      "personal": "personal",
+      "debt": "debt"
+    },
+    "resultOne": "{{count}} result",
+    "resultOther": "{{count}} results",
+    "noTransactions": "No transactions found"
+  }
+}

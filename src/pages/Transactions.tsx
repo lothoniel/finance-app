@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import { Search } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import { sortByDateDesc } from '../lib/filters'
-import { formatDate, formatMXNCompact } from '../lib/formatters'
+import { formatDate, formatMoneyCompact } from '../lib/formatters'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 
@@ -38,14 +39,18 @@ const amountStyle: Record<TxType, string> = {
 }
 
 export default function Transactions() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<FilterOption>('all')
 
+  const language = useStore((s) => s.settings.language)
+  const currency = useStore((s) => s.settings.currencyDisplay)
   const expenses = useStore((s) => s.expenses)
   const paychecks = useStore((s) => s.paychecks)
   const transfers = useStore((s) => s.transfers)
   const debtPayments = useStore((s) => s.debtPayments)
   const categories = useStore((s) => s.settings.expenseCategories)
+  const paycheckLabel = t('dashboard.recurring.paycheck')
 
   const allRows = useMemo<TxRow[]>(() => {
     const rows: TxRow[] = []
@@ -67,8 +72,8 @@ export default function Transactions() {
       rows.push({
         id: p.id,
         date: p.date,
-        description: 'Paycheck',
-        categoryLabel: 'Paycheck',
+        description: paycheckLabel,
+        categoryLabel: paycheckLabel,
         categoryColor: '#16a34a',
         type: 'income',
         amount: p.mxnAmount,
@@ -100,7 +105,7 @@ export default function Transactions() {
     })
 
     return rows
-  }, [expenses, paychecks, transfers, debtPayments, categories])
+  }, [expenses, paychecks, transfers, debtPayments, categories, paycheckLabel])
 
   const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: periodFiltered } =
     usePeriodFilter(allRows, 'month')
@@ -129,7 +134,7 @@ export default function Transactions() {
     <div className="p-6 max-w-[1400px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Transactions</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('nav.items.transactions')}</h1>
         <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} modes={['month', 'quarter', 'year']} />
       </div>
 
@@ -137,15 +142,15 @@ export default function Transactions() {
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-6 overflow-x-auto`}>
         <div className="flex-1 min-w-[120px] px-5 py-4">
           <div className="text-[22px] font-bold leading-tight text-[#181d26] dark:text-[#e8eaf0]">{periodFiltered.length}</div>
-          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">TOTAL ENTRIES</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('transactions.kpis.totalEntries')}</div>
         </div>
         <div className="flex-1 min-w-[120px] px-5 py-4">
-          <div className="text-[22px] font-bold leading-tight" style={{ color: '#16a34a' }}>{formatMXNCompact(totalIncome)}</div>
-          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">INCOME</div>
+          <div className="text-[22px] font-bold leading-tight" style={{ color: '#16a34a' }}>{formatMoneyCompact(totalIncome, currency)}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('transactions.kpis.income')}</div>
         </div>
         <div className="flex-1 min-w-[120px] px-5 py-4">
-          <div className="text-[22px] font-bold leading-tight" style={{ color: '#ef4444' }}>{formatMXNCompact(totalExpenses)}</div>
-          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">EXPENSES</div>
+          <div className="text-[22px] font-bold leading-tight" style={{ color: '#ef4444' }}>{formatMoneyCompact(totalExpenses, currency)}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('transactions.kpis.expenses')}</div>
         </div>
       </div>
 
@@ -157,7 +162,7 @@ export default function Transactions() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9297a0]" />
             <input
               type="text"
-              placeholder="Search by name, category..."
+              placeholder={t('transactions.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] text-[13px] bg-white dark:bg-[#252b3b] text-[#181d26] dark:text-[#e8eaf0] focus:outline-none focus:border-[#181d26]"
@@ -168,18 +173,20 @@ export default function Transactions() {
               <button
                 key={f}
                 onClick={() => setTypeFilter(f)}
-                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors capitalize ${
+                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
                   typeFilter === f
                     ? 'bg-white dark:bg-[#1e2330] text-[#181d26] dark:text-[#e8eaf0] shadow-sm'
                     : 'text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0]'
                 }`}
               >
-                {f}
+                {t(`transactions.filters.${f}`)}
               </button>
             ))}
           </div>
           <span className="text-[12px] text-[#9297a0] ml-auto tabular-nums">
-            {displayed.length} {displayed.length === 1 ? 'result' : 'results'}
+            {displayed.length === 1
+              ? t('transactions.resultOne', { count: displayed.length })
+              : t('transactions.resultOther', { count: displayed.length })}
           </span>
         </div>
 
@@ -188,12 +195,18 @@ export default function Transactions() {
           <table className="w-full">
             <thead>
               <tr>
-                {['Date', 'Description', 'Category', 'Type', 'Amount'].map((h) => (
+                {[
+                  { key: 'date', label: t('expenses.table.date') },
+                  { key: 'description', label: t('expenses.table.description') },
+                  { key: 'category', label: t('expenses.table.category') },
+                  { key: 'type', label: t('expenses.table.type') },
+                  { key: 'amount', label: t('expenses.table.amount') },
+                ].map((h) => (
                   <th
-                    key={h}
-                    className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}
+                    key={h.key}
+                    className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.key === 'amount' ? 'text-right' : 'text-left'}`}
                   >
-                    {h}
+                    {h.label}
                   </th>
                 ))}
               </tr>
@@ -201,17 +214,17 @@ export default function Transactions() {
             <tbody>
               {displayed.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-[13px] text-[#9297a0]">No transactions found</td>
+                  <td colSpan={5} className="text-center py-10 text-[13px] text-[#9297a0]">{t('transactions.noTransactions')}</td>
                 </tr>
               )}
               {displayed.map((row, i) => {
                 const isLast = i === displayed.length - 1
                 const border = isLast ? '' : 'border-b border-[#f4f5f7] dark:border-[#252a38]'
                 const isIncome = row.type === 'income'
-                const amountStr = `${isIncome ? '+' : '−'}${formatMXNCompact(row.amount)}`
+                const amountStr = `${isIncome ? '+' : '−'}${formatMoneyCompact(row.amount, currency)}`
                 return (
                   <tr key={row.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
-                    <td className={`px-4 py-3 text-[13px] text-[#9297a0] whitespace-nowrap ${border}`}>{formatDate(row.date)}</td>
+                    <td className={`px-4 py-3 text-[13px] text-[#9297a0] whitespace-nowrap ${border}`}>{formatDate(row.date, language)}</td>
                     <td className={`px-4 py-3 text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{row.description}</td>
                     <td className={`px-4 py-3 ${border}`}>
                       <div className="flex items-center gap-1.5">
@@ -221,7 +234,7 @@ export default function Transactions() {
                     </td>
                     <td className={`px-4 py-3 ${border}`}>
                       <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${pillStyle[row.type]}`}>
-                        {row.type}
+                        {t(`transactions.types.${row.type}`)}
                       </span>
                     </td>
                     <td className={`px-4 py-3 text-right text-[13px] font-semibold tabular-nums ${amountStyle[row.type]} ${border}`}>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import i18n from './lib/i18n'
 import { useStore } from './store'
 import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
@@ -19,10 +20,17 @@ import Transactions from './pages/Transactions'
 
 export default function App() {
   const theme = useStore((s) => s.settings.theme)
+  const language = useStore((s) => s.settings.language)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])
+
+  useEffect(() => {
+    if (language && i18n.language !== language) {
+      i18n.changeLanguage(language)
+    }
+  }, [language])
 
   return (
     <BrowserRouter>

@@ -235,7 +235,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'finance-app-v1',
-      version: 12,
+      version: 13,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>
         const settings = (state.settings ?? {}) as Record<string, unknown>
@@ -354,6 +354,14 @@ export const useStore = create<AppState>()(
             state.expenses = (state.expenses as Record<string, unknown>[]).map((e) =>
               e.shared && e.splitRatio === undefined ? { ...e, splitRatio: 0.5 } : e
             )
+          }
+        }
+        if (version < 13) {
+          if (settings.language !== 'en' && settings.language !== 'es') {
+            settings.language = 'en'
+          }
+          if (settings.currencyDisplay !== 'MXN' && settings.currencyDisplay !== 'USD') {
+            settings.currencyDisplay = 'MXN'
           }
         }
         state.settings = settings

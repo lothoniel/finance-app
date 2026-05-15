@@ -66,3 +66,18 @@ Active development. No backend. Design system overhaul in progress across all pa
 
 ## Features Added (2026-05-07)
 - **Dashboard Spending Trends chart**: now period-aware. Monthly = last 7 months ending at selected month; Quarterly = 3 months of selected quarter; Yearly = all 12 months of selected year. Top 7 categories (was 6) recalculated from visible months. Chart title updates dynamically. Section renamed "Spending Trends".
+
+## i18n Rollout (in progress, started 2026-05-15)
+- **Stack**: `react-i18next` + `i18next` + `i18next-browser-languagedetector`. Bootstrap in `src/lib/i18n.ts`, imported from `src/main.tsx` before App. Locale files at `src/locales/{en,es}.json`. Default = English; Spanish is the alternate.
+- **Preferences are split**: `settings.language` ('en' | 'es') and `settings.currencyDisplay` ('MXN' | 'USD') are independent. Currency toggle is **format-only** — digits never change, only symbol/format. Store bumped to v13 with migration.
+- **Translation editing model**: edit JSON files directly; Vite HMR picks up changes live. No in-app editor.
+- **Helper convention**: page reads `language` + `currencyDisplay` from store. Use `formatMoneyCompact(amount, currency)` instead of `formatMXNCompact`. Pass `language` to `formatDate`/`formatShortMonth`/`formatMonthYear` (date-fns `es` locale).
+- **Key reuse**: namespace by feature area, not by page (e.g. Transactions reuses `expenses.table.*`, `dashboard.recurring.paycheck`; Expenses reuses `dashboard.budget.{percentUsed,over,left}`).
+- **Done so far**:
+  - Phase 1: Shell — Settings (incl. new Preferences section), Sidebar (PATH_TO_LABEL_KEY map, badge interpolation), Layout, Modal chrome, `common.*` keys.
+  - Phase 2: Dashboard — all strings translated, 17 `formatMXNCompact` → `formatMoneyCompact`, interpolated insight bodies, locale-aware month names. Added `formatUSDCompact`.
+  - Phase 3: Expenses page + ExpenseForm + PeriodSelector. ScreenshotImportModal **deferred**.
+  - Phase 4: Transactions page (reuses many `expenses.*` + `dashboard.*` keys).
+- **Remaining pages**: Income (+ PaycheckForm, ManualTaxForm, TransferForm), DebtPayment (+ DebtPaymentForm), Portfolio (+ PortfolioForm), Mortgage (+ MortgagePaymentForm, MortgageContributionForm), SharedBalance (+ SettlementModal, SplitRatioModal), CashFlow, Reports, Budget, NetWorth, ScreenshotImportModal.
+- **Tests**: `src/__tests__/lib/formatters.test.ts` covers `formatMoneyCompact` (MXN/USD) and Spanish-locale `formatDate`/`formatShortMonth`. 51/51 passing as of Phase 4.
+- **Plan file**: `~/.claude/plans/i-want-to-implement-misty-wombat.md` holds the Phase 2 plan; Phases 3/4 followed the same pattern (incremental, one PR per page) without rewriting the plan file.

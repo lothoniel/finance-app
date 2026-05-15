@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Menu } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import Sidebar from './Sidebar'
 import QuickAdd from '../ui/QuickAdd'
 
 export default function Layout() {
+  const { t } = useTranslation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true)
 
@@ -21,7 +23,7 @@ export default function Layout() {
       <button
         onClick={() => setSidebarOpen(true)}
         className="lg:hidden fixed top-3 left-3 z-20 p-2 bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] text-[#41454d] dark:text-[#9297a0] shadow-sm"
-        aria-label="Open menu"
+        aria-label={t('common.openMenu')}
       >
         <Menu className="w-4 h-4" />
       </button>

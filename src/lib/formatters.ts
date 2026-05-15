@@ -1,4 +1,20 @@
 import { format, parseISO } from 'date-fns'
+import { es } from 'date-fns/locale'
+import type { CurrencyDisplay } from '../store/types'
+
+type DateLocale = 'en' | 'es'
+const dateLocale = (locale?: DateLocale) => (locale === 'es' ? { locale: es } : undefined)
+
+export function formatMoney(amount: number, currency: CurrencyDisplay): string {
+  return currency === 'USD' ? formatUSD(amount) : formatMXN(amount)
+}
+
+export function formatMoneyCompact(amount: number, currency: CurrencyDisplay): string {
+  // MXN and USD share the same compact representation ($ + k/M suffix).
+  // currency is accepted for API symmetry with formatMoney and future divergence.
+  void currency
+  return formatMXNCompact(amount)
+}
 
 export function formatMXN(amount: number): string {
   return new Intl.NumberFormat('es-MX', {
@@ -28,25 +44,25 @@ export function formatUSD(amount: number): string {
   }).format(amount)
 }
 
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string, locale?: DateLocale): string {
   try {
-    return format(parseISO(dateStr), 'MMM d, yyyy')
+    return format(parseISO(dateStr), 'MMM d, yyyy', dateLocale(locale))
   } catch {
     return dateStr
   }
 }
 
-export function formatMonthYear(dateStr: string): string {
+export function formatMonthYear(dateStr: string, locale?: DateLocale): string {
   try {
-    return format(parseISO(dateStr), 'MMMM yyyy')
+    return format(parseISO(dateStr), 'MMMM yyyy', dateLocale(locale))
   } catch {
     return dateStr
   }
 }
 
-export function formatShortMonth(dateStr: string): string {
+export function formatShortMonth(dateStr: string, locale?: DateLocale): string {
   try {
-    return format(parseISO(dateStr), 'MMM yy')
+    return format(parseISO(dateStr), 'MMM yy', dateLocale(locale))
   } catch {
     return dateStr
   }

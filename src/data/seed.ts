@@ -46,6 +46,8 @@ export const defaultSettings: AppSettings = {
     { name: 'Others', icon: 'Tag', color: '#64748B' },
   ],
   splitRatio: 0.5,
+  language: 'en',
+  currencyDisplay: 'MXN',
 }
 
 export const seedExpenses: Expense[] = [

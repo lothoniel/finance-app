@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   TrendingUp,
@@ -31,6 +32,29 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
   end?: boolean
   badge?: string
+}
+
+const PATH_TO_LABEL_KEY: Record<string, string> = {
+  '/': 'dashboard',
+  '/net-worth': 'netWorth',
+  '/reports': 'reports',
+  '/expenses': 'expenses',
+  '/budget': 'budget',
+  '/transactions': 'transactions',
+  '/income': 'income',
+  '/cash-flow': 'cashFlow',
+  '/portfolio': 'investments',
+  '/debt': 'debt',
+  '/mortgage': 'mortgage',
+  '/shared-balance': 'sharedBalance',
+  '/settings': 'settings',
+}
+
+const GROUP_LABEL_TO_KEY: Record<string, string> = {
+  Overview: 'overview',
+  Money: 'money',
+  Planning: 'planning',
+  System: 'system',
 }
 
 interface SidebarProps {
@@ -120,6 +144,7 @@ function buildNavGroups(
 }
 
 export default function Sidebar({ open, onClose, desktopOpen, onToggle }: SidebarProps) {
+  const { t } = useTranslation()
   const user1Name = useStore((s) => s.settings.user1Name)
   const importedBackupDate = useStore((s) => s.importedBackupDate)
   const theme = useStore((s) => s.settings.theme)
@@ -129,8 +154,8 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
   const sidebarConfig = useStore((s) => s.settings.sidebarConfig)
 
   const backupLabel = importedBackupDate
-    ? `Backup ${format(parseISO(importedBackupDate), 'MMM d')}`
-    : 'No backup'
+    ? t('common.backupOn', { date: format(parseISO(importedBackupDate), 'MMM d') })
+    : t('common.noBackup')
 
   const overBudgetCount = useMemo(() => {
     const now = new Date()
@@ -150,6 +175,21 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
     () => buildNavGroups(sidebarConfig, overBudgetBadge),
     [sidebarConfig, overBudgetBadge],
   )
+
+  const labelFor = (item: NavItem) => {
+    const key = PATH_TO_LABEL_KEY[item.to]
+    return key ? t(`nav.items.${key}`) : item.label
+  }
+  const groupLabelFor = (label: string) => {
+    const key = GROUP_LABEL_TO_KEY[label]
+    return key ? t(`nav.groups.${key}`) : label
+  }
+  const badgeText = (badge: string) => {
+    if (badge === 'new') return t('nav.badges.new')
+    const m = badge.match(/^(\d+)\s+over$/)
+    if (m) return t('nav.badges.over', { count: Number(m[1]) })
+    return badge
+  }
 
   return (
     <>
@@ -183,7 +223,7 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
           <button
             onClick={onToggle}
             className="hidden lg:flex p-1.5 rounded-[6px] text-[#9297a0] hover:text-[#41454d] dark:hover:text-[#e8eaf0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors flex-shrink-0"
-            aria-label="Toggle sidebar"
+            aria-label={t('common.toggleSidebar')}
           >
             {desktopOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
           </button>
@@ -195,11 +235,14 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
             <div key={group.label}>
               {group.showLabel && (
                 <p className={`text-[10px] font-semibold uppercase text-[#41454d]/60 dark:text-[#9297a0]/60 px-3 mb-1 tracking-wider whitespace-nowrap transition-opacity duration-200 ${desktopOpen ? 'opacity-100' : 'lg:opacity-0 lg:h-0 lg:overflow-hidden'}`}>
-                  {group.label}
+                  {groupLabelFor(group.label)}
                 </p>
               )}
               <div className="space-y-0.5">
-                {group.items.map(({ to, label, icon: Icon, end, badge }) => (
+                {group.items.map((item) => {
+                  const { to, icon: Icon, end, badge } = item
+                  const label = labelFor(item)
+                  return (
                   <NavLink
                     key={to}
                     to={to}
@@ -233,13 +276,14 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
                                 : 'bg-[#fff1ec] text-[#aa2d00]'
                             }`}
                           >
-                            {badge === 'new' ? 'NEW' : badge}
+                            {badgeText(badge)}
                           </span>
                         )}
                       </>
                     )}
                   </NavLink>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}
@@ -262,7 +306,7 @@ export default function Sidebar({ open, onClose, desktopOpen, onToggle }: Sideba
             <button
               onClick={() => updateSettings({ theme: theme === 'dark' ? 'light' : 'dark' })}
               className="p-1.5 rounded-[6px] text-[#9297a0] hover:text-[#41454d] dark:hover:text-[#e8eaf0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors flex-shrink-0"
-              aria-label="Toggle dark mode"
+              aria-label={t('common.toggleDarkMode')}
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
