@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import Modal from '../ui/Modal'
 
 type ApplyScope = 'following' | 'current' | 'allTime'
@@ -16,29 +17,18 @@ interface Props {
 const cancelBtn = 'flex-1 border border-[#e8e8e8] dark:border-[#2d3347] text-[#181d26] dark:text-[#e8eaf0] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] transition-colors'
 const submitBtn = 'flex-1 bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors'
 
-const SCOPE_OPTIONS: { value: ApplyScope; label: string; description: string }[] = [
-  {
-    value: 'following',
-    label: 'Going forward only',
-    description: 'Only new expenses will use the new split. Existing transactions keep their current ratio.',
-  },
-  {
-    value: 'current',
-    label: 'Since last settlement',
-    description: 'Apply to all shared expenses since the last zero balance, plus new ones.',
-  },
-  {
-    value: 'allTime',
-    label: 'All time',
-    description: 'Retroactively apply to every shared expense ever recorded.',
-  },
-]
-
 export default function SplitRatioModal({ open, onClose, newRatio, user1Name, user2Name, lastSettlementDate, onConfirm }: Props) {
+  const { t } = useTranslation()
   const [scope, setScope] = useState<ApplyScope>('following')
 
   const user1Pct = Math.round(newRatio * 100)
   const user2Pct = 100 - user1Pct
+
+  const scopeOptions: { value: ApplyScope; label: string; description: string }[] = [
+    { value: 'following', label: t('sharedBalance.splitModal.options.followingLabel'), description: t('sharedBalance.splitModal.options.followingDesc') },
+    { value: 'current',   label: t('sharedBalance.splitModal.options.currentLabel'),   description: t('sharedBalance.splitModal.options.currentDesc') },
+    { value: 'allTime',   label: t('sharedBalance.splitModal.options.allTimeLabel'),   description: t('sharedBalance.splitModal.options.allTimeDesc') },
+  ]
 
   function handleConfirm() {
     onConfirm(scope)
@@ -46,14 +36,16 @@ export default function SplitRatioModal({ open, onClose, newRatio, user1Name, us
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Apply New Split Ratio">
+    <Modal open={open} onClose={onClose} title={t('sharedBalance.splitModal.title')}>
       <div className="space-y-4">
         <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">
-          New split: <span className="font-semibold text-[#181d26] dark:text-[#e8eaf0]">{user1Name} {user1Pct}% / {user2Name} {user2Pct}%</span>
+          <span className="font-semibold text-[#181d26] dark:text-[#e8eaf0]">
+            {t('sharedBalance.splitModal.newSplit', { user1Name, user1Pct, user2Name, user2Pct })}
+          </span>
         </p>
-        <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">Apply this ratio to:</p>
+        <p className="text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('sharedBalance.splitModal.applyTo')}</p>
         <div className="space-y-2">
-          {SCOPE_OPTIONS.map((opt) => {
+          {scopeOptions.map((opt) => {
             const disabled = opt.value === 'current' && !lastSettlementDate
             return (
               <label
@@ -82,8 +74,8 @@ export default function SplitRatioModal({ open, onClose, newRatio, user1Name, us
           })}
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className={cancelBtn}>Cancel</button>
-          <button type="button" onClick={handleConfirm} className={submitBtn}>Apply</button>
+          <button type="button" onClick={onClose} className={cancelBtn}>{t('common.cancel')}</button>
+          <button type="button" onClick={handleConfirm} className={submitBtn}>{t('sharedBalance.splitModal.apply')}</button>
         </div>
       </div>
     </Modal>

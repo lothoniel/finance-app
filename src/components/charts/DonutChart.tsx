@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import CustomTooltip from './Tooltip'
-import { formatMXNCompact } from '../../lib/formatters'
+import { formatMoneyCompact } from '../../lib/formatters'
+import { useStore } from '../../store'
 
 interface DonutChartProps {
   data: { name: string; value: number; color: string }[]
@@ -15,6 +16,7 @@ export default function DonutChart({
   centerValue,
   height = 260,
 }: DonutChartProps) {
+  const currency = useStore((s) => s.settings.currencyDisplay)
   const total = data.reduce((sum, d) => sum + d.value, 0)
 
   return (
@@ -84,7 +86,7 @@ export default function DonutChart({
                 {pct}%
               </span>
               <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
-                {formatMXNCompact(entry.value)}
+                {formatMoneyCompact(entry.value, currency)}
               </span>
             </div>
           )

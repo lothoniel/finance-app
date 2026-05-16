@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Camera, Upload, X, AlertCircle, Loader2, CheckSquare, Square, Plus } from 'lucide-react'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
@@ -35,6 +36,7 @@ interface ReviewRow {
 type Step = 'upload' | 'loading' | 'review' | 'done'
 
 export default function ScreenshotImportModal({ open, onClose }: Props) {
+  const { t } = useTranslation()
   const categories = useStore((s) => s.settings.expenseCategories)
   const user1Name = useStore((s) => s.settings.user1Name)
   const user2Name = useStore((s) => s.settings.user2Name)
@@ -154,7 +156,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
 
   async function extract() {
     if (images.length === 0) {
-      setError('Select at least one screenshot.')
+      setError(t('screenshotImport.error.selectOne'))
       return
     }
     setError(null)
@@ -169,7 +171,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
 
       if (transactions.length === 0) {
         const preview = dbg.slice(0, 15).join(' | ')
-        setError(`No transactions found. OCR read: "${preview}"`)
+        setError(t('screenshotImport.error.noTransactions', { preview }))
         setStep('upload')
         return
       }
@@ -192,7 +194,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
       setActiveImage(0)
       setStep('review')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : t('screenshotImport.error.unknown'))
       setStep('upload')
     }
   }
@@ -219,7 +221,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
   const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name))
 
   return (
-    <Modal open={open} onClose={handleClose} title="Import from Screenshot" size={step === 'review' ? 'xl' : 'lg'}>
+    <Modal open={open} onClose={handleClose} title={t('screenshotImport.title')} size={step === 'review' ? 'xl' : 'lg'}>
       {/* ── Upload ── */}
       {step === 'upload' && (
         <div className="space-y-4">
@@ -236,9 +238,9 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
           >
             <Camera className="w-8 h-8 text-[#41454d]" />
             <p className="text-[13px] text-[#41454d] text-center">
-              <span className="font-medium text-[#181d26]">Click to select</span> or drag and drop screenshots
+              <span className="font-medium text-[#181d26]">{t('screenshotImport.dropzone.clickToSelect')}</span>{t('screenshotImport.dropzone.dragText')}
             </p>
-            <p className="text-[11px] text-[#41454d]">PNG, JPG — multiple files supported</p>
+            <p className="text-[11px] text-[#41454d]">{t('screenshotImport.dropzone.hint')}</p>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
               onChange={(e) => e.target.files && addFiles(e.target.files)} />
           </div>
@@ -270,12 +272,12 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
 
           <div className="flex gap-3 pt-2">
             <button onClick={handleClose} className={`flex-1 ${secondaryBtn}`}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button onClick={extract} disabled={images.length === 0}
               className={`flex-1 ${primaryBtn} disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2`}>
               <Upload className="w-4 h-4" />
-              Extract Transactions
+              {t('screenshotImport.buttons.extract')}
             </button>
           </div>
         </div>
@@ -285,8 +287,8 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
       {step === 'loading' && (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <Loader2 className="w-8 h-8 text-[#181d26] animate-spin" />
-          <p className="text-[13px] text-[#41454d]">{progressMsg || 'Starting OCR…'}</p>
-          <p className="text-[11px] text-[#41454d]">This may take a few seconds per image</p>
+          <p className="text-[13px] text-[#41454d]">{progressMsg || t('screenshotImport.loading.starting')}</p>
+          <p className="text-[11px] text-[#41454d]">{t('screenshotImport.loading.hint')}</p>
         </div>
       )}
 
@@ -323,12 +325,14 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
           <div className="flex-1 flex flex-col gap-3 min-w-0 overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-[#181d26]">
-                {rows.length} transaction{rows.length !== 1 ? 's' : ''} found
+                {rows.length === 1
+                  ? t('screenshotImport.review.foundOne', { count: rows.length })
+                  : t('screenshotImport.review.foundOther', { count: rows.length })}
               </span>
               <div className="flex gap-2 text-[11px] text-[#41454d]">
-                <button onClick={() => toggleAll(true)} className="hover:text-[#181d26]">Select all</button>
+                <button onClick={() => toggleAll(true)} className="hover:text-[#181d26]">{t('screenshotImport.review.selectAll')}</button>
                 <span>·</span>
-                <button onClick={() => toggleAll(false)} className="hover:text-[#181d26]">None</button>
+                <button onClick={() => toggleAll(false)} className="hover:text-[#181d26]">{t('screenshotImport.review.none')}</button>
               </div>
             </div>
 
@@ -359,7 +363,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                   {row.isDuplicate && (
                     <p className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
                       <AlertCircle className="w-3 h-3 shrink-0" />
-                      Possible duplicate — same date &amp; amount already exists
+                      {t('screenshotImport.review.duplicateBanner')}
                     </p>
                   )}
 
@@ -367,7 +371,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                     type="text"
                     value={row.description}
                     onChange={(e) => updateRow(row.key, { description: e.target.value })}
-                    placeholder="Description"
+                    placeholder={t('expenses.form.description')}
                     className={inputClass}
                   />
 
@@ -378,7 +382,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                       step="0.01"
                       value={row.amount}
                       onChange={(e) => updateRow(row.key, { amount: e.target.value })}
-                      placeholder="Amount"
+                      placeholder={t('expenses.form.amount')}
                       className={inputClass}
                     />
                     <select
@@ -408,7 +412,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                         onChange={(e) => updateRow(row.key, { shared: e.target.checked })}
                         className="w-3.5 h-3.5 rounded border-[#e8e8e8] accent-[#181d26]"
                       />
-                      Shared
+                      {t('expenses.filters.shared')}
                     </label>
                   </div>
                 </div>
@@ -419,17 +423,17 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
               <button onClick={addEmptyRow}
                 className="flex items-center gap-1.5 border border-dashed border-[#e8e8e8] text-[#41454d] rounded-[8px] px-3 py-2 text-[13px] font-medium hover:border-[#181d26] hover:text-[#181d26] transition-colors shrink-0">
                 <Plus className="w-3.5 h-3.5" />
-                Add row
+                {t('screenshotImport.buttons.addRow')}
               </button>
               <button onClick={handleClose} className={secondaryBtn}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleAddSelected}
                 disabled={selectedCount === 0}
                 className={`flex-1 ${primaryBtn} disabled:opacity-40 disabled:cursor-not-allowed`}
               >
-                Add {selectedCount} selected
+                {t('screenshotImport.buttons.addSelected', { count: selectedCount })}
               </button>
             </div>
           </div>
@@ -444,18 +448,22 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
           </div>
           <div>
             <p className="font-medium text-[#181d26]">
-              {addedCount === 0 ? 'No expenses added' : `${addedCount} expense${addedCount > 1 ? 's' : ''} added`}
+              {addedCount === 0
+                ? t('screenshotImport.done.noneAddedTitle')
+                : addedCount === 1
+                ? t('screenshotImport.done.addedOne', { count: addedCount })
+                : t('screenshotImport.done.addedOther', { count: addedCount })}
             </p>
             <p className="text-[13px] text-[#41454d] mt-1">
-              {addedCount > 0 ? 'They are now visible in your expense list.' : 'No transactions were selected.'}
+              {addedCount > 0 ? t('screenshotImport.done.addedBody') : t('screenshotImport.done.noneSelectedBody')}
             </p>
           </div>
           <div className="flex gap-3 w-full">
             <button onClick={reset} className={`flex-1 ${secondaryBtn}`}>
-              Import More
+              {t('screenshotImport.buttons.importMore')}
             </button>
             <button onClick={handleClose} className={`flex-1 ${primaryBtn}`}>
-              Done
+              {t('screenshotImport.buttons.done')}
             </button>
           </div>
         </div>

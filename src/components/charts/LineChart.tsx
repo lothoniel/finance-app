@@ -9,7 +9,8 @@ import {
   Legend,
 } from 'recharts'
 import CustomTooltip from './Tooltip'
-import { formatMXNCompact } from '../../lib/formatters'
+import { formatMoneyCompact } from '../../lib/formatters'
+import { useStore } from '../../store'
 
 interface LineChartProps {
   data: Record<string, string | number>[]
@@ -19,6 +20,7 @@ interface LineChartProps {
 }
 
 export default function LineChart({ data, lines, xKey, height = 300 }: LineChartProps) {
+  const currency = useStore((s) => s.settings.currencyDisplay)
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ReLineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
@@ -31,7 +33,7 @@ export default function LineChart({ data, lines, xKey, height = 300 }: LineChart
         />
         <YAxis
           tick={{ fontSize: 11, fill: '#6B7280' }}
-          tickFormatter={(v) => formatMXNCompact(v as number)}
+          tickFormatter={(v) => formatMoneyCompact(v as number, currency)}
           axisLine={false}
           tickLine={false}
         />

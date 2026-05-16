@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface Column<T> {
   header: string
@@ -14,7 +15,9 @@ interface DataTableProps<T> {
   emptyMessage?: string
 }
 
-export default function DataTable<T>({ columns, rows, keyFn, emptyMessage = 'No data.' }: DataTableProps<T>) {
+export default function DataTable<T>({ columns, rows, keyFn, emptyMessage }: DataTableProps<T>) {
+  const { t } = useTranslation()
+  const empty = emptyMessage ?? t('common.empty.noData')
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -34,7 +37,7 @@ export default function DataTable<T>({ columns, rows, keyFn, emptyMessage = 'No 
           {rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="text-[13px] text-[#41454d] px-4 py-4">
-                {emptyMessage}
+                {empty}
               </td>
             </tr>
           ) : (

@@ -1,17 +1,19 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import AreaChart from '../components/charts/AreaChart'
 import DebtPaymentForm from '../components/forms/DebtPaymentForm'
 import { filterByPeriod, sortByDateDesc } from '../lib/filters'
-import { formatMXN, formatMXNCompact, formatDate, formatShortMonth } from '../lib/formatters'
+import { formatMoney, formatMoneyCompact, formatDate, formatShortMonth } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { DebtPayment } from '../store/types'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 
 export default function DebtPaymentPage() {
+  const { t } = useTranslation()
   const [cardFilter, setCardFilter] = useState('all')
   const [modalOpen, setModalOpen] = useState(false)
   const [editDebt, setEditDebt] = useState<DebtPayment | undefined>()
@@ -21,6 +23,8 @@ export default function DebtPaymentPage() {
   const paychecks = useStore((s) => s.paychecks)
   const transfers = useStore((s) => s.transfers)
   const creditCards = useStore((s) => s.settings.creditCards)
+  const language = useStore((s) => s.settings.language)
+  const currency = useStore((s) => s.settings.currencyDisplay)
   const deleteDebtPayment = useStore((s) => s.deleteDebtPayment)
 
   const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: periodFiltered } = usePeriodFilter(debtPayments)
@@ -65,31 +69,31 @@ export default function DebtPaymentPage() {
       return { year: d.getFullYear(), month: d.getMonth() + 1 }
     })
     return months.map(({ year, month }) => ({
-      name: formatShortMonth(`${year}-${String(month).padStart(2, '0')}-01`),
+      name: formatShortMonth(`${year}-${String(month).padStart(2, '0')}-01`, language),
       amount: filterByPeriod(debtPayments, 'month', { year, month }).reduce((s, d) => s + d.amount, 0),
     }))
-  }, [debtPayments])
+  }, [debtPayments, language])
 
   const kpis = [
-    { label: 'PAID THIS PERIOD', value: formatMXNCompact(totalPaid), color: '#2e7d65' },
-    { label: 'REMAINING DEBT', value: formatMXNCompact(remainingDebt), color: '#c0392b' },
-    { label: 'DEBT RATIO', value: `${debtRatio.toFixed(1)}%`, color: '#c8912a' },
-    { label: 'PAYMENTS', value: String(paymentCount), sub: 'in selected period', color: undefined },
-    ...(topCard ? [{ label: 'TOP CARD', value: topCard.name, sub: formatMXNCompact(topCard.amount), color: undefined }] : []),
+    { label: t('debt.kpis.paidThisPeriod'), value: formatMoneyCompact(totalPaid, currency), color: '#2e7d65' },
+    { label: t('debt.kpis.remainingDebt'), value: formatMoneyCompact(remainingDebt, currency), color: '#c0392b' },
+    { label: t('debt.kpis.debtRatio'), value: `${debtRatio.toFixed(1)}%`, color: '#c8912a' },
+    { label: t('debt.kpis.payments'), value: String(paymentCount), sub: t('debt.kpis.inSelectedPeriod'), color: undefined },
+    ...(topCard ? [{ label: t('debt.kpis.topCard'), value: topCard.name, sub: formatMoneyCompact(topCard.amount, currency), color: undefined }] : []),
   ]
 
   return (
     <div className="p-6 max-w-[1400px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Debt</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('debt.title')}</h1>
         <div className="flex items-center gap-3 flex-wrap">
           <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} modes={['month', 'quarter', 'year', 'all']} />
           <button
             onClick={() => { setEditDebt(undefined); setModalOpen(true) }}
             className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />Record Payment
+            <Plus className="w-3.5 h-3.5" />{t('debt.recordPayment')}
           </button>
         </div>
       </div>
@@ -112,7 +116,7 @@ export default function DebtPaymentPage() {
       {/* Card Balances */}
       {creditCards.length > 0 && (
         <div className="mb-6">
-          <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Card Balances</p>
+          <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('debt.sections.cardBalances')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {creditCards.map((card) => {
               const total = periodFiltered.filter((d) => d.card === card.name).reduce((s, d) => s + d.amount, 0)
@@ -125,7 +129,7 @@ export default function DebtPaymentPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.4px] truncate mb-2" style={{ color: card.color }}>
                     {card.name}
                   </p>
-                  <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] tabular-nums">{formatMXNCompact(total)}</p>
+                  <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] tabular-nums">{formatMoneyCompact(total, currency)}</p>
                 </div>
               )
             })}
@@ -135,10 +139,10 @@ export default function DebtPaymentPage() {
 
       {/* Debt Payments Chart */}
       <div className={`${CARD} p-5 mb-6`}>
-        <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">Debt Payments — Monthly</p>
+        <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">{t('debt.sections.debtPaymentsMonthly')}</p>
         <AreaChart
           data={chartData}
-          areas={[{ key: 'amount', color: '#c8912a', name: 'Debt Payments' }]}
+          areas={[{ key: 'amount', color: '#c8912a', name: t('debt.chart.debtPayments') }]}
           xKey="name"
           height={220}
         />
@@ -147,13 +151,13 @@ export default function DebtPaymentPage() {
       {/* Payments table */}
       <div>
         <div className="flex items-center gap-3 mb-4">
-          <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Recent Payments</p>
+          <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('debt.sections.recentPayments')}</p>
           <select
             value={cardFilter}
             onChange={(e) => setCardFilter(e.target.value)}
             className="ml-auto border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] px-3 py-1.5 text-[13px] bg-white dark:bg-[#252b3b] text-[#181d26] dark:text-[#e8eaf0]"
           >
-            <option value="all">All Cards</option>
+            <option value="all">{t('debt.filters.allCards')}</option>
             {creditCards.map((card) => (
               <option key={card.name} value={card.name}>{card.name}</option>
             ))}
@@ -165,8 +169,14 @@ export default function DebtPaymentPage() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {['Date', 'Card', 'Description', 'Amount', ''].map((h, i) => (
-                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
+                  {[
+                    { label: t('expenses.table.date'), align: 'text-left' },
+                    { label: t('debt.table.card'), align: 'text-left' },
+                    { label: t('expenses.table.description'), align: 'text-left' },
+                    { label: t('expenses.table.amount'), align: 'text-right' },
+                    { label: '', align: 'text-left' },
+                  ].map((h, i) => (
+                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.align}`}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
@@ -174,7 +184,7 @@ export default function DebtPaymentPage() {
                 {sortedPayments.length === 0 && (
                   <tr>
                     <td colSpan={5} className="text-center py-10 text-[13px] text-[#41454d] dark:text-[#9297a0]">
-                      No debt payments in this period
+                      {t('debt.empty.noPayments')}
                     </td>
                   </tr>
                 )}
@@ -183,7 +193,7 @@ export default function DebtPaymentPage() {
                   const border = i < arr.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
                   return (
                     <tr key={d.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
-                      <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(d.date)}</td>
+                      <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(d.date, language)}</td>
                       <td className={`px-4 py-[11px] ${border}`}>
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cardColor }} />
@@ -191,7 +201,7 @@ export default function DebtPaymentPage() {
                         </div>
                       </td>
                       <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{d.description}</td>
-                      <td className={`px-4 py-[11px] text-right text-[13px] font-medium ${border}`} style={{ color: '#1a7a3c' }}>{formatMXN(d.amount)}</td>
+                      <td className={`px-4 py-[11px] text-right text-[13px] font-medium ${border}`} style={{ color: '#1a7a3c' }}>{formatMoney(d.amount, currency)}</td>
                       <td className={`px-4 py-[11px] ${border}`}>
                         <div className="flex items-center justify-end gap-1">
                           <button

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, TrendingUp, Calendar, RefreshCw, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import Badge from '../components/ui/Badge'
@@ -6,7 +7,7 @@ import DonutChart from '../components/charts/DonutChart'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import PortfolioForm from '../components/forms/PortfolioForm'
 import InvestmentMovementForm from '../components/forms/InvestmentMovementForm'
-import { formatMXN, formatMXNCompact, formatDate } from '../lib/formatters'
+import { formatMoney, formatMoneyCompact, formatDate } from '../lib/formatters'
 import { sortByDateDesc } from '../lib/filters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import type { Portfolio, InvestmentMovement } from '../store/types'
@@ -17,6 +18,7 @@ const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] u
 const portfolioColors = ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#ec4899', '#14b8a6']
 
 export default function PortfolioPage() {
+  const { t } = useTranslation()
   const [portfolioModal, setPortfolioModal] = useState(false)
   const [movementModal, setMovementModal] = useState(false)
   const [editPortfolio, setEditPortfolio] = useState<Portfolio | undefined>()
@@ -24,6 +26,8 @@ export default function PortfolioPage() {
 
   const portfolios = useStore((s) => s.portfolios)
   const investmentMovements = useStore((s) => s.investmentMovements)
+  const language = useStore((s) => s.settings.language)
+  const currency = useStore((s) => s.settings.currencyDisplay)
   const deleteInvestmentMovement = useStore((s) => s.deleteInvestmentMovement)
   const updatePortfolio = useStore((s) => s.updatePortfolio)
 
@@ -83,20 +87,20 @@ export default function PortfolioPage() {
     <div className="p-6 max-w-[1400px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Investments</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('portfolio.title')}</h1>
         <div className="flex items-center gap-3 flex-wrap">
           <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} />
           <button
             onClick={() => { setEditMovement(undefined); setMovementModal(true) }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] border border-[#e8e8e8] dark:border-[#2d3347] text-[13px] font-medium text-[#41454d] dark:text-[#9297a0] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] transition-colors"
           >
-            <TrendingUp className="w-3.5 h-3.5" />Movement
+            <TrendingUp className="w-3.5 h-3.5" />{t('portfolio.buttons.movement')}
           </button>
           <button
             onClick={() => { setEditPortfolio(undefined); setPortfolioModal(true) }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] text-[13px] font-medium hover:opacity-90 transition-opacity"
           >
-            <Plus className="w-3.5 h-3.5" />Portfolio
+            <Plus className="w-3.5 h-3.5" />{t('portfolio.buttons.portfolio')}
           </button>
         </div>
       </div>
@@ -104,10 +108,10 @@ export default function PortfolioPage() {
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
         {[
-          { label: 'TOTAL VALUE', value: formatMXNCompact(totalNetWorth), color: '#181d26' },
-          { label: 'TOTAL YIELD', value: formatMXN(totalGains), sub: 'In selected period', color: totalGains >= 0 ? '#1a7a3c' : '#c0392b' },
-          { label: 'TOTAL DEPOSITS', value: formatMXN(totalDeposits), sub: 'In selected period', color: '#181d26' },
-          { label: 'PORTFOLIOS', value: String(portfolios.length), color: '#181d26' },
+          { label: t('portfolio.kpis.totalValue'), value: formatMoneyCompact(totalNetWorth, currency), color: '#181d26' },
+          { label: t('portfolio.kpis.totalYield'), value: formatMoney(totalGains, currency), sub: t('portfolio.kpis.inSelectedPeriod'), color: totalGains >= 0 ? '#1a7a3c' : '#c0392b' },
+          { label: t('portfolio.kpis.totalDeposits'), value: formatMoney(totalDeposits, currency), sub: t('portfolio.kpis.inSelectedPeriod'), color: '#181d26' },
+          { label: t('portfolio.kpis.portfolios'), value: String(portfolios.length), color: '#181d26' },
         ].map((kpi) => (
           <div key={kpi.label} className="flex-1 px-6 py-4 min-w-0">
             <div className="text-[22px] font-bold dark:text-[#e8eaf0]" style={{ color: kpi.color }}>{kpi.value}</div>
@@ -121,19 +125,19 @@ export default function PortfolioPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Asset Allocation */}
         <div className={`${CARD} p-5`}>
-          <p className={SECTION_LABEL}>Asset Allocation</p>
+          <p className={SECTION_LABEL}>{t('portfolio.sections.assetAllocation')}</p>
           {donutData.length > 0 ? (
-            <DonutChart data={donutData} centerLabel="Total" centerValue={formatMXNCompact(totalNetWorth)} height={220} />
+            <DonutChart data={donutData} centerLabel={t('expenses.sections.donutTotal')} centerValue={formatMoneyCompact(totalNetWorth, currency)} height={220} />
           ) : (
-            <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No portfolios yet</p>
+            <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('portfolio.empty.noPortfolios')}</p>
           )}
         </div>
 
         {/* Holdings */}
         <div className={`${CARD} p-5`}>
-          <p className={SECTION_LABEL}>Holdings</p>
+          <p className={SECTION_LABEL}>{t('portfolio.sections.holdings')}</p>
           {portfolios.length === 0 && (
-            <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No portfolios yet. Add one to get started.</p>
+            <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('portfolio.empty.noPortfoliosCta')}</p>
           )}
           <div className="space-y-3">
             {portfolios.map((p, i) => {
@@ -156,12 +160,12 @@ export default function PortfolioPage() {
                           className="text-[11px] font-semibold px-2 py-0.5 rounded-[4px]"
                           style={{ backgroundColor: p.apy >= 10 ? '#eef8f4' : '#fff1ec', color: p.apy >= 10 ? '#2e7d65' : '#aa2d00' }}
                         >
-                          {p.apy}% APY
+                          {t('portfolio.holdings.apy', { rate: p.apy })}
                         </span>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-[20px] font-bold text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMXNCompact(p.balance)}</p>
+                      <p className="text-[20px] font-bold text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMoneyCompact(p.balance, currency)}</p>
                       <p className="text-[11px] text-[#9297a0] mt-0.5">{alloc.toFixed(1)}%</p>
                     </div>
                   </div>
@@ -169,13 +173,13 @@ export default function PortfolioPage() {
                   {/* Secondary row: Return % + last gain */}
                   <div className="flex items-center gap-5 mb-3">
                     <div>
-                      <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">Return</p>
+                      <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">{t('portfolio.holdings.return')}</p>
                       <p className="text-[13px] font-semibold text-[#1a7a3c]">{returnPct[p.id]}</p>
                     </div>
                     {gain !== undefined && (
                       <div>
-                        <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">Last gain</p>
-                        <p className="text-[13px] font-semibold text-[#1a7a3c]">+{formatMXN(gain)}</p>
+                        <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">{t('portfolio.holdings.lastGain')}</p>
+                        <p className="text-[13px] font-semibold text-[#1a7a3c]">+{formatMoney(gain, currency)}</p>
                       </div>
                     )}
                   </div>
@@ -183,10 +187,10 @@ export default function PortfolioPage() {
                   {/* Dates */}
                   <div className="flex justify-between pt-2 border-t border-[#e8e8e8] dark:border-[#2d3347] mb-3">
                     <div className="flex items-center gap-1.5 text-[11px] text-[#41454d] dark:text-[#9297a0]">
-                      <Calendar className="w-3.5 h-3.5" />Updated: {formatDate(p.updatedDate)}
+                      <Calendar className="w-3.5 h-3.5" />{t('portfolio.holdings.updated', { date: formatDate(p.updatedDate, language) })}
                     </div>
                     <div className="flex items-center gap-1.5 text-[11px] text-[#41454d] dark:text-[#9297a0]">
-                      <RefreshCw className="w-3.5 h-3.5" />Renews: {formatDate(p.renewsDate)}
+                      <RefreshCw className="w-3.5 h-3.5" />{t('portfolio.holdings.renews', { date: formatDate(p.renewsDate, language) })}
                     </div>
                   </div>
 
@@ -202,7 +206,7 @@ export default function PortfolioPage() {
       {/* Transaction History */}
       <div>
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Transaction History</span>
+          <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('portfolio.sections.transactionHistory')}</span>
           <span className="flex-1 h-px bg-[#e8e8e8] dark:bg-[#2d3347]" />
         </div>
         <div className={`${CARD} overflow-hidden`}>
@@ -210,14 +214,21 @@ export default function PortfolioPage() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {['Date', 'Portfolio', 'Description', 'Type', 'Amount', ''].map((h, i) => (
-                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
+                  {[
+                    { label: t('expenses.table.date'), align: 'text-left' },
+                    { label: t('portfolio.table.portfolio'), align: 'text-left' },
+                    { label: t('expenses.table.description'), align: 'text-left' },
+                    { label: t('portfolio.table.type'), align: 'text-left' },
+                    { label: t('expenses.table.amount'), align: 'text-right' },
+                    { label: '', align: 'text-left' },
+                  ].map((h, i) => (
+                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${h.align}`}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {sortedMovements.length === 0 && (
-                  <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No movements in this period</td></tr>
+                  <tr><td colSpan={6} className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('portfolio.empty.noMovementsPeriod')}</td></tr>
                 )}
                 {sortedMovements.map((m, i, arr) => {
                   const portfolio = portfolios.find((p) => p.id === m.portfolioId)
@@ -229,15 +240,15 @@ export default function PortfolioPage() {
                   const border = i < arr.length - 1 ? 'border-b border-[#e8e8e8] dark:border-[#2d3347]' : ''
                   return (
                     <tr key={m.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
-                      <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(m.date)}</td>
+                      <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] whitespace-nowrap ${border}`}>{formatDate(m.date, language)}</td>
                       <td className={`px-4 py-[11px] text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>
                         {portfolio?.name ?? m.portfolioId}
                         {destPortfolio && <span className="text-[#9297a0]"> → {destPortfolio.name}</span>}
                       </td>
                       <td className={`px-4 py-[11px] text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{m.description}</td>
-                      <td className={`px-4 py-[11px] ${border}`}><Badge type={m.type.toLowerCase()} /></td>
+                      <td className={`px-4 py-[11px] ${border}`}><Badge type={m.type.toLowerCase()} label={t(`portfolio.movementTypes.${m.type.toLowerCase()}`)} /></td>
                       <td className={`px-4 py-[11px] text-right text-[13px] font-medium ${border}`} style={{ color: amtColor }}>
-                        {amtSign}{formatMXN(m.amount)}
+                        {amtSign}{formatMoney(m.amount, currency)}
                       </td>
                       <td className={`px-4 py-[11px] ${border}`}>
                         <div className="flex items-center justify-end gap-1">

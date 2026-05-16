@@ -9,7 +9,8 @@ import {
   Legend,
 } from 'recharts'
 import CustomTooltip from './Tooltip'
-import { formatMXNCompact } from '../../lib/formatters'
+import { formatMoneyCompact } from '../../lib/formatters'
+import { useStore } from '../../store'
 
 interface AreaChartProps {
   data: Record<string, string | number>[]
@@ -20,6 +21,7 @@ interface AreaChartProps {
 }
 
 export default function AreaChart({ data, areas, xKey, height = 300, fillOpacity = 0.3 }: AreaChartProps) {
+  const currency = useStore((s) => s.settings.currencyDisplay)
   return (
     <ResponsiveContainer width="100%" height={height} debounce={50}>
       <ReAreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
@@ -40,7 +42,7 @@ export default function AreaChart({ data, areas, xKey, height = 300, fillOpacity
         />
         <YAxis
           tick={{ fontSize: 11, fill: '#6B7280' }}
-          tickFormatter={(v) => formatMXNCompact(v as number)}
+          tickFormatter={(v) => formatMoneyCompact(v as number, currency)}
           axisLine={false}
           tickLine={false}
         />

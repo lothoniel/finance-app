@@ -1,17 +1,20 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import DonutChart from '../components/charts/DonutChart'
 import { sortByDateDesc } from '../lib/filters'
-import { formatMXN, formatMXNCompact } from '../lib/formatters'
+import { formatMoney, formatMoneyCompact } from '../lib/formatters'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] uppercase mb-4'
 const portfolioColors = ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#ec4899', '#14b8a6']
 
 export default function NetWorth() {
+  const { t } = useTranslation()
   const portfolios = useStore((s) => s.portfolios)
   const mortgageConfig = useStore((s) => s.mortgageConfig)
   const mortgagePayments = useStore((s) => s.mortgagePayments)
+  const currency = useStore((s) => s.settings.currencyDisplay)
 
   const totalAssets = portfolios.reduce((s, p) => s + p.balance, 0)
 
@@ -35,17 +38,17 @@ export default function NetWorth() {
     <div className="p-6 max-w-[1400px]">
       {/* Header */}
       <div className="mb-5">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Net Worth</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('netWorth.title')}</h1>
       </div>
 
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
         {[
-          { label: 'NET WORTH', value: formatMXNCompact(netWorth), color: netWorth >= 0 ? '#1a7a3c' : '#c0392b' },
-          { label: 'TOTAL ASSETS', value: formatMXNCompact(totalAssets), color: '#181d26' },
-          { label: 'TOTAL LIABILITIES', value: formatMXNCompact(totalLiabilities), color: '#c0392b' },
+          { key: 'netWorth', label: t('netWorth.kpis.netWorth'), value: formatMoneyCompact(netWorth, currency), color: netWorth >= 0 ? '#1a7a3c' : '#c0392b' },
+          { key: 'totalAssets', label: t('netWorth.kpis.totalAssets'), value: formatMoneyCompact(totalAssets, currency), color: '#181d26' },
+          { key: 'totalLiabilities', label: t('netWorth.kpis.totalLiabilities'), value: formatMoneyCompact(totalLiabilities, currency), color: '#c0392b' },
         ].map((kpi) => (
-          <div key={kpi.label} className="flex-1 px-6 py-4 min-w-0">
+          <div key={kpi.key} className="flex-1 px-6 py-4 min-w-0">
             <div className="text-[22px] font-bold dark:text-[#e8eaf0]" style={{ color: kpi.color }}>{kpi.value}</div>
             <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
           </div>
@@ -56,42 +59,42 @@ export default function NetWorth() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Assets donut */}
         <div className={`${CARD} p-5`}>
-          <p className={SECTION_LABEL}>Assets</p>
+          <p className={SECTION_LABEL}>{t('netWorth.sections.assets')}</p>
           {donutData.length > 0 ? (
-            <DonutChart data={donutData} centerLabel="Assets" centerValue={formatMXNCompact(totalAssets)} height={220} />
+            <DonutChart data={donutData} centerLabel={t('netWorth.assets.centerLabel')} centerValue={formatMoneyCompact(totalAssets, currency)} height={220} />
           ) : (
-            <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No portfolios yet</p>
+            <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('netWorth.assets.empty')}</p>
           )}
         </div>
 
         {/* Liabilities — mortgage only */}
         <div className={`${CARD} p-5`}>
-          <p className={SECTION_LABEL}>Liabilities</p>
+          <p className={SECTION_LABEL}>{t('netWorth.sections.liabilities')}</p>
 
           <div className="border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] p-4">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Mortgage</p>
-                <p className="text-[12px] text-[#9297a0] mt-0.5">{mortgageConfig.interestRate}% annual rate</p>
+                <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('netWorth.liabilities.mortgage')}</p>
+                <p className="text-[12px] text-[#9297a0] mt-0.5">{t('netWorth.liabilities.annualRate', { rate: mortgageConfig.interestRate })}</p>
               </div>
               <div className="text-right">
-                <p className="text-[20px] font-bold text-[#c0392b]">{formatMXNCompact(currentMortgageBalance)}</p>
-                <p className="text-[11px] text-[#9297a0]">remaining balance</p>
+                <p className="text-[20px] font-bold text-[#c0392b]">{formatMoneyCompact(currentMortgageBalance, currency)}</p>
+                <p className="text-[11px] text-[#9297a0]">{t('netWorth.liabilities.remainingBalance')}</p>
               </div>
             </div>
 
             <div className="flex gap-6 mb-4">
               <div>
-                <p className="text-[11px] text-[#9297a0] uppercase font-semibold tracking-wider">Monthly Payment</p>
-                <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mt-0.5">{formatMXN(mortgageConfig.minimumPayment)}</p>
+                <p className="text-[11px] text-[#9297a0] uppercase font-semibold tracking-wider">{t('netWorth.liabilities.monthlyPayment')}</p>
+                <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mt-0.5">{formatMoney(mortgageConfig.minimumPayment, currency)}</p>
               </div>
               <div>
-                <p className="text-[11px] text-[#9297a0] uppercase font-semibold tracking-wider">Paid Off</p>
+                <p className="text-[11px] text-[#9297a0] uppercase font-semibold tracking-wider">{t('netWorth.liabilities.paidOff')}</p>
                 <p className="text-[14px] font-semibold text-[#1a7a3c] mt-0.5">{paidOffPct.toFixed(1)}%</p>
               </div>
               <div>
-                <p className="text-[11px] text-[#9297a0] uppercase font-semibold tracking-wider">Original</p>
-                <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mt-0.5">{formatMXNCompact(mortgageConfig.principal)}</p>
+                <p className="text-[11px] text-[#9297a0] uppercase font-semibold tracking-wider">{t('netWorth.liabilities.original')}</p>
+                <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mt-0.5">{formatMoneyCompact(mortgageConfig.principal, currency)}</p>
               </div>
             </div>
 
@@ -103,15 +106,15 @@ export default function NetWorth() {
                 />
               </div>
               <div className="flex justify-between mt-1.5">
-                <span className="text-[11px] text-[#9297a0]">{formatMXNCompact(amountPaid)} paid</span>
-                <span className="text-[11px] text-[#9297a0]">{formatMXNCompact(currentMortgageBalance)} left</span>
+                <span className="text-[11px] text-[#9297a0]">{t('netWorth.liabilities.paid', { amount: formatMoneyCompact(amountPaid, currency) })}</span>
+                <span className="text-[11px] text-[#9297a0]">{t('netWorth.liabilities.left', { amount: formatMoneyCompact(currentMortgageBalance, currency) })}</span>
               </div>
             </div>
           </div>
 
           <div className="mt-4 pt-4 border-t border-[#e8e8e8] dark:border-[#2d3347] flex justify-between">
-            <span className="text-[13px] text-[#9297a0]">Total Liabilities</span>
-            <span className="text-[13px] font-semibold text-[#c0392b]">{formatMXNCompact(totalLiabilities)}</span>
+            <span className="text-[13px] text-[#9297a0]">{t('netWorth.liabilities.total')}</span>
+            <span className="text-[13px] font-semibold text-[#c0392b]">{formatMoneyCompact(totalLiabilities, currency)}</span>
           </div>
         </div>
       </div>
@@ -119,25 +122,31 @@ export default function NetWorth() {
       {/* Portfolio Holdings table */}
       <div className={CARD}>
         <div className="p-5 pb-0">
-          <p className={SECTION_LABEL}>Portfolio Holdings</p>
+          <p className={SECTION_LABEL}>{t('netWorth.sections.portfolioHoldings')}</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr>
-                {['Name', 'Type', 'APY', 'Balance', 'Allocation'].map((h, i) => (
+                {[
+                  { key: 'name', label: t('netWorth.table.name') },
+                  { key: 'type', label: t('netWorth.table.type') },
+                  { key: 'apy', label: t('netWorth.table.apy') },
+                  { key: 'balance', label: t('netWorth.table.balance') },
+                  { key: 'allocation', label: t('netWorth.table.allocation') },
+                ].map((h, i) => (
                   <th
-                    key={h}
+                    key={h.key}
                     className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-5 ${i >= 2 ? 'text-right' : 'text-left'}`}
                   >
-                    {h}
+                    {h.label}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {portfolios.length === 0 && (
-                <tr><td colSpan={5} className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">No portfolios yet</td></tr>
+                <tr><td colSpan={5} className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('netWorth.table.empty')}</td></tr>
               )}
               {portfolios.map((p, i, arr) => {
                 const color = portfolioColors[i % portfolioColors.length]
@@ -162,7 +171,7 @@ export default function NetWorth() {
                     </td>
                     {/* Balance */}
                     <td className={`px-5 py-3.5 text-right ${border}`}>
-                      <span className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(p.balance)}</span>
+                      <span className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(p.balance, currency)}</span>
                     </td>
                     {/* Allocation bar + % */}
                     <td className={`px-5 py-3.5 text-right ${border}`}>

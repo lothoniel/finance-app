@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Pencil, Trash2, Users } from 'lucide-react'
 import { useStore } from '../store'
 import Tabs from '../components/ui/Tabs'
@@ -6,40 +7,43 @@ import PeriodSelector from '../components/ui/PeriodSelector'
 import AreaChart from '../components/charts/AreaChart'
 import MortgagePaymentForm from '../components/forms/MortgagePaymentForm'
 import MortgageContributionForm from '../components/forms/MortgageContributionForm'
-import { formatMXN, formatMXNCompact, formatDate, formatMonthYear } from '../lib/formatters'
+import { formatMoney, formatMoneyCompact, formatDate, formatMonthYear } from '../lib/formatters'
 import { sortByDateAsc, sortByDateDesc } from '../lib/filters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import { monthsRemaining, totalInterestRemaining, buildBalanceSeries, calcMonthlyPayment } from '../lib/mortgage'
 import type { MortgagePayment, MortgageContribution } from '../store/types'
 
-function addMonths(dateStr: string, months: number): string {
+function addMonths(dateStr: string, months: number, language?: 'en' | 'es'): string {
   const [y, m] = dateStr.split('-').map(Number)
   const total = y * 12 + (m - 1) + Math.ceil(months)
   const yr = Math.floor(total / 12)
   const mo = total % 12
-  return formatMonthYear(`${yr}-${String(mo + 1).padStart(2, '0')}-01`)
-}
-
-function formatDuration(months: number): string {
-  if (!isFinite(months)) return '—'
-  const m = Math.round(months)
-  const y = Math.floor(m / 12)
-  const rem = m % 12
-  if (y === 0) return `${rem}mo`
-  if (rem === 0) return `${y}yr`
-  return `${y}yr ${rem}mo`
+  return formatMonthYear(`${yr}-${String(mo + 1).padStart(2, '0')}-01`, language)
 }
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const CONTRIBUTOR_COLORS = ['#2e7d65', '#1a7a3c', '#c8912a', '#c0392b', '#181d26', '#41454d', '#aa2d00']
 
 export default function MortgagePage() {
+  const { t } = useTranslation()
   const config = useStore((s) => s.mortgageConfig)
   const payments = useStore((s) => s.mortgagePayments)
   const contributions = useStore((s) => s.mortgageContributions)
+  const language = useStore((s) => s.settings.language)
+  const currency = useStore((s) => s.settings.currencyDisplay)
   const deleteMortgagePayment = useStore((s) => s.deleteMortgagePayment)
   const deleteMortgageContribution = useStore((s) => s.deleteMortgageContribution)
   const addMortgageContribution = useStore((s) => s.addMortgageContribution)
+
+  const formatDuration = (months: number): string => {
+    if (!isFinite(months)) return t('mortgage.duration.dash')
+    const total = Math.round(months)
+    const y = Math.floor(total / 12)
+    const rem = total % 12
+    if (y === 0) return t('mortgage.duration.months', { count: rem })
+    if (rem === 0) return t('mortgage.duration.years', { count: y })
+    return t('mortgage.duration.yearsMonths', { years: y, months: rem })
+  }
 
   useEffect(() => {
     if (contributions.length > 0) return
@@ -121,12 +125,12 @@ export default function MortgagePage() {
     return {
       newBalance,
       monthsSaved: saved,
-      newPayoffDate: addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, newMonths),
+      newPayoffDate: addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, newMonths, language),
       interestSaved: Math.max(0, interestNow - interestAfter),
       totalPaidWithout: contractualPayment * config.termMonths,
       totalPaidWith: alreadyPaid + currentBalance + interestAfter,
     }
-  }, [simAmount, currentBalance, config, payments, contractualPayment])
+  }, [simAmount, currentBalance, config, payments, contractualPayment, language])
 
   const sortedContribs = useMemo(() => sortByDateDesc(filteredContribs), [filteredContribs])
   const totalContributed = filteredContribs.reduce((s, c) => s + c.amount, 0)
@@ -154,9 +158,14 @@ export default function MortgagePage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
         <div>
-          <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Mortgage</h1>
+          <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('mortgage.title')}</h1>
           <p className="text-[12px] text-[#9297a0] mt-0.5">
-            {formatMXN(config.principal)} · {config.interestRate}% · {config.termMonths / 12} years · started {formatDate(config.startDate)}
+            {t('mortgage.subtitle', {
+              principal: formatMoney(config.principal, currency),
+              rate: config.interestRate,
+              years: config.termMonths / 12,
+              date: formatDate(config.startDate, language),
+            })}
           </p>
         </div>
         <div className="flex gap-2">
@@ -165,7 +174,7 @@ export default function MortgagePage() {
               onClick={() => { setEditPayment(undefined); setModalOpen(true) }}
               className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />Add Payment
+              <Plus className="w-3.5 h-3.5" />{t('mortgage.buttons.addPayment')}
             </button>
           )}
           {tab === 'contributions' && (
@@ -173,7 +182,7 @@ export default function MortgagePage() {
               onClick={() => { setEditContrib(undefined); setContribModalOpen(true) }}
               className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" />Add Contribution
+              <Plus className="w-3.5 h-3.5" />{t('mortgage.buttons.addContribution')}
             </button>
           )}
         </div>
@@ -182,10 +191,10 @@ export default function MortgagePage() {
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-6 overflow-x-auto`}>
         {[
-          { label: 'CURRENT BALANCE', value: formatMXN(currentBalance), sub: `${paidOffPct}% paid off`, color: '#c0392b' },
-          { label: 'PROJECTED PAYOFF', value: addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, actualMonthsLeft), sub: formatDuration(actualMonthsLeft) + ' remaining', color: undefined },
-          { label: 'TIME SAVED', value: formatDuration(monthsSaved), sub: 'vs. min payments only', color: '#2e7d65' },
-          { label: 'INTEREST SAVED', value: formatMXNCompact(interestSaved), sub: undefined, color: '#2e7d65' },
+          { label: t('mortgage.kpis.currentBalance'), value: formatMoney(currentBalance, currency), sub: t('mortgage.kpis.paidOffPct', { pct: paidOffPct }), color: '#c0392b' },
+          { label: t('mortgage.kpis.projectedPayoff'), value: addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, actualMonthsLeft, language), sub: t('mortgage.kpis.remaining', { duration: formatDuration(actualMonthsLeft) }), color: undefined },
+          { label: t('mortgage.kpis.timeSaved'), value: formatDuration(monthsSaved), sub: t('mortgage.kpis.vsMinPayments'), color: '#2e7d65' },
+          { label: t('mortgage.kpis.interestSaved'), value: formatMoneyCompact(interestSaved, currency), sub: undefined, color: '#2e7d65' },
         ].map((kpi) => (
           <div key={kpi.label} className="flex-1 min-w-[140px] px-5 py-4">
             <div className={`text-[22px] font-bold leading-tight ${kpi.color ? '' : 'text-[#181d26] dark:text-[#e8eaf0]'}`} style={kpi.color ? { color: kpi.color } : undefined}>
@@ -199,7 +208,7 @@ export default function MortgagePage() {
 
       <div className="mb-6">
         <Tabs
-          tabs={[{ id: 'overview', label: 'Overview' }, { id: 'contributions', label: 'Contributions' }]}
+          tabs={[{ id: 'overview', label: t('mortgage.tabs.overview') }, { id: 'contributions', label: t('mortgage.tabs.contributions') }]}
           active={tab}
           onChange={setTab}
         />
@@ -211,9 +220,9 @@ export default function MortgagePage() {
           {/* KPI strip */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { label: 'Principal Reduced', value: formatMXNCompact(config.principal - currentBalance), sub: `${paidOffPct}% paid off` },
-              { label: 'Extra Capital', value: formatMXNCompact(totalExtraCapital), sub: `${payments.filter(p => p.extraCapital > 0).length} extra deposits` },
-              { label: 'Min. Payment', value: formatMXN(config.minimumPayment), sub: 'Monthly' },
+              { label: t('mortgage.overview.principalReduced'), value: formatMoneyCompact(config.principal - currentBalance, currency), sub: t('mortgage.kpis.paidOffPct', { pct: paidOffPct }) },
+              { label: t('mortgage.overview.extraCapital'), value: formatMoneyCompact(totalExtraCapital, currency), sub: t('mortgage.overview.extraDeposits', { count: payments.filter(p => p.extraCapital > 0).length }) },
+              { label: t('mortgage.overview.minPayment'), value: formatMoney(config.minimumPayment, currency), sub: t('mortgage.overview.monthly') },
             ].map(({ label, value, sub }) => (
               <div key={label} className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-4">
                 <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">{label}</p>
@@ -225,7 +234,7 @@ export default function MortgagePage() {
 
           {/* Balance chart */}
           <div>
-            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Balance Over Time</p>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('mortgage.chart.title')}</p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
               {chartFiltered.length > 1 ? (
                 <AreaChart
@@ -235,25 +244,25 @@ export default function MortgagePage() {
                     ...(p.actual !== null ? { 'Actual Balance': p.actual } : {}),
                   }))}
                   areas={[
-                    { key: 'Original Schedule', color: '#93c5fd', name: 'Original Schedule' },
-                    { key: 'Actual Balance', color: '#6ee7b7', name: 'Actual Balance' },
+                    { key: 'Original Schedule', color: '#93c5fd', name: t('mortgage.chart.originalSchedule') },
+                    { key: 'Actual Balance', color: '#6ee7b7', name: t('mortgage.chart.actualBalance') },
                   ]}
                   xKey="name"
                   height={280}
                   fillOpacity={0.15}
                 />
               ) : (
-                <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">Add payments to see balance progression</p>
+                <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('mortgage.chart.empty')}</p>
               )}
             </div>
           </div>
 
           {/* Simulator */}
           <div>
-            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Extra Deposit Simulator</p>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('mortgage.simulator.title')}</p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
               <div className="flex items-center gap-3 mb-4 flex-wrap">
-                <span className="text-[13px] text-[#41454d] dark:text-[#9297a0] whitespace-nowrap">If I deposit an extra</span>
+                <span className="text-[13px] text-[#41454d] dark:text-[#9297a0] whitespace-nowrap">{t('mortgage.simulator.prefix')}</span>
                 <div className="relative max-w-xs">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#41454d] dark:text-[#9297a0] text-[13px]">$</span>
                   <input
@@ -262,18 +271,18 @@ export default function MortgagePage() {
                     step="1000"
                     value={simAmount}
                     onChange={(e) => setSimAmount(e.target.value)}
-                    placeholder="100,000"
+                    placeholder={t('mortgage.simulator.placeholder')}
                     className="w-full pl-7 pr-3 py-2 border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] text-[13px] text-[#181d26] dark:text-[#e8eaf0] bg-white dark:bg-[#252b3b] focus:outline-none focus:border-[#181d26]"
                   />
                 </div>
-                <span className="text-[13px] text-[#41454d] dark:text-[#9297a0]">today...</span>
+                <span className="text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('mortgage.simulator.suffix')}</span>
               </div>
               {simResult ? (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { label: 'Months Saved', value: formatDuration(simResult.monthsSaved), color: '#e8874a' },
-                    { label: 'New Payoff', value: simResult.newPayoffDate, color: '#1a7a3c' },
-                    { label: 'Interest Saved', value: formatMXNCompact(simResult.interestSaved), color: '#2e7d65' },
+                    { label: t('mortgage.simulator.monthsSaved'), value: formatDuration(simResult.monthsSaved), color: '#e8874a' },
+                    { label: t('mortgage.simulator.newPayoff'), value: simResult.newPayoffDate, color: '#1a7a3c' },
+                    { label: t('mortgage.simulator.interestSaved'), value: formatMoneyCompact(simResult.interestSaved, currency), color: '#2e7d65' },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="bg-[#f8fafc] dark:bg-[#161b25] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] p-3">
                       <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">{label}</p>
@@ -281,44 +290,51 @@ export default function MortgagePage() {
                     </div>
                   ))}
                   <div className="bg-[#f8fafc] dark:bg-[#161b25] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[8px] p-3">
-                    <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">Total Paid</p>
-                    <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">w/o extras: <span className="font-semibold text-[#c0392b]">{formatMXN(simResult.totalPaidWithout)}</span></p>
-                    <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">with deposit: <span className="font-semibold text-[#1a7a3c]">{formatMXN(simResult.totalPaidWith)}</span></p>
+                    <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">{t('mortgage.simulator.totalPaid')}</p>
+                    <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">{t('mortgage.simulator.withoutExtras')}: <span className="font-semibold text-[#c0392b]">{formatMoney(simResult.totalPaidWithout, currency)}</span></p>
+                    <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">{t('mortgage.simulator.withDeposit')}: <span className="font-semibold text-[#1a7a3c]">{formatMoney(simResult.totalPaidWith, currency)}</span></p>
                   </div>
                 </div>
               ) : (
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] text-center py-2">Enter an amount to see the impact</p>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] text-center py-2">{t('mortgage.simulator.enterAmount')}</p>
               )}
             </div>
           </div>
 
           {/* Payment Log */}
           <div>
-            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Payment History</p>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('mortgage.payments.title')}</p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] overflow-hidden">
               {sorted.length === 0 ? (
-                <p className="text-center py-10 text-[13px] text-[#41454d] dark:text-[#9297a0]">No payments recorded yet</p>
+                <p className="text-center py-10 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('mortgage.payments.empty')}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr>
-                        {['Date', 'Total Paid', 'Extra Capital', 'Balance After', 'Note', ''].map((h, i) => (
-                          <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${['Total Paid','Extra Capital','Balance After'].includes(h) ? 'text-right' : 'text-left'}`}>{h}</th>
+                        {[
+                          { label: t('expenses.table.date'), align: 'text-left' },
+                          { label: t('mortgage.payments.table.totalPaid'), align: 'text-right' },
+                          { label: t('mortgage.payments.table.extraCapital'), align: 'text-right' },
+                          { label: t('mortgage.payments.table.balanceAfter'), align: 'text-right' },
+                          { label: t('mortgage.payments.table.note'), align: 'text-left' },
+                          { label: '', align: 'text-left' },
+                        ].map((h, i) => (
+                          <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.align}`}>{h.label}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {sorted.map((p, i, arr) => (
                         <tr key={p.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
-                          <td className={`${td} ${i < arr.length - 1 ? borderB : ''}`}>{formatDate(p.date)}</td>
-                          <td className={`${td} text-right font-semibold text-[#181d26] dark:text-[#e8eaf0] ${i < arr.length - 1 ? borderB : ''}`}>{formatMXN(p.totalPaid)}</td>
+                          <td className={`${td} ${i < arr.length - 1 ? borderB : ''}`}>{formatDate(p.date, language)}</td>
+                          <td className={`${td} text-right font-semibold text-[#181d26] dark:text-[#e8eaf0] ${i < arr.length - 1 ? borderB : ''}`}>{formatMoney(p.totalPaid, currency)}</td>
                           <td className={`${td} text-right ${i < arr.length - 1 ? borderB : ''}`}>
                             {p.extraCapital > 0
-                              ? <span className="font-semibold text-[#1a7a3c]">{formatMXN(p.extraCapital)}</span>
+                              ? <span className="font-semibold text-[#1a7a3c]">{formatMoney(p.extraCapital, currency)}</span>
                               : <span className="text-[#e0e2e6]">—</span>}
                           </td>
-                          <td className={`${td} text-right ${i < arr.length - 1 ? borderB : ''}`}>{formatMXN(p.balanceAfter)}</td>
+                          <td className={`${td} text-right ${i < arr.length - 1 ? borderB : ''}`}>{formatMoney(p.balanceAfter, currency)}</td>
                           <td className={`${td} text-[#41454d] dark:text-[#9297a0] text-[12px] hidden sm:table-cell ${i < arr.length - 1 ? borderB : ''}`}>{p.note ?? '—'}</td>
                           <td className={`px-4 py-[11px] ${i < arr.length - 1 ? borderB : ''}`}>
                             <div className="flex items-center justify-end gap-1">
@@ -350,39 +366,45 @@ export default function MortgagePage() {
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Users className="w-4 h-4 text-[#41454d] dark:text-[#9297a0]" />
-                <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0]">Total Contributed</p>
+                <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0]">{t('mortgage.contributions.totalContributed')}</p>
               </div>
-              <p className="text-[22px] font-normal text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(totalContributed)}</p>
-              <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">{filteredContribs.length} entries</p>
+              <p className="text-[22px] font-normal text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(totalContributed, currency)}</p>
+              <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">{t('mortgage.contributions.entries', { count: filteredContribs.length })}</p>
             </div>
             {byPerson.map(([name, total], i) => (
               <div key={name} className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-4" style={{ borderLeftWidth: 3, borderLeftColor: personColors[name] ?? CONTRIBUTOR_COLORS[i] }}>
                 <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">{name}</p>
-                <p className="text-[22px] font-normal text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(total)}</p>
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">{((total / totalContributed) * 100).toFixed(1)}% of total</p>
+                <p className="text-[22px] font-normal text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(total, currency)}</p>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0]">{t('mortgage.contributions.percentOfTotal', { pct: ((total / totalContributed) * 100).toFixed(1) })}</p>
               </div>
             ))}
           </div>
 
           <div>
-            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">Contribution History</p>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('mortgage.contributions.history')}</p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] overflow-hidden">
               {sortedContribs.length === 0 ? (
-                <p className="text-center py-10 text-[13px] text-[#41454d] dark:text-[#9297a0]">No contributions in this period</p>
+                <p className="text-center py-10 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('mortgage.contributions.empty')}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr>
-                        {['Date', 'By', 'Description', 'Amount', ''].map((h, i) => (
-                          <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${h === 'Amount' ? 'text-right' : 'text-left'}`}>{h}</th>
+                        {[
+                          { label: t('expenses.table.date'), align: 'text-left' },
+                          { label: t('mortgage.contributions.table.by'), align: 'text-left' },
+                          { label: t('expenses.table.description'), align: 'text-left' },
+                          { label: t('expenses.table.amount'), align: 'text-right' },
+                          { label: '', align: 'text-left' },
+                        ].map((h, i) => (
+                          <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${h.align}`}>{h.label}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {sortedContribs.map((c, i, arr) => (
                         <tr key={c.id} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
-                          <td className={`${td} whitespace-nowrap ${i < arr.length - 1 ? borderB : ''}`}>{formatDate(c.date)}</td>
+                          <td className={`${td} whitespace-nowrap ${i < arr.length - 1 ? borderB : ''}`}>{formatDate(c.date, language)}</td>
                           <td className={`px-4 py-[11px] ${i < arr.length - 1 ? borderB : ''}`}>
                             <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold text-white"
                               style={{ backgroundColor: personColors[c.by] ?? '#181d26' }}>
@@ -390,7 +412,7 @@ export default function MortgagePage() {
                             </span>
                           </td>
                           <td className={`${td} ${i < arr.length - 1 ? borderB : ''}`}>{c.description}</td>
-                          <td className={`${td} text-right font-semibold text-[#181d26] dark:text-[#e8eaf0] ${i < arr.length - 1 ? borderB : ''}`}>{formatMXN(c.amount)}</td>
+                          <td className={`${td} text-right font-semibold text-[#181d26] dark:text-[#e8eaf0] ${i < arr.length - 1 ? borderB : ''}`}>{formatMoney(c.amount, currency)}</td>
                           <td className={`px-4 py-[11px] ${i < arr.length - 1 ? borderB : ''}`}>
                             <div className="flex items-center justify-end gap-1">
                               <button onClick={() => { setEditContrib(c); setContribModalOpen(true) }} className="p-1.5 rounded-[6px] text-[#41454d] hover:text-[#181d26] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b] dark:hover:text-[#e8eaf0] transition-colors">

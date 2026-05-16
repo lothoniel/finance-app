@@ -10,7 +10,8 @@ import {
   Legend,
 } from 'recharts'
 import CustomTooltip from './Tooltip'
-import { formatMXNCompact } from '../../lib/formatters'
+import { formatMoneyCompact } from '../../lib/formatters'
+import { useStore } from '../../store'
 
 interface BarChartProps {
   data: Record<string, string | number>[]
@@ -29,6 +30,7 @@ export default function BarChart({
   horizontal = false,
   colorKey,
 }: BarChartProps) {
+  const currency = useStore((s) => s.settings.currencyDisplay)
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ReBarChart
@@ -49,7 +51,7 @@ export default function BarChart({
             <XAxis
               type="number"
               tick={{ fontSize: 11, fill: '#6B7280' }}
-              tickFormatter={(v) => formatMXNCompact(v as number)}
+              tickFormatter={(v) => formatMoneyCompact(v as number, currency)}
               axisLine={false}
               tickLine={false}
             />
@@ -72,7 +74,7 @@ export default function BarChart({
             />
             <YAxis
               tick={{ fontSize: 11, fill: '#6B7280' }}
-              tickFormatter={(v) => formatMXNCompact(v as number)}
+              tickFormatter={(v) => formatMoneyCompact(v as number, currency)}
               axisLine={false}
               tickLine={false}
             />

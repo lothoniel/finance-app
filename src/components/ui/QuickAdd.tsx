@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, X, ShoppingCart, DollarSign, ArrowRightLeft, CreditCard } from 'lucide-react'
 import ExpenseForm from '../forms/ExpenseForm'
 import PaycheckForm from '../forms/PaycheckForm'
@@ -8,6 +9,7 @@ import DebtPaymentForm from '../forms/DebtPaymentForm'
 type ModalType = 'expense' | 'paycheck' | 'transfer' | 'debt' | null
 
 export default function QuickAdd() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [modal, setModal] = useState<ModalType>(null)
 
@@ -17,10 +19,10 @@ export default function QuickAdd() {
   }
 
   const actions = [
-    { type: 'expense' as const, label: 'Expense', icon: ShoppingCart, color: '#EF4444' },
-    { type: 'paycheck' as const, label: 'Paycheck', icon: DollarSign, color: '#22C55E' },
-    { type: 'transfer' as const, label: 'Transfer', icon: ArrowRightLeft, color: '#3B82F6' },
-    { type: 'debt' as const, label: 'Debt Pay', icon: CreditCard, color: '#F59E0B' },
+    { type: 'expense' as const, label: t('common.quickAdd.expense'), icon: ShoppingCart, color: '#EF4444' },
+    { type: 'paycheck' as const, label: t('common.quickAdd.paycheck'), icon: DollarSign, color: '#22C55E' },
+    { type: 'transfer' as const, label: t('common.quickAdd.transfer'), icon: ArrowRightLeft, color: '#3B82F6' },
+    { type: 'debt' as const, label: t('common.quickAdd.debtPay'), icon: CreditCard, color: '#F59E0B' },
   ]
 
   return (

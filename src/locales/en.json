@@ -12,7 +12,16 @@
     "backupOn": "Backup {{date}}",
     "toggleSidebar": "Toggle sidebar",
     "toggleDarkMode": "Toggle dark mode",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "empty": {
+      "noData": "No data."
+    },
+    "quickAdd": {
+      "expense": "Expense",
+      "paycheck": "Paycheck",
+      "transfer": "Transfer",
+      "debtPay": "Debt Pay"
+    }
   },
   "nav": {
     "groups": {
@@ -286,6 +295,628 @@
       "statusLabel": "Status",
       "statusActive": "Active",
       "statusPaused": "Paused"
+    }
+  },
+  "budget": {
+    "title": "Budget",
+    "kpis": {
+      "totalBudget": "Total Budget",
+      "totalSpent": "Total Spent",
+      "overBudget": "Over Budget",
+      "overCount": "{{count}} categories",
+      "remaining": "Remaining"
+    },
+    "columns": {
+      "category": "Category",
+      "budget": "Budget",
+      "actual": "Actual",
+      "remaining": "Remaining"
+    },
+    "groups": {
+      "income": "Income",
+      "expenses": "Expenses",
+      "totalIncome": "Total Income",
+      "totalExpenses": "Total Expenses",
+      "paychecks": "Paychecks",
+      "ungrouped": "Ungrouped",
+      "fixed": "Fixed",
+      "variable": "Variable",
+      "untagged": "Untagged"
+    },
+    "groupBy": {
+      "category": "Category Groups",
+      "type": "Fixed / Variable"
+    },
+    "unbudgeted": {
+      "show": "Show {{count}} unbudgeted",
+      "hide": "Hide unbudgeted",
+      "setBudget": "+ Set budget",
+      "clickToSet": "Click to set budget"
+    },
+    "clickToEdit": "Click to edit budget",
+    "summary": {
+      "leftToBudget": "Left to budget",
+      "byGroup": "By Group",
+      "byType": "By Type",
+      "budgetAllocation": "Budget Allocation",
+      "spent": "{{amount}} spent",
+      "over": "-{{amount}} over",
+      "left": "{{amount}} left"
+    },
+    "popover": {
+      "history": "History",
+      "spentLastMonth": "Spent last month",
+      "monthlyAverage": "Monthly average",
+      "monthlyBudgetPlaceholder": "Monthly budget",
+      "footer": "Monthly · Enter to save · Esc to cancel"
+    },
+    "rollover": {
+      "fromYear": "Rollover from this year",
+      "fromMonth": "Rollover from last month",
+      "budget": "Budget",
+      "actual": "Actual",
+      "remaining": "Remaining"
+    }
+  },
+  "netWorth": {
+    "title": "Net Worth",
+    "kpis": {
+      "netWorth": "NET WORTH",
+      "totalAssets": "TOTAL ASSETS",
+      "totalLiabilities": "TOTAL LIABILITIES"
+    },
+    "sections": {
+      "assets": "Assets",
+      "liabilities": "Liabilities",
+      "portfolioHoldings": "Portfolio Holdings"
+    },
+    "assets": {
+      "centerLabel": "Assets",
+      "empty": "No portfolios yet"
+    },
+    "liabilities": {
+      "mortgage": "Mortgage",
+      "annualRate": "{{rate}}% annual rate",
+      "remainingBalance": "remaining balance",
+      "monthlyPayment": "Monthly Payment",
+      "paidOff": "Paid Off",
+      "original": "Original",
+      "paid": "{{amount}} paid",
+      "left": "{{amount}} left",
+      "total": "Total Liabilities"
+    },
+    "table": {
+      "name": "Name",
+      "type": "Type",
+      "apy": "APY",
+      "balance": "Balance",
+      "allocation": "Allocation",
+      "empty": "No portfolios yet"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "kpis": {
+      "totalIncome": "TOTAL INCOME",
+      "expenses": "EXPENSES",
+      "netCashFlow": "NET CASH FLOW",
+      "savingsRate": "SAVINGS RATE"
+    },
+    "tabs": {
+      "cashflow": "Cash Flow",
+      "spending": "Spending",
+      "income": "Income"
+    },
+    "sectionInPeriod": "{{section}} — {{period}}",
+    "sections": {
+      "cashFlow": "Cash Flow",
+      "incomeVsDebt": "Income vs Debt Payments",
+      "summary": "Summary",
+      "spendingByCategory": "Spending by Category",
+      "byCategory": "By Category",
+      "incomeSources": "Income Sources",
+      "incomeVsOutflow": "Income vs Outflow"
+    },
+    "stackedBy": {
+      "week": "Stacked by Week",
+      "month": "Stacked by Month"
+    },
+    "table": {
+      "period": "Period",
+      "income": "Income",
+      "expenses": "Expenses",
+      "debtPayments": "Debt Payments",
+      "net": "Net",
+      "savingsRate": "Savings Rate"
+    },
+    "chart": {
+      "income": "Income",
+      "expenses": "Expenses",
+      "debtPayments": "Debt Payments",
+      "paycheck": "Paycheck",
+      "transfers": "Transfers",
+      "outflow": "Outflow",
+      "donutCenter": "Expenses"
+    },
+    "empty": {
+      "noData": "No data for this period",
+      "noExpenses": "No expenses for this period"
+    },
+    "bucket": {
+      "week": "W{{n}}"
+    }
+  },
+  "cashFlow": {
+    "title": "Cash Flow",
+    "view": {
+      "bar": "Bar Chart",
+      "sankey": "Sankey Diagram"
+    },
+    "kpis": {
+      "income": "INCOME",
+      "expenses": "EXPENSES",
+      "totalSavings": "TOTAL SAVINGS",
+      "savingsRate": "SAVINGS RATE"
+    },
+    "chart": {
+      "stackTitle": "Paychecks · Transfers · Expenses · Debt",
+      "empty6mo": "No data for the last 6 months"
+    },
+    "series": {
+      "paychecks": "Paychecks",
+      "transfers": "Transfers",
+      "expenses": "Expenses",
+      "debt": "Debt"
+    },
+    "breakdown": {
+      "income": "Income",
+      "expenses": "Expenses",
+      "paychecks": "Paychecks",
+      "transfers": "Transfers",
+      "noIncome": "No income in this period",
+      "noExpenses": "No expenses in this period"
+    },
+    "sankey": {
+      "title": "Sankey Diagram",
+      "empty": "No data for this period",
+      "nodes": {
+        "paycheck": "Paycheck",
+        "transfers": "Transfers",
+        "income": "Income",
+        "savings": "Savings",
+        "debt": "Debt",
+        "investments": "Investments"
+      }
+    },
+    "analysis": {
+      "title": "Cash Flow Analysis",
+      "month": "Month",
+      "net": "Net",
+      "total": "Total"
+    },
+    "comparison": {
+      "title": "Period Comparison",
+      "periodA": "Period A",
+      "periodB": "Period B",
+      "metric": "Metric",
+      "variance": "Variance",
+      "quickInsight": "Quick Insight",
+      "insight": "{{metric}} {{direction}} by {{amount}} from {{from}} to {{to}}.",
+      "increased": "increased",
+      "decreased": "decreased",
+      "metrics": {
+        "income": "Income",
+        "transfers": "Transfers",
+        "expenses": "Expenses",
+        "debt": "Debt",
+        "debtPay": "Debt Pay",
+        "netFlow": "Net Flow"
+      }
+    }
+  },
+  "sharedBalance": {
+    "title": "Shared Balance",
+    "buttons": {
+      "share": "Share",
+      "copied": "Copied!",
+      "cash": "Cash",
+      "recordSettlement": "Record Settlement"
+    },
+    "kpis": {
+      "totalShared": "TOTAL SHARED",
+      "since": "Since {{date}}",
+      "allTime": "All time",
+      "splitRatio": "SPLIT RATIO",
+      "netSettlement": "NET SETTLEMENT"
+    },
+    "net": {
+      "settled": "All settled up!",
+      "owes": "{{debtor}} owes {{creditor}}"
+    },
+    "ledger": {
+      "totalPaidShared": "Total Paid (Shared)",
+      "share": "Share ({{pct}}%)",
+      "stillOwes": "Still Owes",
+      "isOwed": "Is Owed"
+    },
+    "sections": {
+      "sharedSinceLast": "Shared Expenses Since Last Settlement",
+      "cashEntries": "Cash Entries",
+      "settlementHistory": "Settlement History"
+    },
+    "table": {
+      "paidBy": "Paid By",
+      "totals": "Totals"
+    },
+    "empty": {
+      "noSharedSinceLast": "No shared expenses since last settlement",
+      "noMatchFilters": "No expenses match your filters",
+      "noSettlements": "No settlements recorded yet"
+    },
+    "entry": {
+      "cash": "Cash",
+      "settlement": "Settlement",
+      "paidByLabel": "Paid by {{name}}"
+    },
+    "cashModal": {
+      "title": "Add Cash Entry",
+      "note": "Note",
+      "notePlaceholder": "e.g. Cash for groceries",
+      "amountMxn": "Amount (MXN)",
+      "submit": "Add Cash Entry"
+    },
+    "settlementForm": {
+      "title": "Record Settlement",
+      "amountMxn": "Amount (MXN)",
+      "descriptionPlaceholder": "e.g. Monthly settlement",
+      "submit": "Record Settlement"
+    },
+    "splitModal": {
+      "title": "Apply New Split Ratio",
+      "newSplit": "New split: {{user1Name}} {{user1Pct}}% / {{user2Name}} {{user2Pct}}%",
+      "applyTo": "Apply this ratio to:",
+      "apply": "Apply",
+      "options": {
+        "followingLabel": "Going forward only",
+        "followingDesc": "Only new expenses will use the new split. Existing transactions keep their current ratio.",
+        "currentLabel": "Since last settlement",
+        "currentDesc": "Apply to all shared expenses since the last zero balance, plus new ones.",
+        "allTimeLabel": "All time",
+        "allTimeDesc": "Retroactively apply to every shared expense ever recorded."
+      }
+    },
+    "snapshot": {
+      "invalidTitle": "Invalid or expired snapshot",
+      "invalidBody": "This link may be corrupted or incomplete.",
+      "banner": "View-only snapshot · Created {{date}}"
+    }
+  },
+  "mortgage": {
+    "title": "Mortgage",
+    "subtitle": "{{principal}} · {{rate}}% · {{years}} years · started {{date}}",
+    "buttons": {
+      "addPayment": "Add Payment",
+      "addContribution": "Add Contribution"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "contributions": "Contributions"
+    },
+    "kpis": {
+      "currentBalance": "CURRENT BALANCE",
+      "paidOffPct": "{{pct}}% paid off",
+      "projectedPayoff": "PROJECTED PAYOFF",
+      "remaining": "{{duration}} remaining",
+      "timeSaved": "TIME SAVED",
+      "vsMinPayments": "vs. min payments only",
+      "interestSaved": "INTEREST SAVED"
+    },
+    "duration": {
+      "dash": "—",
+      "months": "{{count}}mo",
+      "years": "{{count}}yr",
+      "yearsMonths": "{{years}}yr {{months}}mo"
+    },
+    "overview": {
+      "principalReduced": "Principal Reduced",
+      "extraCapital": "Extra Capital",
+      "extraDeposits": "{{count}} extra deposits",
+      "minPayment": "Min. Payment",
+      "monthly": "Monthly"
+    },
+    "chart": {
+      "title": "Balance Over Time",
+      "originalSchedule": "Original Schedule",
+      "actualBalance": "Actual Balance",
+      "empty": "Add payments to see balance progression"
+    },
+    "simulator": {
+      "title": "Extra Deposit Simulator",
+      "prefix": "If I deposit an extra",
+      "suffix": "today...",
+      "placeholder": "100,000",
+      "monthsSaved": "Months Saved",
+      "newPayoff": "New Payoff",
+      "interestSaved": "Interest Saved",
+      "totalPaid": "Total Paid",
+      "withoutExtras": "w/o extras",
+      "withDeposit": "with deposit",
+      "enterAmount": "Enter an amount to see the impact"
+    },
+    "payments": {
+      "title": "Payment History",
+      "empty": "No payments recorded yet",
+      "table": {
+        "totalPaid": "Total Paid",
+        "extraCapital": "Extra Capital",
+        "balanceAfter": "Balance After",
+        "note": "Note"
+      }
+    },
+    "contributions": {
+      "totalContributed": "Total Contributed",
+      "entries": "{{count}} entries",
+      "percentOfTotal": "{{pct}}% of total",
+      "history": "Contribution History",
+      "empty": "No contributions in this period",
+      "table": {
+        "by": "By"
+      }
+    },
+    "form": {
+      "payment": {
+        "titleAdd": "Record Mortgage Payment",
+        "titleEdit": "Edit Payment",
+        "totalPaidMxn": "Total Paid (MXN)",
+        "balanceAfterMxn": "Balance After (MXN)",
+        "extraCapitalMxn": "Extra Capital (MXN)",
+        "auto": "auto",
+        "manual": "manual",
+        "override": "Override",
+        "resetToAuto": "Reset to auto",
+        "previousBalance": "Previous balance: {{amount}}",
+        "noteLabel": "Note (optional)",
+        "notePlaceholder": "e.g. Extra payment from bonus",
+        "submitAdd": "Record Payment",
+        "submitEdit": "Save Changes"
+      },
+      "contribution": {
+        "titleAdd": "Add Contribution",
+        "titleEdit": "Edit Contribution",
+        "by": "By",
+        "byPlaceholder": "e.g. Jorge, Caro, Papa",
+        "descriptionPlaceholder": "e.g. Mensualidad May 25",
+        "amountMxn": "Amount (MXN)",
+        "submitAdd": "Add Contribution",
+        "submitEdit": "Save Changes"
+      }
+    }
+  },
+  "portfolio": {
+    "title": "Investments",
+    "buttons": {
+      "movement": "Movement",
+      "portfolio": "Portfolio"
+    },
+    "kpis": {
+      "totalValue": "TOTAL VALUE",
+      "totalYield": "TOTAL YIELD",
+      "totalDeposits": "TOTAL DEPOSITS",
+      "portfolios": "PORTFOLIOS",
+      "inSelectedPeriod": "In selected period"
+    },
+    "sections": {
+      "assetAllocation": "Asset Allocation",
+      "holdings": "Holdings",
+      "transactionHistory": "Transaction History"
+    },
+    "empty": {
+      "noPortfolios": "No portfolios yet",
+      "noPortfoliosCta": "No portfolios yet. Add one to get started.",
+      "noMovementsPeriod": "No movements in this period"
+    },
+    "holdings": {
+      "apy": "{{rate}}% APY",
+      "return": "Return",
+      "lastGain": "Last gain",
+      "updated": "Updated: {{date}}",
+      "renews": "Renews: {{date}}"
+    },
+    "table": {
+      "portfolio": "Portfolio",
+      "type": "Type"
+    },
+    "movementTypes": {
+      "deposit": "DEPOSIT",
+      "gain": "GAIN",
+      "withdrawal": "WITHDRAWAL",
+      "transfer": "TRANSFER"
+    },
+    "form": {
+      "portfolio": {
+        "titleAdd": "Add Portfolio",
+        "titleEdit": "Edit Portfolio",
+        "name": "Name",
+        "namePlaceholder": "e.g. Banorte NTEDIG",
+        "type": "Type",
+        "typePlaceholder": "e.g. NTEDIG, 28DIAS",
+        "apy": "APY (%)",
+        "balanceMxn": "Balance (MXN)",
+        "updatedDate": "Updated Date",
+        "renewsDate": "Renews Date",
+        "submitAdd": "Add Portfolio",
+        "submitEdit": "Save Changes"
+      },
+      "movement": {
+        "titleAdd": "Add Investment Movement",
+        "titleEdit": "Edit Investment Movement",
+        "portfolioLabel": "Portfolio",
+        "fromPortfolio": "From Portfolio",
+        "toPortfolio": "To Portfolio",
+        "descriptionPlaceholder": "e.g. Rendimiento mensual",
+        "typeLabel": "Type",
+        "types": {
+          "deposit": "Deposit",
+          "gain": "Gain",
+          "withdrawal": "Withdrawal",
+          "transfer": "Transfer"
+        },
+        "amountMxn": "Amount (MXN)",
+        "submitAdd": "Add Movement",
+        "submitEdit": "Save Changes"
+      }
+    }
+  },
+  "debt": {
+    "title": "Debt",
+    "recordPayment": "Record Payment",
+    "kpis": {
+      "paidThisPeriod": "PAID THIS PERIOD",
+      "remainingDebt": "REMAINING DEBT",
+      "debtRatio": "DEBT RATIO",
+      "payments": "PAYMENTS",
+      "topCard": "TOP CARD",
+      "inSelectedPeriod": "in selected period"
+    },
+    "sections": {
+      "cardBalances": "Card Balances",
+      "debtPaymentsMonthly": "Debt Payments — Monthly",
+      "recentPayments": "Recent Payments"
+    },
+    "chart": {
+      "debtPayments": "Debt Payments"
+    },
+    "filters": {
+      "allCards": "All Cards"
+    },
+    "empty": {
+      "noPayments": "No debt payments in this period"
+    },
+    "table": {
+      "card": "Card"
+    },
+    "form": {
+      "titleAdd": "Record Payment",
+      "titleEdit": "Edit Debt Payment",
+      "creditCard": "Credit Card",
+      "amountMxn": "Amount (MXN)",
+      "descriptionPlaceholder": "e.g. Pago tarjeta enero",
+      "submitAdd": "Record Payment",
+      "submitEdit": "Save Changes"
+    }
+  },
+  "income": {
+    "title": "Income",
+    "buttons": {
+      "addTax": "Add Tax",
+      "transfer": "Transfer",
+      "paycheck": "Paycheck"
+    },
+    "kpis": {
+      "grossIncome": "GROSS INCOME",
+      "netIncome": "NET INCOME",
+      "taxesLabel": "−{{amount}} taxes",
+      "transfers": "TRANSFERS"
+    },
+    "sections": {
+      "incomeTrend": "Income Trend — Last 7 Months",
+      "incomeVsTaxes": "Income vs Taxes",
+      "rateChart": "USD/MXN Rate Trend",
+      "paychecks": "Paychecks",
+      "manualTaxes": "Manual Taxes",
+      "transfersReceived": "Transfers Received"
+    },
+    "table": {
+      "usd": "USD",
+      "rate": "Rate",
+      "mxn": "MXN"
+    },
+    "chart": {
+      "paycheck": "Paycheck",
+      "transfers": "Transfers",
+      "income": "Income",
+      "taxes": "Taxes",
+      "usdMxnRate": "USD/MXN Rate"
+    },
+    "empty": {
+      "noPaychecksPeriod": "No paychecks in this period",
+      "noTaxesPeriod": "No tax records in this period",
+      "noTransfersFound": "No transfers found"
+    },
+    "breakdown": {
+      "household": "Household",
+      "rental": "Rental",
+      "others": "Others",
+      "total": "Total"
+    },
+    "filters": {
+      "searchTransfers": "Search transfers...",
+      "allCategories": "All Categories",
+      "transferOne": "{{count}} transfer",
+      "transferOther": "{{count}} transfers"
+    },
+    "forms": {
+      "paycheck": {
+        "titleAdd": "Add Paycheck",
+        "titleEdit": "Edit Paycheck",
+        "usdAmount": "USD Amount (optional)",
+        "mxnAmount": "MXN Amount *",
+        "exchangeRate": "Exchange rate: 1 USD = {{rate}} MXN",
+        "submitAdd": "Add Paycheck",
+        "submitEdit": "Save Changes"
+      },
+      "tax": {
+        "title": "Add Tax Record",
+        "amountMxn": "Amount (MXN)",
+        "descriptionPlaceholder": "e.g. ISR ajuste",
+        "submit": "Add Tax Record"
+      },
+      "transfer": {
+        "titleAdd": "Add Transfer",
+        "titleEdit": "Edit Transfer",
+        "amountMxn": "Amount (MXN)",
+        "descriptionPlaceholder": "e.g. Renta departamento",
+        "submitAdd": "Add Transfer",
+        "submitEdit": "Save Changes"
+      }
+    }
+  },
+  "screenshotImport": {
+    "title": "Import from Screenshot",
+    "dropzone": {
+      "clickToSelect": "Click to select",
+      "dragText": " or drag and drop screenshots",
+      "hint": "PNG, JPG — multiple files supported"
+    },
+    "buttons": {
+      "extract": "Extract Transactions",
+      "addRow": "Add row",
+      "addSelected": "Add {{count}} selected",
+      "importMore": "Import More",
+      "done": "Done"
+    },
+    "loading": {
+      "starting": "Starting OCR…",
+      "hint": "This may take a few seconds per image"
+    },
+    "error": {
+      "selectOne": "Select at least one screenshot.",
+      "unknown": "Unknown error",
+      "noTransactions": "No transactions found. OCR read: \"{{preview}}\""
+    },
+    "review": {
+      "foundOne": "{{count}} transaction found",
+      "foundOther": "{{count}} transactions found",
+      "selectAll": "Select all",
+      "none": "None",
+      "duplicateBanner": "Possible duplicate — same date & amount already exists"
+    },
+    "done": {
+      "noneAddedTitle": "No expenses added",
+      "addedOne": "{{count}} expense added",
+      "addedOther": "{{count}} expenses added",
+      "addedBody": "They are now visible in your expense list.",
+      "noneSelectedBody": "No transactions were selected."
     }
   },
   "transactions": {

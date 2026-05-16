@@ -1,5 +1,6 @@
 import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { InvestmentMovement } from '../../store/types'
@@ -19,6 +20,7 @@ const submitBtn = 'flex-1 bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#
 type MovementType = 'DEPOSIT' | 'GAIN' | 'WITHDRAWAL' | 'TRANSFER'
 
 export default function InvestmentMovementForm({ open, onClose, movement }: InvestmentMovementFormProps) {
+  const { t } = useTranslation()
   const portfolios = useStore((s) => s.portfolios)
   const addInvestmentMovement = useStore((s) => s.addInvestmentMovement)
   const updateInvestmentMovement = useStore((s) => s.updateInvestmentMovement)
@@ -113,14 +115,14 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={movement ? 'Edit Investment Movement' : 'Add Investment Movement'}>
+    <Modal open={open} onClose={onClose} title={movement ? t('portfolio.form.movement.titleEdit') : t('portfolio.form.movement.titleAdd')}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className={label}>Date</label>
+          <label className={label}>{t('expenses.form.date')}</label>
           <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required className={inputClass} />
         </div>
         <div>
-          <label className={label}>{form.type === 'TRANSFER' ? 'From Portfolio' : 'Portfolio'}</label>
+          <label className={label}>{form.type === 'TRANSFER' ? t('portfolio.form.movement.fromPortfolio') : t('portfolio.form.movement.portfolioLabel')}</label>
           <select
             value={form.portfolioId}
             onChange={(e) => {
@@ -140,7 +142,7 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
         </div>
         {form.type === 'TRANSFER' && (
           <div>
-            <label className={label}>To Portfolio</label>
+            <label className={label}>{t('portfolio.form.movement.toPortfolio')}</label>
             <select
               value={form.destinationPortfolioId}
               onChange={(e) => setForm({ ...form, destinationPortfolioId: e.target.value })}
@@ -153,36 +155,36 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
           </div>
         )}
         <div>
-          <label className={label}>Description</label>
-          <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder="e.g. Rendimiento mensual" className={inputClass} />
+          <label className={label}>{t('expenses.form.description')}</label>
+          <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder={t('portfolio.form.movement.descriptionPlaceholder')} className={inputClass} />
         </div>
         <div>
-          <label className={label}>Type</label>
+          <label className={label}>{t('portfolio.form.movement.typeLabel')}</label>
           <select
             value={form.type}
             onChange={(e) => {
-              const t = e.target.value as MovementType
+              const newType = e.target.value as MovementType
               setForm((f) => ({
                 ...f,
-                type: t,
-                destinationPortfolioId: t === 'TRANSFER' ? (f.destinationPortfolioId || (portfolios.find((p) => p.id !== f.portfolioId)?.id ?? '')) : f.destinationPortfolioId,
+                type: newType,
+                destinationPortfolioId: newType === 'TRANSFER' ? (f.destinationPortfolioId || (portfolios.find((p) => p.id !== f.portfolioId)?.id ?? '')) : f.destinationPortfolioId,
               }))
             }}
             className={inputClass}
           >
-            <option value="DEPOSIT">Deposit</option>
-            <option value="GAIN">Gain</option>
-            <option value="WITHDRAWAL">Withdrawal</option>
-            <option value="TRANSFER">Transfer</option>
+            <option value="DEPOSIT">{t('portfolio.form.movement.types.deposit')}</option>
+            <option value="GAIN">{t('portfolio.form.movement.types.gain')}</option>
+            <option value="WITHDRAWAL">{t('portfolio.form.movement.types.withdrawal')}</option>
+            <option value="TRANSFER">{t('portfolio.form.movement.types.transfer')}</option>
           </select>
         </div>
         <div>
-          <label className={label}>Amount (MXN)</label>
+          <label className={label}>{t('portfolio.form.movement.amountMxn')}</label>
           <input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required placeholder="0.00" className={inputClass} />
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className={cancelBtn}>Cancel</button>
-          <button type="submit" className={submitBtn}>{movement ? 'Save Changes' : 'Add Movement'}</button>
+          <button type="button" onClick={onClose} className={cancelBtn}>{t('common.cancel')}</button>
+          <button type="submit" className={submitBtn}>{movement ? t('portfolio.form.movement.submitEdit') : t('portfolio.form.movement.submitAdd')}</button>
         </div>
       </form>
     </Modal>

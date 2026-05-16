@@ -1,4 +1,5 @@
-import { formatMXN } from '../../lib/formatters'
+import { formatMoney } from '../../lib/formatters'
+import { useStore } from '../../store'
 
 interface CustomTooltipProps {
   active?: boolean
@@ -7,6 +8,7 @@ interface CustomTooltipProps {
 }
 
 export default function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+  const currency = useStore((s) => s.settings.currencyDisplay)
   if (!active || !payload || payload.length === 0) return null
 
   return (
@@ -23,7 +25,7 @@ export default function CustomTooltip({ active, payload, label }: CustomTooltipP
             />
             <span className="text-xs text-gray-600 dark:text-gray-300 flex-1">{entry.name}</span>
             <span className="text-xs font-semibold text-gray-900 dark:text-white">
-              {formatMXN(entry.value ?? 0)}
+              {formatMoney(entry.value ?? 0, currency)}
             </span>
           </div>
         ))}

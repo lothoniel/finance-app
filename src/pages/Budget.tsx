@@ -1,12 +1,15 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { format } from 'date-fns'
+import { es as esLocale } from 'date-fns/locale'
 import { ChevronDown, ChevronRight, RotateCcw } from 'lucide-react'
 import { useStore } from '../store'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
-import { formatMXNCompact } from '../lib/formatters'
+import { formatMoneyCompact } from '../lib/formatters'
 import { renderIcon } from '../lib/iconRenderer'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import { PERIOD_SCALE } from '../lib/constants'
-import type { Expense } from '../store/types'
+import type { Expense, CurrencyDisplay } from '../store/types'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const COL = 'w-24 text-right flex-shrink-0'
@@ -44,12 +47,12 @@ function ProgressBar({ actual, budget }: { actual: number; budget: number }) {
   )
 }
 
-function RemainingCell({ remaining, hasBudget }: { remaining: number; hasBudget: boolean }) {
+function RemainingCell({ remaining, hasBudget, currency }: { remaining: number; hasBudget: boolean; currency: CurrencyDisplay }) {
   if (!hasBudget) return <span className="text-[#9297a0]">—</span>
   const color = remaining < 0 ? 'text-[#c0392b]' : remaining === 0 ? 'text-[#41454d] dark:text-[#9297a0]' : 'text-[#27ae60]'
   return (
     <span className={`font-medium ${color}`}>
-      {remaining < 0 ? `-${formatMXNCompact(Math.abs(remaining))}` : formatMXNCompact(remaining)}
+      {remaining < 0 ? `-${formatMoneyCompact(Math.abs(remaining), currency)}` : formatMoneyCompact(remaining, currency)}
     </span>
   )
 }
@@ -66,14 +69,19 @@ interface PopoverState {
 function BudgetPopover({
   state,
   expenses,
+  language,
+  currency,
   onSave,
   onClose,
 }: {
   state: PopoverState
   expenses: Expense[]
+  language: 'en' | 'es'
+  currency: CurrencyDisplay
   onSave: (catId: string, budget: number | undefined) => void
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const [value, setValue] = useState(state.currentBudget?.toString() ?? '')
   const [hoveredBar, setHoveredBar] = useState<number | null>(null)
@@ -83,9 +91,10 @@ function BudgetPopover({
     const now = new Date()
     return Array.from({ length: 6 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
-      return { year: d.getFullYear(), month: d.getMonth() + 1, label: d.toLocaleString('en', { month: 'short' }).toUpperCase() }
+      const label = format(d, 'MMM', language === 'es' ? { locale: esLocale } : undefined).toUpperCase()
+      return { year: d.getFullYear(), month: d.getMonth() + 1, label }
     })
-  }, [])
+  }, [language])
 
   const monthlySpending = useMemo(() =>
     historyMonths.map(({ year, month }) =>
@@ -126,17 +135,17 @@ function BudgetPopover({
       style={{ position: 'fixed', top, right, width: 280, zIndex: 50 }}
       className={`${CARD} shadow-xl p-4`}
     >
-      <div className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">History</div>
+      <div className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('budget.popover.history')}</div>
 
       {/* Stats */}
       <div className="flex gap-6 mb-4">
         <div>
-          <div className="text-[16px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(spentLastMonth)}</div>
-          <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] mt-0.5">Spent last month</div>
+          <div className="text-[16px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(spentLastMonth, currency)}</div>
+          <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] mt-0.5">{t('budget.popover.spentLastMonth')}</div>
         </div>
         <div>
-          <div className="text-[16px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(monthlyAvg)}</div>
-          <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] mt-0.5">Monthly average</div>
+          <div className="text-[16px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(monthlyAvg, currency)}</div>
+          <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] mt-0.5">{t('budget.popover.monthlyAverage')}</div>
         </div>
       </div>
 
@@ -145,7 +154,7 @@ function BudgetPopover({
         {hoveredBar !== null && (
           <div className="absolute -top-6 left-0 right-0 flex justify-center pointer-events-none">
             <span className="text-[11px] font-semibold text-[#181d26] dark:text-[#e8eaf0] bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded px-1.5 py-0.5 shadow-sm">
-              {formatMXNCompact(monthlySpending[hoveredBar])}
+              {formatMoneyCompact(monthlySpending[hoveredBar], currency)}
             </span>
           </div>
         )}
@@ -182,12 +191,12 @@ function BudgetPopover({
         autoFocus
         type="number" min="0" step="1"
         value={value}
-        placeholder="Monthly budget"
+        placeholder={t('budget.popover.monthlyBudgetPlaceholder')}
         onChange={e => setValue(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose() }}
         className="w-full border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] px-3 py-2 text-[13px] text-right text-[#181d26] dark:text-[#e8eaf0] bg-white dark:bg-[#1e2330] focus:outline-none focus:border-[#181d26] dark:focus:border-[#e8eaf0]"
       />
-      <div className="text-[10px] text-[#9297a0] text-right mt-1">Monthly · Enter to save · Esc to cancel</div>
+      <div className="text-[10px] text-[#9297a0] text-right mt-1">{t('budget.popover.footer')}</div>
     </div>
   )
 }
@@ -195,6 +204,7 @@ function BudgetPopover({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Budget() {
+  const { t } = useTranslation()
   const [periodMode, setPeriodMode] = useState<PeriodMode>('month')
   const [periodValue, setPeriodValue] = useState<PeriodValue>(currentMonth)
   const [groupByMode, setGroupByMode] = useState<'category' | 'type'>('category')
@@ -213,7 +223,17 @@ export default function Budget() {
   const transfers = useStore(s => s.transfers)
   const transferCategories = useStore(s => s.settings.transferCategories)
   const categories = useStore(s => s.settings.expenseCategories)
+  const language = useStore(s => s.settings.language)
+  const currency = useStore(s => s.settings.currencyDisplay)
   const updateSettings = useStore(s => s.updateSettings)
+
+  const GROUP_KEYS: Record<string, string> = {
+    Ungrouped: 'budget.groups.ungrouped',
+    Fixed: 'budget.groups.fixed',
+    Variable: 'budget.groups.variable',
+    Untagged: 'budget.groups.untagged',
+  }
+  const displayGroup = (g: string) => GROUP_KEYS[g] ? t(GROUP_KEYS[g]) : g
 
   const scale = PERIOD_SCALE[periodMode] ?? 1
 
@@ -392,19 +412,19 @@ export default function Budget() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Budget</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('budget.title')}</h1>
         <PeriodSelector mode={periodMode} value={periodValue} onChange={handlePeriodChange} modes={['month', 'quarter', 'year']} />
       </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Budget', value: formatMXNCompact(totalExpenseBudget), color: 'text-[#181d26] dark:text-[#e8eaf0]' },
-          { label: 'Total Spent', value: formatMXNCompact(totalExpenseActual), color: totalExpenseActual > totalExpenseBudget ? 'text-[#c0392b]' : 'text-[#181d26] dark:text-[#e8eaf0]' },
-          { label: 'Over Budget', value: `${overBudgetCount} categories`, color: overBudgetCount > 0 ? 'text-[#c0392b]' : 'text-[#181d26] dark:text-[#e8eaf0]' },
-          { label: 'Remaining', value: formatMXNCompact(Math.max(totalExpenseBudget - totalExpenseActual, 0)), color: totalExpenseBudget - totalExpenseActual < 0 ? 'text-[#c0392b]' : 'text-[#27ae60]' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className={`${CARD} p-5`}>
+          { key: 'totalBudget', label: t('budget.kpis.totalBudget'), value: formatMoneyCompact(totalExpenseBudget, currency), color: 'text-[#181d26] dark:text-[#e8eaf0]' },
+          { key: 'totalSpent', label: t('budget.kpis.totalSpent'), value: formatMoneyCompact(totalExpenseActual, currency), color: totalExpenseActual > totalExpenseBudget ? 'text-[#c0392b]' : 'text-[#181d26] dark:text-[#e8eaf0]' },
+          { key: 'overBudget', label: t('budget.kpis.overBudget'), value: t('budget.kpis.overCount', { count: overBudgetCount }), color: overBudgetCount > 0 ? 'text-[#c0392b]' : 'text-[#181d26] dark:text-[#e8eaf0]' },
+          { key: 'remaining', label: t('budget.kpis.remaining'), value: formatMoneyCompact(Math.max(totalExpenseBudget - totalExpenseActual, 0), currency), color: totalExpenseBudget - totalExpenseActual < 0 ? 'text-[#c0392b]' : 'text-[#27ae60]' },
+        ].map(({ key, label, value, color }) => (
+          <div key={key} className={`${CARD} p-5`}>
             <div className={`text-[22px] font-bold ${color}`}>{value}</div>
             <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] uppercase tracking-wide mt-1">{label}</div>
           </div>
@@ -417,10 +437,10 @@ export default function Budget() {
         <div className={`flex-1 min-w-0 ${CARD} overflow-hidden`}>
           {/* Column headers */}
           <div className="flex items-center gap-3 px-5 py-3 border-b border-[#f0f2f5] dark:border-[#2d3347]">
-            <div className="flex-1 text-[11px] text-[#41454d] dark:text-[#9297a0] uppercase tracking-wide">Category</div>
-            <div className={colHeader}>Budget</div>
-            <div className={colHeader}>Actual</div>
-            <div className={colHeader}>Remaining</div>
+            <div className="flex-1 text-[11px] text-[#41454d] dark:text-[#9297a0] uppercase tracking-wide">{t('budget.columns.category')}</div>
+            <div className={colHeader}>{t('budget.columns.budget')}</div>
+            <div className={colHeader}>{t('budget.columns.actual')}</div>
+            <div className={colHeader}>{t('budget.columns.remaining')}</div>
           </div>
 
           {/* ── Income section ── */}
@@ -431,11 +451,11 @@ export default function Budget() {
             {incomeOpen
               ? <ChevronDown className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />
               : <ChevronRight className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />}
-            <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] text-left">Income</span>
-            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(totalIncomeBudget)}</div>
-            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(totalIncomeActual)}</div>
+            <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] text-left">{t('budget.groups.income')}</span>
+            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(totalIncomeBudget, currency)}</div>
+            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(totalIncomeActual, currency)}</div>
             <div className={`${COL} text-[13px] font-semibold`}>
-              <RemainingCell remaining={totalIncomeBudget - totalIncomeActual} hasBudget={totalIncomeBudget > 0} />
+              <RemainingCell remaining={totalIncomeBudget - totalIncomeActual} hasBudget={totalIncomeBudget > 0} currency={currency} />
             </div>
           </button>
 
@@ -447,13 +467,13 @@ export default function Budget() {
                   {renderIcon('Banknote', 'w-3 h-3', '#3b82f6')}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">Paychecks</div>
+                  <div className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{t('budget.groups.paychecks')}</div>
                   <ProgressBar actual={actualPaychecks} budget={paycheckBudget} />
                 </div>
-                <div className={`${COL} text-[13px] text-[#41454d] dark:text-[#9297a0]`}>{formatMXNCompact(paycheckBudget)}</div>
-                <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(actualPaychecks)}</div>
+                <div className={`${COL} text-[13px] text-[#41454d] dark:text-[#9297a0]`}>{formatMoneyCompact(paycheckBudget, currency)}</div>
+                <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(actualPaychecks, currency)}</div>
                 <div className={`${COL} text-[13px]`}>
-                  <RemainingCell remaining={paycheckBudget - actualPaychecks} hasBudget={paycheckBudget > 0} />
+                  <RemainingCell remaining={paycheckBudget - actualPaychecks} hasBudget={paycheckBudget > 0} currency={currency} />
                 </div>
               </div>
 
@@ -470,10 +490,10 @@ export default function Budget() {
                       <div className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{tc.name}</div>
                       <ProgressBar actual={actual} budget={budget} />
                     </div>
-                    <div className={`${COL} text-[13px] text-[#41454d] dark:text-[#9297a0]`}>{budget > 0 ? formatMXNCompact(budget) : '—'}</div>
-                    <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(actual)}</div>
+                    <div className={`${COL} text-[13px] text-[#41454d] dark:text-[#9297a0]`}>{budget > 0 ? formatMoneyCompact(budget, currency) : '—'}</div>
+                    <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(actual, currency)}</div>
                     <div className={`${COL} text-[13px]`}>
-                      <RemainingCell remaining={budget - actual} hasBudget={budget > 0} />
+                      <RemainingCell remaining={budget - actual} hasBudget={budget > 0} currency={currency} />
                     </div>
                   </div>
                 )
@@ -484,11 +504,11 @@ export default function Budget() {
           {/* Total Income row */}
           <div className={`${rowBase} bg-[#f8fafc] dark:bg-[#252b3b] border-b border-[#e8e8e8] dark:border-[#2d3347]`}>
             <div className="w-3.5 flex-shrink-0" />
-            <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Total Income</span>
-            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(totalIncomeBudget)}</div>
-            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(totalIncomeActual)}</div>
+            <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('budget.groups.totalIncome')}</span>
+            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(totalIncomeBudget, currency)}</div>
+            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(totalIncomeActual, currency)}</div>
             <div className={`${COL} text-[13px] font-semibold`}>
-              <RemainingCell remaining={totalIncomeBudget - totalIncomeActual} hasBudget={totalIncomeBudget > 0} />
+              <RemainingCell remaining={totalIncomeBudget - totalIncomeActual} hasBudget={totalIncomeBudget > 0} currency={currency} />
             </div>
           </div>
 
@@ -498,7 +518,7 @@ export default function Budget() {
               {expensesOpen
                 ? <ChevronDown className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />
                 : <ChevronRight className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />}
-              <span className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Expenses</span>
+              <span className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('budget.groups.expenses')}</span>
             </button>
             <div className="flex bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full p-0.5 gap-0.5 flex-shrink-0">
               {(['category', 'type'] as const).map(m => (
@@ -508,7 +528,7 @@ export default function Budget() {
                       ? 'bg-white dark:bg-[#1e2330] text-[#181d26] dark:text-[#e8eaf0] shadow-sm'
                       : 'text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26]'
                   }`}>
-                  {m === 'category' ? 'Category Groups' : 'Fixed / Variable'}
+                  {m === 'category' ? t('budget.groupBy.category') : t('budget.groupBy.type')}
                 </button>
               ))}
             </div>
@@ -530,11 +550,11 @@ export default function Budget() {
                       {isOpen
                         ? <ChevronDown className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />
                         : <ChevronRight className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />}
-                      <span className="flex-1 text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] text-left">{group}</span>
-                      <div className={`${COL} text-[13px] font-medium text-[#41454d] dark:text-[#9297a0]`}>{formatMXNCompact(totals.budget)}</div>
-                      <div className={`${COL} text-[13px] font-medium text-[#41454d] dark:text-[#9297a0]`}>{formatMXNCompact(totals.actual)}</div>
+                      <span className="flex-1 text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] text-left">{displayGroup(group)}</span>
+                      <div className={`${COL} text-[13px] font-medium text-[#41454d] dark:text-[#9297a0]`}>{formatMoneyCompact(totals.budget, currency)}</div>
+                      <div className={`${COL} text-[13px] font-medium text-[#41454d] dark:text-[#9297a0]`}>{formatMoneyCompact(totals.actual, currency)}</div>
                       <div className={`${COL} text-[13px] font-medium`}>
-                        <RemainingCell remaining={totals.budget - totals.actual} hasBudget={totals.budget > 0} />
+                        <RemainingCell remaining={totals.budget - totals.actual} hasBudget={totals.budget > 0} currency={currency} />
                       </div>
                     </button>
 
@@ -564,12 +584,12 @@ export default function Budget() {
                                   ? 'text-[#181d26] dark:text-[#e8eaf0] bg-[#f0f2f5] dark:bg-[#252b3b]'
                                   : 'text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b]'
                               }`}
-                              title="Click to edit budget"
+                              title={t('budget.clickToEdit')}
                             >
-                              {formatMXNCompact(hasRollover ? effectiveBudget : budget)}
+                              {formatMoneyCompact(hasRollover ? effectiveBudget : budget, currency)}
                             </button>
                           </div>
-                          <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(actual)}</div>
+                          <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(actual, currency)}</div>
                           <div className={`${COL} text-[13px]`}>
                             {hasRollover ? (
                               <div
@@ -582,10 +602,10 @@ export default function Budget() {
                                 onMouseLeave={() => setRolloverTooltip(null)}
                               >
                                 <RotateCcw className={`w-3 h-3 ${!rolloverVisible && isFuturePeriod ? 'text-[#c8cdd5] dark:text-[#3d4357]' : 'text-[#9297a0]'}`} />
-                                <RemainingCell remaining={remaining} hasBudget />
+                                <RemainingCell remaining={remaining} hasBudget currency={currency} />
                               </div>
                             ) : (
-                              <RemainingCell remaining={budget - actual} hasBudget={budget > 0} />
+                              <RemainingCell remaining={budget - actual} hasBudget={budget > 0} currency={currency} />
                             )}
                           </div>
                         </div>
@@ -604,11 +624,11 @@ export default function Budget() {
                   >
                     <div className="w-3.5 flex-shrink-0" />
                     <span className="flex-1 text-[12px] text-[#41454d] dark:text-[#9297a0] text-left">
-                      {showUnbudgeted ? 'Hide' : `Show ${unbudgetedCats.length}`} unbudgeted
+                      {showUnbudgeted ? t('budget.unbudgeted.hide') : t('budget.unbudgeted.show', { count: unbudgetedCats.length })}
                     </span>
                     <div className={`${COL} text-[13px] text-[#41454d] dark:text-[#9297a0]`}>—</div>
                     <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>
-                      {formatMXNCompact(unbudgetedCats.reduce((s, c) => s + (actualByCategory[c.id] ?? 0), 0))}
+                      {formatMoneyCompact(unbudgetedCats.reduce((s, c) => s + (actualByCategory[c.id] ?? 0), 0), currency)}
                     </div>
                     <div className={`${COL} text-[13px] text-[#9297a0]`}>—</div>
                   </button>
@@ -633,12 +653,12 @@ export default function Budget() {
                                 ? 'text-[#41454d] dark:text-[#9297a0] bg-[#f0f2f5] dark:bg-[#252b3b]'
                                 : 'text-[#c0c4cc] dark:text-[#4a5168] hover:text-[#41454d] dark:hover:text-[#9297a0] hover:bg-[#f0f2f5] dark:hover:bg-[#252b3b]'
                             } text-[12px]`}
-                            title="Click to set budget"
+                            title={t('budget.unbudgeted.clickToSet')}
                           >
-                            + Set budget
+                            {t('budget.unbudgeted.setBudget')}
                           </button>
                         </div>
-                        <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(actual)}</div>
+                        <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(actual, currency)}</div>
                         <div className={`${COL} text-[13px] text-[#9297a0]`}>—</div>
                       </div>
                     )
@@ -651,11 +671,11 @@ export default function Budget() {
           {/* Total Expenses row — always visible */}
           <div className={`${rowBase} bg-[#f8fafc] dark:bg-[#252b3b] border-b border-[#e8e8e8] dark:border-[#2d3347]`}>
             <div className="w-3.5 flex-shrink-0" />
-            <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Total Expenses</span>
-            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(totalExpenseBudget)}</div>
-            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMXNCompact(totalExpenseActual)}</div>
+            <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('budget.groups.totalExpenses')}</span>
+            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(totalExpenseBudget, currency)}</div>
+            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(totalExpenseActual, currency)}</div>
             <div className={`${COL} text-[13px] font-semibold`}>
-              <RemainingCell remaining={totalExpenseBudget - totalExpenseActual} hasBudget={totalExpenseBudget > 0} />
+              <RemainingCell remaining={totalExpenseBudget - totalExpenseActual} hasBudget={totalExpenseBudget > 0} currency={currency} />
             </div>
           </div>
         </div>
@@ -664,33 +684,33 @@ export default function Budget() {
         <div className="w-64 flex-shrink-0 sticky top-6 space-y-3">
           <div className={`${CARD} p-5 text-center`}>
             <div className={`text-[28px] font-bold ${leftToBudget >= 0 ? 'text-[#27ae60]' : 'text-[#c0392b]'}`}>
-              {leftToBudget < 0 ? `-${formatMXNCompact(Math.abs(leftToBudget))}` : formatMXNCompact(leftToBudget)}
+              {leftToBudget < 0 ? `-${formatMoneyCompact(Math.abs(leftToBudget), currency)}` : formatMoneyCompact(leftToBudget, currency)}
             </div>
-            <div className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">Left to budget</div>
+            <div className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">{t('budget.summary.leftToBudget')}</div>
           </div>
 
           {groupOrder.length > 0 && (
             <div className={`${CARD} p-4 space-y-4`}>
               <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] uppercase tracking-wide font-medium">
-                {groupByMode === 'category' ? 'By Group' : 'By Type'}
+                {groupByMode === 'category' ? t('budget.summary.byGroup') : t('budget.summary.byType')}
               </div>
               {groupOrder.map(group => {
-                const t = groupTotals[group] ?? { budget: 0, actual: 0 }
-                const pct = t.budget > 0 ? Math.min((t.actual / t.budget) * 100, 100) : 0
-                const over = t.actual > t.budget
+                const gt = groupTotals[group] ?? { budget: 0, actual: 0 }
+                const pct = gt.budget > 0 ? Math.min((gt.actual / gt.budget) * 100, 100) : 0
+                const over = gt.actual > gt.budget
                 return (
                   <div key={group}>
                     <div className="flex items-baseline justify-between mb-1">
-                      <span className="text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0]">{group}</span>
-                      <span className="text-[11px] text-[#41454d] dark:text-[#9297a0]">{formatMXNCompact(t.budget)}</span>
+                      <span className="text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0]">{displayGroup(group)}</span>
+                      <span className="text-[11px] text-[#41454d] dark:text-[#9297a0]">{formatMoneyCompact(gt.budget, currency)}</span>
                     </div>
                     <div className="h-1.5 bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full overflow-hidden mb-1.5">
                       <div className={`h-full rounded-full ${over ? 'bg-[#c0392b]' : 'bg-[#27ae60]'}`} style={{ width: `${pct}%` }} />
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[11px] text-[#41454d] dark:text-[#9297a0]">{formatMXNCompact(t.actual)} spent</span>
+                      <span className="text-[11px] text-[#41454d] dark:text-[#9297a0]">{t('budget.summary.spent', { amount: formatMoneyCompact(gt.actual, currency) })}</span>
                       <span className={`text-[11px] font-medium ${over ? 'text-[#c0392b]' : 'text-[#27ae60]'}`}>
-                        {over ? `-${formatMXNCompact(t.actual - t.budget)} over` : `${formatMXNCompact(t.budget - t.actual)} left`}
+                        {over ? t('budget.summary.over', { amount: formatMoneyCompact(gt.actual - gt.budget, currency) }) : t('budget.summary.left', { amount: formatMoneyCompact(gt.budget - gt.actual, currency) })}
                       </span>
                     </div>
                   </div>
@@ -700,17 +720,17 @@ export default function Budget() {
           )}
 
           <div className={`${CARD} p-4 space-y-3`}>
-            <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] uppercase tracking-wide font-medium">Budget Allocation</div>
+            <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] uppercase tracking-wide font-medium">{t('budget.summary.budgetAllocation')}</div>
             {[
-              { label: 'Income', value: totalIncomeBudget, color: '#27ae60' },
-              { label: 'Expenses', value: totalExpenseBudget, color: '#e67e22' },
-            ].map(({ label, value, color }) => {
+              { key: 'income', label: t('budget.groups.income'), value: totalIncomeBudget, color: '#27ae60' },
+              { key: 'expenses', label: t('budget.groups.expenses'), value: totalExpenseBudget, color: '#e67e22' },
+            ].map(({ key, label, value, color }) => {
               const pct = totalIncomeBudget > 0 ? Math.min((value / totalIncomeBudget) * 100, 100) : 0
               return (
-                <div key={label}>
+                <div key={key}>
                   <div className="flex justify-between mb-1">
                     <span className="text-[12px] text-[#181d26] dark:text-[#e8eaf0]">{label}</span>
-                    <span className="text-[12px] font-medium text-[#181d26] dark:text-[#e8eaf0]">{formatMXNCompact(value)}</span>
+                    <span className="text-[12px] font-medium text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(value, currency)}</span>
                   </div>
                   <div className="h-1.5 bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
@@ -732,24 +752,24 @@ export default function Budget() {
           <div className="space-y-1.5">
             <div className="flex justify-between gap-3">
               <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">
-                {rolloverTooltip.mode === 'year' ? 'Rollover from this year' : 'Rollover from last month'}
+                {rolloverTooltip.mode === 'year' ? t('budget.rollover.fromYear') : t('budget.rollover.fromMonth')}
               </span>
               <span className={`text-[12px] font-medium flex-shrink-0 ${rolloverTooltip.rollover >= 0 ? 'text-[#27ae60]' : 'text-[#c0392b]'}`}>
-                {rolloverTooltip.rollover >= 0 ? '+' : ''}{formatMXNCompact(rolloverTooltip.rollover)}
+                {rolloverTooltip.rollover >= 0 ? '+' : ''}{formatMoneyCompact(rolloverTooltip.rollover, currency)}
               </span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">Budget</span>
-              <span className="text-[12px] flex-shrink-0">{formatMXNCompact(rolloverTooltip.budget)}</span>
+              <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">{t('budget.rollover.budget')}</span>
+              <span className="text-[12px] flex-shrink-0">{formatMoneyCompact(rolloverTooltip.budget, currency)}</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">Actual</span>
-              <span className="text-[12px] flex-shrink-0">{formatMXNCompact(rolloverTooltip.actual)}</span>
+              <span className="text-[12px] text-[#41454d] dark:text-[#9297a0]">{t('budget.rollover.actual')}</span>
+              <span className="text-[12px] flex-shrink-0">{formatMoneyCompact(rolloverTooltip.actual, currency)}</span>
             </div>
             <div className="flex justify-between gap-3 border-t border-[#f0f2f5] dark:border-[#2d3347] pt-1.5 mt-0.5">
-              <span className="text-[12px] font-semibold">Remaining</span>
+              <span className="text-[12px] font-semibold">{t('budget.rollover.remaining')}</span>
               <span className={`text-[12px] font-semibold flex-shrink-0 ${rolloverTooltip.remaining >= 0 ? 'text-[#27ae60]' : 'text-[#c0392b]'}`}>
-                {rolloverTooltip.remaining < 0 ? `-${formatMXNCompact(Math.abs(rolloverTooltip.remaining))}` : formatMXNCompact(rolloverTooltip.remaining)}
+                {rolloverTooltip.remaining < 0 ? `-${formatMoneyCompact(Math.abs(rolloverTooltip.remaining), currency)}` : formatMoneyCompact(rolloverTooltip.remaining, currency)}
               </span>
             </div>
           </div>
@@ -761,6 +781,8 @@ export default function Budget() {
         <BudgetPopover
           state={popover}
           expenses={expenses}
+          language={language}
+          currency={currency}
           onSave={saveBudget}
           onClose={() => setPopover(null)}
         />

@@ -1,5 +1,6 @@
 import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { ManualTax } from '../../store/types'
@@ -17,6 +18,7 @@ const cancelBtn = 'flex-1 border border-[#e8e8e8] dark:border-[#2d3347] text-[#1
 const submitBtn = 'flex-1 bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors'
 
 export default function ManualTaxForm({ open, onClose, tax }: ManualTaxFormProps) {
+  const { t } = useTranslation()
   const addManualTax = useStore((s) => s.addManualTax)
 
   const [form, setForm] = useState({ date: today(), description: '', amount: '' })
@@ -33,23 +35,23 @@ export default function ManualTaxForm({ open, onClose, tax }: ManualTaxFormProps
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Add Tax Record">
+    <Modal open={open} onClose={onClose} title={t('income.forms.tax.title')}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className={label}>Date</label>
+          <label className={label}>{t('expenses.form.date')}</label>
           <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required className={inputClass} />
         </div>
         <div>
-          <label className={label}>Description</label>
-          <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder="e.g. ISR ajuste" className={inputClass} />
+          <label className={label}>{t('expenses.form.description')}</label>
+          <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder={t('income.forms.tax.descriptionPlaceholder')} className={inputClass} />
         </div>
         <div>
-          <label className={label}>Amount (MXN)</label>
+          <label className={label}>{t('income.forms.tax.amountMxn')}</label>
           <input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required placeholder="0.00" className={inputClass} />
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className={cancelBtn}>Cancel</button>
-          <button type="submit" className={submitBtn}>Add Tax Record</button>
+          <button type="button" onClick={onClose} className={cancelBtn}>{t('common.cancel')}</button>
+          <button type="submit" className={submitBtn}>{t('income.forms.tax.submit')}</button>
         </div>
       </form>
     </Modal>

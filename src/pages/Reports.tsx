@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Sankey } from 'recharts'
 import type { NodeProps, LinkProps } from 'recharts/types/chart/Sankey'
 import { useStore } from '../store'
@@ -7,7 +8,8 @@ import DonutChart from '../components/charts/DonutChart'
 import StackedBarChart from '../components/charts/StackedBarChart'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import { filterByPeriod, getMonthsInRange, type PeriodMode, type PeriodValue } from '../lib/filters'
-import { formatMXNCompact } from '../lib/formatters'
+import { formatMoneyCompact, formatShortMonth, formatMonthYear } from '../lib/formatters'
+import type { CurrencyDisplay } from '../store/types'
 
 interface BucketMeta {
   key: string
@@ -42,22 +44,33 @@ const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] u
 
 type Tab = 'cashflow' | 'spending' | 'income'
 
-function SankeyNodeRenderer({ x, y, width, height, index, payload }: NodeProps) {
-  const color = NODE_COLORS[index % NODE_COLORS.length]
-  const isTarget = index >= 2
-  const labelX = isTarget ? x + width + 8 : x - 8
-  const anchor = isTarget ? 'start' : 'end'
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} fill={color} rx={2} />
-      <text x={labelX} y={y + height / 2 - 7} textAnchor={anchor} dominantBaseline="middle" fontSize={12} fontWeight={600} fill="#374151">
-        {payload.name}
-      </text>
-      <text x={labelX} y={y + height / 2 + 8} textAnchor={anchor} dominantBaseline="middle" fontSize={10} fill="#9297a0">
-        {formatMXNCompact(payload.value ?? 0)}
-      </text>
-    </g>
-  )
+const SANKEY_NODE_KEY: Record<string, string> = {
+  Paycheck: 'cashFlow.sankey.nodes.paycheck',
+  Transfers: 'cashFlow.sankey.nodes.transfers',
+  Savings: 'cashFlow.sankey.nodes.savings',
+  Debt: 'cashFlow.sankey.nodes.debt',
+  Investments: 'cashFlow.sankey.nodes.investments',
+}
+
+function makeSankeyNodeRenderer(t: (k: string) => string, currency: CurrencyDisplay) {
+  return function SankeyNodeRenderer({ x, y, width, height, index, payload }: NodeProps) {
+    const color = NODE_COLORS[index % NODE_COLORS.length]
+    const isTarget = index >= 2
+    const labelX = isTarget ? x + width + 8 : x - 8
+    const anchor = isTarget ? 'start' : 'end'
+    const displayName = SANKEY_NODE_KEY[payload.name] ? t(SANKEY_NODE_KEY[payload.name]) : payload.name
+    return (
+      <g>
+        <rect x={x} y={y} width={width} height={height} fill={color} rx={2} />
+        <text x={labelX} y={y + height / 2 - 7} textAnchor={anchor} dominantBaseline="middle" fontSize={12} fontWeight={600} fill="#374151">
+          {displayName}
+        </text>
+        <text x={labelX} y={y + height / 2 + 8} textAnchor={anchor} dominantBaseline="middle" fontSize={10} fill="#9297a0">
+          {formatMoneyCompact(payload.value ?? 0, currency)}
+        </text>
+      </g>
+    )
+  }
 }
 
 function SankeyLinkRenderer({ sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth, payload }: LinkProps) {
@@ -73,7 +86,7 @@ function SankeyLinkRenderer({ sourceX, sourceY, sourceControlX, targetX, targetY
   )
 }
 
-function buildChartKeys(mode: PeriodMode, value: PeriodValue, allDates: string[]): BucketMeta[] {
+function buildChartKeys(mode: PeriodMode, value: PeriodValue, allDates: string[], language: 'en' | 'es', weekLabel: (n: number) => string): BucketMeta[] {
   if (mode === 'all') {
     if (allDates.length === 0) return []
     const sorted = [...allDates].sort()
@@ -81,13 +94,13 @@ function buildChartKeys(mode: PeriodMode, value: PeriodValue, allDates: string[]
     const max = sorted[sorted.length - 1].slice(0, 7) + '-01'
     return getMonthsInRange(min, max).map(key => ({
       key,
-      label: new Date(key + '-02').toLocaleString('default', { month: 'short', year: '2-digit' }),
+      label: formatShortMonth(`${key}-01`, language),
     }))
   }
   if (mode === 'month' && value.year && value.month) {
     return [1, 2, 3, 4].map(w => ({
       key: `W${w}`,
-      label: `W${w}`,
+      label: weekLabel(w),
       isWeek: true as const,
       weekNum: w,
       year: value.year,
@@ -99,17 +112,21 @@ function buildChartKeys(mode: PeriodMode, value: PeriodValue, allDates: string[]
     return [0, 1, 2].map(i => {
       const m = startM + i
       const y = value.year!
+      const monthKey = `${y}-${String(m).padStart(2, '0')}`
       return {
-        key: `${y}-${String(m).padStart(2, '0')}`,
-        label: new Date(y, m - 1, 1).toLocaleString('default', { month: 'short', year: '2-digit' }),
+        key: monthKey,
+        label: formatShortMonth(`${monthKey}-01`, language),
       }
     })
   }
   if (mode === 'year' && value.year) {
-    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => ({
-      key: `${value.year}-${String(m).padStart(2, '0')}`,
-      label: new Date(value.year!, m - 1, 1).toLocaleString('default', { month: 'short' }),
-    }))
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => {
+      const monthKey = `${value.year}-${String(m).padStart(2, '0')}`
+      return {
+        key: monthKey,
+        label: formatShortMonth(`${monthKey}-01`, language),
+      }
+    })
   }
   return []
 }
@@ -125,12 +142,12 @@ function isInChartBucket(date: string, b: BucketMeta): boolean {
   return date.startsWith(b.key)
 }
 
-function periodSectionLabel(mode: PeriodMode, value: PeriodValue): string {
-  if (mode === 'all') return 'All Time'
+function periodSectionLabel(mode: PeriodMode, value: PeriodValue, language: 'en' | 'es', t: (k: string, opts?: Record<string, unknown>) => string): string {
+  if (mode === 'all') return t('periodSelector.allTime')
   if (mode === 'month' && value.year && value.month) {
-    return new Date(value.year, value.month - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' })
+    return formatMonthYear(`${value.year}-${String(value.month).padStart(2, '0')}-01`, language)
   }
-  if (mode === 'quarter' && value.year && value.quarter) return `Q${value.quarter} ${value.year}`
+  if (mode === 'quarter' && value.year && value.quarter) return t('periodSelector.quarterShort', { quarter: value.quarter, year: value.year })
   if (mode === 'year' && value.year) return String(value.year)
   return ''
 }
@@ -144,6 +161,7 @@ function currentValue(mode: PeriodMode): PeriodValue {
 }
 
 export default function Reports() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('cashflow')
   const [mode, setMode] = useState<PeriodMode>('all')
   const [periodValue, setPeriodValue] = useState<PeriodValue>({})
@@ -168,6 +186,8 @@ export default function Reports() {
   const debtPayments = useStore(s => s.debtPayments)
   const investmentMovements = useStore(s => s.investmentMovements)
   const expenseCategories = useStore(s => s.settings.expenseCategories)
+  const language = useStore(s => s.settings.language)
+  const currency = useStore(s => s.settings.currencyDisplay)
 
   // Filter all data to selected period
   const fExpenses = useMemo(() => filterByPeriod(expenses, mode, periodValue), [expenses, mode, periodValue])
@@ -190,7 +210,10 @@ export default function Reports() {
     ...fTransfers.map(t => t.date),
   ], [fPaychecks, fExpenses, fTransfers])
 
-  const chartKeys = useMemo(() => buildChartKeys(mode, periodValue, allDates), [mode, periodValue, allDates])
+  const chartKeys = useMemo(
+    () => buildChartKeys(mode, periodValue, allDates, language, (n) => t('reports.bucket.week', { n })),
+    [mode, periodValue, allDates, language, t]
+  )
 
   // Bucket data for Cash Flow charts + table
   const buckets = useMemo((): BucketData[] => {
@@ -298,20 +321,24 @@ export default function Reports() {
     .filter(cat => categoryBuckets.some(b => (b[cat.name] as number) > 0))
     .map(cat => ({ name: cat.name, color: cat.color }))
 
-  const sectionLabel = periodSectionLabel(mode, periodValue)
+  const sectionLabel = periodSectionLabel(mode, periodValue, language, t)
   const maxCatTotal = categoryTotals[0]?.total ?? 1
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: 'cashflow', label: 'Cash Flow' },
-    { key: 'spending', label: 'Spending' },
-    { key: 'income', label: 'Income' },
+    { key: 'cashflow', label: t('reports.tabs.cashflow') },
+    { key: 'spending', label: t('reports.tabs.spending') },
+    { key: 'income', label: t('reports.tabs.income') },
   ]
+
+  const renderSankeyNode = makeSankeyNodeRenderer(t, currency)
+
+  const sectionTitle = (section: string) => t('reports.sectionInPeriod', { section, period: sectionLabel })
 
   return (
     <div className="p-6 max-w-[1400px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Reports</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('reports.title')}</h1>
         <PeriodSelector
           mode={mode}
           value={periodValue}
@@ -326,10 +353,10 @@ export default function Reports() {
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
         {[
-          { label: 'TOTAL INCOME', value: formatMXNCompact(kpiIncome), color: '#22c55e' },
-          { label: 'EXPENSES', value: formatMXNCompact(kpiExpenses), color: '#ef4444' },
-          { label: 'NET CASH FLOW', value: formatMXNCompact(kpiSavings), color: kpiSavings >= 0 ? '#22c55e' : '#ef4444' },
-          { label: 'SAVINGS RATE', value: `${kpiSavingsRate.toFixed(1)}%`, color: '#22c55e' },
+          { label: t('reports.kpis.totalIncome'), value: formatMoneyCompact(kpiIncome, currency), color: '#22c55e' },
+          { label: t('reports.kpis.expenses'), value: formatMoneyCompact(kpiExpenses, currency), color: '#ef4444' },
+          { label: t('reports.kpis.netCashFlow'), value: formatMoneyCompact(kpiSavings, currency), color: kpiSavings >= 0 ? '#22c55e' : '#ef4444' },
+          { label: t('reports.kpis.savingsRate'), value: `${kpiSavingsRate.toFixed(1)}%`, color: '#22c55e' },
         ].map(kpi => (
           <div key={kpi.label} className="flex-1 px-6 py-4">
             <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mb-1">{kpi.label}</div>
@@ -340,17 +367,17 @@ export default function Reports() {
 
       {/* Tabs */}
       <div className="flex border-b border-[#e8e8e8] dark:border-[#2d3347] mb-6">
-        {TABS.map(t => (
+        {TABS.map(tabItem => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tabItem.key}
+            onClick={() => setTab(tabItem.key)}
             className={`px-4 py-2.5 text-[14px] font-medium transition-colors border-b-2 -mb-px ${
-              tab === t.key
+              tab === tabItem.key
                 ? 'border-[#181d26] dark:border-[#e8eaf0] text-[#181d26] dark:text-[#e8eaf0]'
                 : 'border-transparent text-[#6b7280] hover:text-[#374151] dark:hover:text-[#9297a0]'
             }`}
           >
-            {t.label}
+            {tabItem.label}
           </button>
         ))}
       </div>
@@ -360,7 +387,7 @@ export default function Reports() {
         <div className="space-y-5">
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>Cash Flow — {sectionLabel}</div>
+              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.cashFlow'))}</div>
               <div ref={sankeyRef} className="w-full overflow-hidden">
                 {sankeyData.nodes.length > 0 ? (
                   <Sankey
@@ -371,11 +398,11 @@ export default function Reports() {
                     nodePadding={14}
                     iterations={0}
                     margin={{ top: 10, right: 130, left: 100, bottom: 10 }}
-                    node={(props: NodeProps) => <SankeyNodeRenderer {...props} />}
+                    node={(props: NodeProps) => renderSankeyNode(props)}
                     link={(props: LinkProps) => <SankeyLinkRenderer {...props} />}
                   />
                 ) : (
-                  <p className="text-[13px] text-[#9297a0] py-8 text-center">No data for this period</p>
+                  <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('reports.empty.noData')}</p>
                 )}
               </div>
             </div>
@@ -383,32 +410,39 @@ export default function Reports() {
 
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>Income vs Debt Payments — {sectionLabel}</div>
+              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.incomeVsDebt'))}</div>
               {buckets.length > 0 ? (
                 <AreaChart
                   data={cashFlowChartData}
                   xKey="name"
                   areas={[
-                    { key: 'Income', name: 'Income', color: '#22c55e' },
-                    { key: 'Expenses', name: 'Expenses', color: '#ef4444' },
-                    { key: 'Debt', name: 'Debt Payments', color: '#f97316' },
+                    { key: 'Income', name: t('reports.chart.income'), color: '#22c55e' },
+                    { key: 'Expenses', name: t('reports.chart.expenses'), color: '#ef4444' },
+                    { key: 'Debt', name: t('reports.chart.debtPayments'), color: '#f97316' },
                   ]}
                   height={280}
                 />
               ) : (
-                <p className="text-[13px] text-[#9297a0] py-8 text-center">No data for this period</p>
+                <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('reports.empty.noData')}</p>
               )}
             </div>
           </div>
 
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>Summary — {sectionLabel}</div>
+              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.summary'))}</div>
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-[#e8e8e8] dark:border-[#2d3347]">
-                    {['Period', 'Income', 'Expenses', 'Debt Payments', 'Net', 'Savings Rate'].map(col => (
-                      <th key={col} className="text-left pb-2.5 pr-4 text-[11px] font-semibold text-[#9297a0] uppercase tracking-wide">
+                    {[
+                      t('reports.table.period'),
+                      t('reports.table.income'),
+                      t('reports.table.expenses'),
+                      t('reports.table.debtPayments'),
+                      t('reports.table.net'),
+                      t('reports.table.savingsRate'),
+                    ].map((col, i) => (
+                      <th key={i} className="text-left pb-2.5 pr-4 text-[11px] font-semibold text-[#9297a0] uppercase tracking-wide">
                         {col}
                       </th>
                     ))}
@@ -418,11 +452,11 @@ export default function Reports() {
                   {[...buckets].reverse().map(b => (
                     <tr key={b.key} className="border-b border-[#f4f5f7] dark:border-[#252a38] last:border-0">
                       <td className="py-3 pr-4 font-medium text-[#181d26] dark:text-[#e8eaf0]">{b.label}</td>
-                      <td className="py-3 pr-4 font-medium text-[#22c55e]">{formatMXNCompact(b.income)}</td>
-                      <td className="py-3 pr-4 font-medium text-[#ef4444]">{formatMXNCompact(b.expenses)}</td>
-                      <td className="py-3 pr-4 font-medium text-[#f97316]">{formatMXNCompact(b.debt)}</td>
+                      <td className="py-3 pr-4 font-medium text-[#22c55e]">{formatMoneyCompact(b.income, currency)}</td>
+                      <td className="py-3 pr-4 font-medium text-[#ef4444]">{formatMoneyCompact(b.expenses, currency)}</td>
+                      <td className="py-3 pr-4 font-medium text-[#f97316]">{formatMoneyCompact(b.debt, currency)}</td>
                       <td className={`py-3 pr-4 font-semibold ${b.savings >= 0 ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>
-                        {b.savings >= 0 ? '+' : ''}{formatMXNCompact(b.savings)}
+                        {b.savings >= 0 ? '+' : ''}{formatMoneyCompact(b.savings, currency)}
                       </td>
                       <td className="py-3">
                         <div className="flex items-center gap-2">
@@ -436,7 +470,7 @@ export default function Reports() {
                   ))}
                   {buckets.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-[13px] text-[#9297a0]">No data for this period</td>
+                      <td colSpan={6} className="py-8 text-center text-[13px] text-[#9297a0]">{t('reports.empty.noData')}</td>
                     </tr>
                   )}
                 </tbody>
@@ -451,16 +485,16 @@ export default function Reports() {
         <div className="space-y-5">
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>Spending by Category — {sectionLabel}</div>
+              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.spendingByCategory'))}</div>
               {donutData.length > 0 ? (
                 <DonutChart
                   data={donutData}
-                  centerLabel="Expenses"
-                  centerValue={formatMXNCompact(kpiExpenses)}
+                  centerLabel={t('reports.chart.donutCenter')}
+                  centerValue={formatMoneyCompact(kpiExpenses, currency)}
                   height={220}
                 />
               ) : (
-                <p className="text-[13px] text-[#9297a0] py-8 text-center">No expenses for this period</p>
+                <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('reports.empty.noExpenses')}</p>
               )}
             </div>
           </div>
@@ -468,7 +502,7 @@ export default function Reports() {
           <div className="grid grid-cols-3 gap-5">
             <div className={`${CARD} col-span-2`}>
               <div className="p-5">
-                <div className={SECTION_LABEL}>Stacked by {mode === 'month' ? 'Week' : mode === 'quarter' ? 'Month' : mode === 'year' ? 'Month' : 'Month'}</div>
+                <div className={SECTION_LABEL}>{mode === 'month' ? t('reports.stackedBy.week') : t('reports.stackedBy.month')}</div>
                 {stackedCategories.length > 0 ? (
                   <StackedBarChart
                     data={categoryBuckets}
@@ -477,7 +511,7 @@ export default function Reports() {
                     height={240}
                   />
                 ) : (
-                  <p className="text-[13px] text-[#9297a0] py-8 text-center">No data for this period</p>
+                  <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('reports.empty.noData')}</p>
                 )}
               </div>
             </div>
@@ -485,10 +519,10 @@ export default function Reports() {
             <div className={CARD}>
               <div className="p-5">
                 <div className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">
-                  By Category — {sectionLabel}
+                  {sectionTitle(t('reports.sections.byCategory'))}
                 </div>
                 {categoryTotals.length === 0 ? (
-                  <p className="text-[12px] text-[#9297a0]">No expenses for this period</p>
+                  <p className="text-[12px] text-[#9297a0]">{t('reports.empty.noExpenses')}</p>
                 ) : (
                   <div className="space-y-3">
                     {categoryTotals.map(cat => (
@@ -499,7 +533,7 @@ export default function Reports() {
                             <span className="text-[12px] text-[#374151] dark:text-[#9297a0] truncate">{cat.name}</span>
                           </div>
                           <span className="text-[12px] font-semibold text-[#181d26] dark:text-[#e8eaf0] ml-2 flex-shrink-0">
-                            {formatMXNCompact(cat.total)}
+                            {formatMoneyCompact(cat.total, currency)}
                           </span>
                         </div>
                         <div className="h-1.5 bg-[#f4f5f7] dark:bg-[#252a38] rounded-full overflow-hidden">
@@ -520,38 +554,38 @@ export default function Reports() {
         <div className="space-y-5">
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>Income Sources — {sectionLabel}</div>
+              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.incomeSources'))}</div>
               {incomeChartData.length > 0 ? (
                 <AreaChart
                   data={incomeChartData}
                   xKey="name"
                   areas={[
-                    { key: 'Paycheck', name: 'Paycheck', color: '#22c55e' },
-                    { key: 'Transfers', name: 'Transfers', color: '#3b82f6' },
+                    { key: 'Paycheck', name: t('reports.chart.paycheck'), color: '#22c55e' },
+                    { key: 'Transfers', name: t('reports.chart.transfers'), color: '#3b82f6' },
                   ]}
                   height={280}
                 />
               ) : (
-                <p className="text-[13px] text-[#9297a0] py-8 text-center">No data for this period</p>
+                <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('reports.empty.noData')}</p>
               )}
             </div>
           </div>
 
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>Income vs Outflow — {sectionLabel}</div>
+              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.incomeVsOutflow'))}</div>
               {outflowChartData.length > 0 ? (
                 <AreaChart
                   data={outflowChartData}
                   xKey="name"
                   areas={[
-                    { key: 'Income', name: 'Income', color: '#22c55e' },
-                    { key: 'Outflow', name: 'Outflow', color: '#ef4444' },
+                    { key: 'Income', name: t('reports.chart.income'), color: '#22c55e' },
+                    { key: 'Outflow', name: t('reports.chart.outflow'), color: '#ef4444' },
                   ]}
                   height={280}
                 />
               ) : (
-                <p className="text-[13px] text-[#9297a0] py-8 text-center">No data for this period</p>
+                <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('reports.empty.noData')}</p>
               )}
             </div>
           </div>

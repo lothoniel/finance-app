@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Lightbulb } from 'lucide-react'
 import { Sankey } from 'recharts'
 import type { NodeProps, LinkProps } from 'recharts/types/chart/Sankey'
@@ -7,8 +8,9 @@ import AreaChart from '../components/charts/AreaChart'
 import BarChart from '../components/charts/BarChart'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
-import { formatMXN, formatMXNCompact, formatShortMonth } from '../lib/formatters'
+import { formatMoney, formatMoneyCompact, formatShortMonth, formatMonthYear } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
+import type { CurrencyDisplay } from '../store/types'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] uppercase mb-4'
@@ -20,22 +22,34 @@ const DEST_COLORS: Record<string, string> = { Savings: '#10b981', Debt: '#f97316
 
 type ChartView = 'bar' | 'sankey'
 
-function SankeyNodeRenderer({ x, y, width, height, index, payload }: NodeProps) {
-  const color = NODE_COLORS[index % NODE_COLORS.length]
-  const isSource = index <= 1
-  const labelX = isSource ? x - 8 : x + width + 8
-  const anchor = isSource ? 'end' : 'start'
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} fill={color} rx={2} />
-      <text x={labelX} y={y + height / 2 - 7} textAnchor={anchor} dominantBaseline="middle" fontSize={12} fontWeight={600} fill="#374151">
-        {payload.name}
-      </text>
-      <text x={labelX} y={y + height / 2 + 8} textAnchor={anchor} dominantBaseline="middle" fontSize={10} fill="#9297a0">
-        {formatMXNCompact(payload.value ?? 0)}
-      </text>
-    </g>
-  )
+const NODE_NAME_TO_KEY: Record<string, string> = {
+  Paycheck: 'cashFlow.sankey.nodes.paycheck',
+  Transfers: 'cashFlow.sankey.nodes.transfers',
+  Income: 'cashFlow.sankey.nodes.income',
+  Savings: 'cashFlow.sankey.nodes.savings',
+  Debt: 'cashFlow.sankey.nodes.debt',
+  Investments: 'cashFlow.sankey.nodes.investments',
+}
+
+function makeSankeyNodeRenderer(t: (key: string) => string, currency: CurrencyDisplay) {
+  return function SankeyNodeRenderer({ x, y, width, height, index, payload }: NodeProps) {
+    const color = NODE_COLORS[index % NODE_COLORS.length]
+    const isSource = index <= 1
+    const labelX = isSource ? x - 8 : x + width + 8
+    const anchor = isSource ? 'end' : 'start'
+    const displayName = NODE_NAME_TO_KEY[payload.name] ? t(NODE_NAME_TO_KEY[payload.name]) : payload.name
+    return (
+      <g>
+        <rect x={x} y={y} width={width} height={height} fill={color} rx={2} />
+        <text x={labelX} y={y + height / 2 - 7} textAnchor={anchor} dominantBaseline="middle" fontSize={12} fontWeight={600} fill="#374151">
+          {displayName}
+        </text>
+        <text x={labelX} y={y + height / 2 + 8} textAnchor={anchor} dominantBaseline="middle" fontSize={10} fill="#9297a0">
+          {formatMoneyCompact(payload.value ?? 0, currency)}
+        </text>
+      </g>
+    )
+  }
 }
 
 function SankeyLinkRenderer({ sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth, payload }: LinkProps) {
@@ -73,17 +87,16 @@ function defaultCompPair(mode: PeriodMode): [PeriodValue, PeriodValue] {
   ]
 }
 
-function formatPeriodLabel(mode: PeriodMode, val: PeriodValue): string {
-  if (mode === 'quarter') return `Q${val.quarter ?? 1} ${val.year ?? ''}`
+function formatPeriodLabel(mode: PeriodMode, val: PeriodValue, language: 'en' | 'es', t: (k: string, opts?: Record<string, unknown>) => string): string {
+  if (mode === 'quarter') return t('periodSelector.quarterShort', { quarter: val.quarter ?? 1, year: val.year ?? '' })
   if (mode === 'year') return String(val.year ?? '')
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ]
-  return `${monthNames[(val.month ?? 1) - 1]} ${val.year ?? ''}`
+  const year = val.year ?? new Date().getFullYear()
+  const month = val.month ?? 1
+  return formatMonthYear(`${year}-${String(month).padStart(2, '0')}-01`, language)
 }
 
 export default function CashFlow() {
+  const { t } = useTranslation()
   const [chartView, setChartView] = useState<ChartView>('bar')
   const [compA, setCompA] = useState<PeriodValue>(() => defaultCompPair('month')[0])
   const [compB, setCompB] = useState<PeriodValue>(() => defaultCompPair('month')[1])
@@ -105,6 +118,8 @@ export default function CashFlow() {
   const debtPayments = useStore((s) => s.debtPayments)
   const investmentMovements = useStore((s) => s.investmentMovements)
   const categories = useStore((s) => s.settings.expenseCategories)
+  const language = useStore((s) => s.settings.language)
+  const currency = useStore((s) => s.settings.currencyDisplay)
 
   const { mode: periodMode, value: periodValue, onChange: onPeriodChange, filtered: filteredExpenses } = usePeriodFilter(expenses)
 
@@ -148,10 +163,10 @@ export default function CashFlow() {
       const trnAmount = filterByPeriod(transfers, 'month', val).reduce((s, t) => s + t.amount, 0)
       const exp = filterByPeriod(expenses, 'month', val).reduce((s, e) => s + e.amount, 0)
       const debt = filterByPeriod(debtPayments, 'month', val).reduce((s, d) => s + d.amount, 0)
-      const label = new Date(y, m - 1).toLocaleString('en-US', { month: 'short' })
+      const label = formatShortMonth(`${y}-${String(m).padStart(2, '0')}-01`, language)
       return { month: label, Paychecks: paycheckInc, Transfers: trnAmount, Expenses: exp, Debt: debt }
     })
-  }, [months6, paychecks, transfers, expenses, debtPayments])
+  }, [months6, paychecks, transfers, expenses, debtPayments, language])
 
   const donutData = useMemo(() => {
     const catTotals: Record<string, number> = {}
@@ -170,7 +185,7 @@ export default function CashFlow() {
     const exp = filterByPeriod(expenses, 'month', val).reduce((s, e) => s + e.amount, 0)
     const debt = filterByPeriod(debtPayments, 'month', val).reduce((s, d) => s + d.amount, 0)
     const net = inc - debt
-    const label = formatShortMonth(`${y}-${String(m).padStart(2, '0')}-01`)
+    const label = formatShortMonth(`${y}-${String(m).padStart(2, '0')}-01`, language)
     return { label, inc, exp, debt, net }
   })
 
@@ -218,8 +233,15 @@ export default function CashFlow() {
   const metricsB = getMetrics(compB)
   const compMetrics = ['Income', 'Expenses', 'Debt', 'Net Flow'] as const
 
-  const labelA = formatPeriodLabel(compMode, compA)
-  const labelB = formatPeriodLabel(compMode, compB)
+  const labelA = formatPeriodLabel(compMode, compA, language, t)
+  const labelB = formatPeriodLabel(compMode, compB, language, t)
+
+  const METRIC_KEYS: Record<typeof compMetrics[number], string> = {
+    Income: 'cashFlow.comparison.metrics.income',
+    Expenses: 'cashFlow.comparison.metrics.expenses',
+    Debt: 'cashFlow.comparison.metrics.debt',
+    'Net Flow': 'cashFlow.comparison.metrics.netFlow',
+  }
 
   const bestMetric = compMetrics.reduce((best, m) => {
     const diff = (metricsB[m] ?? 0) - (metricsA[m] ?? 0)
@@ -227,13 +249,21 @@ export default function CashFlow() {
     return Math.abs(diff) > Math.abs(bestDiff) ? m : best
   }, compMetrics[0])
   const diff = (metricsB[bestMetric] ?? 0) - (metricsA[bestMetric] ?? 0)
-  const insight = `${bestMetric} ${diff >= 0 ? 'increased' : 'decreased'} by ${formatMXN(Math.abs(diff))} from ${labelA} to ${labelB}.`
+  const insight = t('cashFlow.comparison.insight', {
+    metric: t(METRIC_KEYS[bestMetric]),
+    direction: diff >= 0 ? t('cashFlow.comparison.increased') : t('cashFlow.comparison.decreased'),
+    amount: formatMoney(Math.abs(diff), currency),
+    from: labelA,
+    to: labelB,
+  })
+
+  const renderSankeyNode = makeSankeyNodeRenderer(t, currency)
 
   return (
     <div className="p-6 max-w-[1400px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
-        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Cash Flow</h1>
+        <h1 className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('cashFlow.title')}</h1>
         <div className="flex items-center gap-3 flex-wrap">
           <PeriodSelector mode={periodMode} value={periodValue} onChange={onPeriodChange} />
           {/* Chart view toggle */}
@@ -248,7 +278,7 @@ export default function CashFlow() {
                     : 'text-[#41454d] dark:text-[#9297a0] hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]'
                 }`}
               >
-                {view === 'bar' ? 'Bar Chart' : 'Sankey Diagram'}
+                {view === 'bar' ? t('cashFlow.view.bar') : t('cashFlow.view.sankey')}
               </button>
             ))}
           </div>
@@ -258,10 +288,10 @@ export default function CashFlow() {
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
         {[
-          { label: 'INCOME', value: formatMXNCompact(totalIncome), color: '#22c55e' },
-          { label: 'EXPENSES', value: formatMXNCompact(totalExpenses), color: '#ef4444' },
-          { label: 'TOTAL SAVINGS', value: formatMXNCompact(totalSavings), color: totalSavings >= 0 ? '#22c55e' : '#ef4444' },
-          { label: 'SAVINGS RATE', value: `${savingsRate.toFixed(1)}%`, color: '#22c55e' },
+          { label: t('cashFlow.kpis.income'), value: formatMoneyCompact(totalIncome, currency), color: '#22c55e' },
+          { label: t('cashFlow.kpis.expenses'), value: formatMoneyCompact(totalExpenses, currency), color: '#ef4444' },
+          { label: t('cashFlow.kpis.totalSavings'), value: formatMoneyCompact(totalSavings, currency), color: totalSavings >= 0 ? '#22c55e' : '#ef4444' },
+          { label: t('cashFlow.kpis.savingsRate'), value: `${savingsRate.toFixed(1)}%`, color: '#22c55e' },
         ].map((kpi) => (
           <div key={kpi.label} className="flex-1 px-6 py-4">
             <div className="text-[22px] font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
@@ -276,21 +306,21 @@ export default function CashFlow() {
           {/* Area chart */}
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>Paychecks · Transfers · Expenses · Debt</div>
+              <div className={SECTION_LABEL}>{t('cashFlow.chart.stackTitle')}</div>
               {chartData.some((d) => d.Paychecks > 0 || d.Transfers > 0 || d.Expenses > 0 || d.Debt > 0) ? (
                 <AreaChart
                   data={chartData}
                   xKey="month"
                   areas={[
-                    { key: 'Paychecks', name: 'Paychecks', color: '#22c55e' },
-                    { key: 'Transfers', name: 'Transfers', color: '#3b82f6' },
-                    { key: 'Expenses', name: 'Expenses', color: '#ef4444' },
-                    { key: 'Debt', name: 'Debt', color: '#f97316' },
+                    { key: 'Paychecks', name: t('cashFlow.series.paychecks'), color: '#22c55e' },
+                    { key: 'Transfers', name: t('cashFlow.series.transfers'), color: '#3b82f6' },
+                    { key: 'Expenses', name: t('cashFlow.series.expenses'), color: '#ef4444' },
+                    { key: 'Debt', name: t('cashFlow.series.debt'), color: '#f97316' },
                   ]}
                   height={260}
                 />
               ) : (
-                <p className="text-[13px] text-[#9297a0] py-8 text-center">No data for the last 6 months</p>
+                <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('cashFlow.chart.empty6mo')}</p>
               )}
             </div>
           </div>
@@ -300,15 +330,15 @@ export default function CashFlow() {
             {/* Income breakdown */}
             <div className={CARD}>
               <div className="p-5">
-                <div className={SECTION_LABEL}>Income</div>
+                <div className={SECTION_LABEL}>{t('cashFlow.breakdown.income')}</div>
                 <div className="space-y-2.5">
                   {[
-                    { label: 'Paychecks', amount: paycheckTotal, color: '#22c55e' },
-                    { label: 'Transfers', amount: transferTotal, color: '#3b82f6' },
-                  ].map(({ label, amount, color }) => {
+                    { key: 'paychecks', label: t('cashFlow.breakdown.paychecks'), amount: paycheckTotal, color: '#22c55e' },
+                    { key: 'transfers', label: t('cashFlow.breakdown.transfers'), amount: transferTotal, color: '#3b82f6' },
+                  ].map(({ key, label, amount, color }) => {
                     const pct = totalIncome > 0 ? (amount / totalIncome) * 100 : 0
                     return (
-                      <div key={label} className="flex items-center gap-3">
+                      <div key={key} className="flex items-center gap-3">
                         <div className="relative flex-1 h-8 rounded-[6px] overflow-hidden bg-[#f4f5f7] dark:bg-[#252b3b]">
                           <div
                             className="absolute inset-y-0 left-0 rounded-[6px]"
@@ -318,12 +348,12 @@ export default function CashFlow() {
                             {label}
                           </span>
                         </div>
-                        <span className="text-[13px] font-bold w-16 text-right" style={{ color }}>{formatMXNCompact(amount)}</span>
+                        <span className="text-[13px] font-bold w-16 text-right" style={{ color }}>{formatMoneyCompact(amount, currency)}</span>
                         <span className="text-[12px] text-[#9297a0] w-8 text-right">{pct.toFixed(0)}%</span>
                       </div>
                     )
                   })}
-                  {totalIncome === 0 && <p className="text-[13px] text-[#9297a0] text-center py-4">No income in this period</p>}
+                  {totalIncome === 0 && <p className="text-[13px] text-[#9297a0] text-center py-4">{t('cashFlow.breakdown.noIncome')}</p>}
                 </div>
               </div>
             </div>
@@ -331,7 +361,7 @@ export default function CashFlow() {
             {/* Expenses breakdown */}
             <div className={CARD}>
               <div className="p-5">
-                <div className={SECTION_LABEL}>Expenses</div>
+                <div className={SECTION_LABEL}>{t('cashFlow.breakdown.expenses')}</div>
                 {donutData.length > 0 ? (
                   <div className="space-y-2.5">
                     {donutData.map((d) => {
@@ -347,14 +377,14 @@ export default function CashFlow() {
                               {d.name}
                             </span>
                           </div>
-                          <span className="text-[13px] font-bold w-16 text-right" style={{ color: d.color }}>{formatMXNCompact(d.value)}</span>
+                          <span className="text-[13px] font-bold w-16 text-right" style={{ color: d.color }}>{formatMoneyCompact(d.value, currency)}</span>
                           <span className="text-[12px] text-[#9297a0] w-8 text-right">{pct.toFixed(0)}%</span>
                         </div>
                       )
                     })}
                   </div>
                 ) : (
-                  <p className="text-[13px] text-[#9297a0] text-center py-4">No expenses in this period</p>
+                  <p className="text-[13px] text-[#9297a0] text-center py-4">{t('cashFlow.breakdown.noExpenses')}</p>
                 )}
               </div>
             </div>
@@ -368,7 +398,7 @@ export default function CashFlow() {
           {/* Sankey */}
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>Sankey Diagram</div>
+              <div className={SECTION_LABEL}>{t('cashFlow.sankey.title')}</div>
               <div ref={sankeyRef} className="w-full overflow-hidden">
                 {sankeyData.nodes.length > 0 ? (
                   <Sankey
@@ -378,11 +408,11 @@ export default function CashFlow() {
                     nodeWidth={15}
                     nodePadding={14}
                     margin={{ top: 10, right: 140, left: 110, bottom: 10 }}
-                    node={(props: NodeProps) => <SankeyNodeRenderer {...props} />}
+                    node={(props: NodeProps) => renderSankeyNode(props)}
                     link={(props: LinkProps) => <SankeyLinkRenderer {...props} />}
                   />
                 ) : (
-                  <p className="text-[13px] text-[#9297a0] py-8 text-center">No data for this period</p>
+                  <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('cashFlow.sankey.empty')}</p>
                 )}
               </div>
             </div>
@@ -391,14 +421,20 @@ export default function CashFlow() {
           {/* Cash Flow Analysis table */}
           <div className={CARD}>
             <div className="p-5 pb-0">
-              <div className="text-[15px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">Cash Flow Analysis</div>
+              <div className="text-[15px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">{t('cashFlow.analysis.title')}</div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr>
-                    {['Month', 'Income', 'Expenses', 'Debt', 'Net'].map((h, i) => (
-                      <th key={h} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${i > 0 ? 'text-right' : 'text-left'}`}>{h}</th>
+                    {[
+                      { label: t('cashFlow.analysis.month'), align: 'text-left' },
+                      { label: t('cashFlow.comparison.metrics.income'), align: 'text-right' },
+                      { label: t('cashFlow.comparison.metrics.expenses'), align: 'text-right' },
+                      { label: t('cashFlow.comparison.metrics.debt'), align: 'text-right' },
+                      { label: t('cashFlow.analysis.net'), align: 'text-right' },
+                    ].map((h, i) => (
+                      <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.align}`}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -408,22 +444,22 @@ export default function CashFlow() {
                     return (
                       <tr key={row.label} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
                         <td className={`py-3 px-4 text-[13px] font-medium text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{row.label}</td>
-                        <td className={`py-3 px-4 text-right text-[13px] font-medium text-[#22c55e] ${border}`}>{formatMXNCompact(row.inc)}</td>
-                        <td className={`py-3 px-4 text-right text-[13px] font-medium text-[#ef4444] ${border}`}>{formatMXNCompact(row.exp)}</td>
-                        <td className={`py-3 px-4 text-right text-[13px] font-medium text-[#f97316] ${border}`}>{formatMXNCompact(row.debt)}</td>
+                        <td className={`py-3 px-4 text-right text-[13px] font-medium text-[#22c55e] ${border}`}>{formatMoneyCompact(row.inc, currency)}</td>
+                        <td className={`py-3 px-4 text-right text-[13px] font-medium text-[#ef4444] ${border}`}>{formatMoneyCompact(row.exp, currency)}</td>
+                        <td className={`py-3 px-4 text-right text-[13px] font-medium text-[#f97316] ${border}`}>{formatMoneyCompact(row.debt, currency)}</td>
                         <td className={`py-3 px-4 text-right text-[13px] font-semibold ${border}`} style={{ color: row.net >= 0 ? '#22c55e' : '#ef4444' }}>
-                          {row.net >= 0 ? '+' : ''}{formatMXNCompact(row.net)}
+                          {row.net >= 0 ? '+' : ''}{formatMoneyCompact(row.net, currency)}
                         </td>
                       </tr>
                     )
                   })}
                   <tr className="border-t-2 border-[#e8e8e8] dark:border-[#2d3347]">
-                    <td className="py-3 px-4 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">Total</td>
-                    <td className="py-3 px-4 text-right text-[13px] font-semibold text-[#22c55e]">{formatMXNCompact(tableData.reduce((s, r) => s + r.inc, 0))}</td>
-                    <td className="py-3 px-4 text-right text-[13px] font-semibold text-[#ef4444]">{formatMXNCompact(tableData.reduce((s, r) => s + r.exp, 0))}</td>
-                    <td className="py-3 px-4 text-right text-[13px] font-semibold text-[#f97316]">{formatMXNCompact(tableData.reduce((s, r) => s + r.debt, 0))}</td>
+                    <td className="py-3 px-4 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('cashFlow.analysis.total')}</td>
+                    <td className="py-3 px-4 text-right text-[13px] font-semibold text-[#22c55e]">{formatMoneyCompact(tableData.reduce((s, r) => s + r.inc, 0), currency)}</td>
+                    <td className="py-3 px-4 text-right text-[13px] font-semibold text-[#ef4444]">{formatMoneyCompact(tableData.reduce((s, r) => s + r.exp, 0), currency)}</td>
+                    <td className="py-3 px-4 text-right text-[13px] font-semibold text-[#f97316]">{formatMoneyCompact(tableData.reduce((s, r) => s + r.debt, 0), currency)}</td>
                     <td className="py-3 px-4 text-right text-[13px] font-semibold" style={{ color: tableData.reduce((s, r) => s + r.net, 0) >= 0 ? '#22c55e' : '#ef4444' }}>
-                      {formatMXNCompact(tableData.reduce((s, r) => s + r.net, 0))}
+                      {formatMoneyCompact(tableData.reduce((s, r) => s + r.net, 0), currency)}
                     </td>
                   </tr>
                 </tbody>
@@ -436,14 +472,14 @@ export default function CashFlow() {
       {/* Period Comparison — always visible */}
       <div className={`${CARD} mt-5`}>
         <div className="p-5">
-          <div className="text-[15px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">Period Comparison</div>
+          <div className="text-[15px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">{t('cashFlow.comparison.title')}</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
-              <p className="text-[12px] font-semibold text-[#9297a0] mb-2">Period A</p>
+              <p className="text-[12px] font-semibold text-[#9297a0] mb-2">{t('cashFlow.comparison.periodA')}</p>
               <PeriodSelector mode={compMode} value={compA} onChange={(_, v) => setCompA(v)} modes={[compMode]} />
             </div>
             <div>
-              <p className="text-[12px] font-semibold text-[#9297a0] mb-2">Period B</p>
+              <p className="text-[12px] font-semibold text-[#9297a0] mb-2">{t('cashFlow.comparison.periodB')}</p>
               <PeriodSelector mode={compMode} value={compB} onChange={(_, v) => setCompB(v)} modes={[compMode]} />
             </div>
           </div>
@@ -452,8 +488,13 @@ export default function CashFlow() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {['Metric', labelA, labelB, 'Variance'].map((h, i) => (
-                    <th key={h} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${i > 0 ? 'text-right' : 'text-left'}`}>{h}</th>
+                  {[
+                    { label: t('cashFlow.comparison.metric'), align: 'text-left' },
+                    { label: labelA, align: 'text-right' },
+                    { label: labelB, align: 'text-right' },
+                    { label: t('cashFlow.comparison.variance'), align: 'text-right' },
+                  ].map((h, i) => (
+                    <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.align}`}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
@@ -465,11 +506,11 @@ export default function CashFlow() {
                   const border = i < compMetrics.length - 1 ? 'border-b border-[#f4f5f7] dark:border-[#252a38]' : ''
                   return (
                     <tr key={metric} className="hover:bg-[#f8fafc] dark:hover:bg-[#252b3b]">
-                      <td className={`py-3 px-4 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{metric}</td>
-                      <td className={`py-3 px-4 text-right text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{formatMXN(a)}</td>
-                      <td className={`py-3 px-4 text-right text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{formatMXN(b)}</td>
+                      <td className={`py-3 px-4 text-[13px] text-[#333840] dark:text-[#c4c8d0] ${border}`}>{t(METRIC_KEYS[metric])}</td>
+                      <td className={`py-3 px-4 text-right text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{formatMoney(a, currency)}</td>
+                      <td className={`py-3 px-4 text-right text-[13px] text-[#181d26] dark:text-[#e8eaf0] ${border}`}>{formatMoney(b, currency)}</td>
                       <td className={`py-3 px-4 text-right text-[13px] font-semibold ${border}`} style={{ color: variance >= 0 ? '#22c55e' : '#ef4444' }}>
-                        {variance >= 0 ? '+' : ''}{formatMXN(variance)}
+                        {variance >= 0 ? '+' : ''}{formatMoney(variance, currency)}
                       </td>
                     </tr>
                   )
@@ -481,18 +522,18 @@ export default function CashFlow() {
           <div className="bg-[#fffbeb] border border-[#f59e0b]/40 rounded-[8px] p-4 mb-5 flex gap-3">
             <Lightbulb className="w-4 h-4 text-[#c8912a] shrink-0 mt-0.5" />
             <div>
-              <p className="text-[11px] font-semibold uppercase text-[#c8912a] tracking-[0.4px] mb-1">Quick Insight</p>
+              <p className="text-[11px] font-semibold uppercase text-[#c8912a] tracking-[0.4px] mb-1">{t('cashFlow.comparison.quickInsight')}</p>
               <p className="text-[13px] text-[#333840]">{insight}</p>
             </div>
           </div>
 
           <BarChart
             data={[
-              { metric: 'Income',    A: metricsA.Income,       B: metricsB.Income },
-              { metric: 'Transfers', A: metricsA.Transfers,    B: metricsB.Transfers },
-              { metric: 'Expenses',  A: metricsA.Expenses,     B: metricsB.Expenses },
-              { metric: 'Debt Pay',  A: metricsA.Debt,         B: metricsB.Debt },
-              { metric: 'Net Flow',  A: metricsA['Net Flow'],  B: metricsB['Net Flow'] },
+              { metric: t('cashFlow.comparison.metrics.income'),    A: metricsA.Income,       B: metricsB.Income },
+              { metric: t('cashFlow.comparison.metrics.transfers'), A: metricsA.Transfers,    B: metricsB.Transfers },
+              { metric: t('cashFlow.comparison.metrics.expenses'),  A: metricsA.Expenses,     B: metricsB.Expenses },
+              { metric: t('cashFlow.comparison.metrics.debtPay'),   A: metricsA.Debt,         B: metricsB.Debt },
+              { metric: t('cashFlow.comparison.metrics.netFlow'),   A: metricsA['Net Flow'],  B: metricsB['Net Flow'] },
             ]}
             bars={[
               { key: 'A', color: '#3b82f6', name: labelA },

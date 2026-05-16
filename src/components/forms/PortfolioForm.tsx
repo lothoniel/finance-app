@@ -1,5 +1,6 @@
 import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import type { Portfolio } from '../../store/types'
@@ -17,6 +18,7 @@ const cancelBtn = 'flex-1 border border-[#e8e8e8] dark:border-[#2d3347] text-[#1
 const submitBtn = 'flex-1 bg-[#181d26] dark:bg-[#e8eaf0] text-white dark:text-[#181d26] rounded-[8px] px-4 py-2.5 text-[13px] font-medium hover:bg-[#0d1218] dark:hover:bg-[#c4c8d0] transition-colors'
 
 export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFormProps) {
+  const { t } = useTranslation()
   const addPortfolio = useStore((s) => s.addPortfolio)
   const updatePortfolio = useStore((s) => s.updatePortfolio)
   const addInvestmentMovement = useStore((s) => s.addInvestmentMovement)
@@ -62,39 +64,39 @@ export default function PortfolioForm({ open, onClose, portfolio }: PortfolioFor
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={portfolio ? 'Edit Portfolio' : 'Add Portfolio'}>
+    <Modal open={open} onClose={onClose} title={portfolio ? t('portfolio.form.portfolio.titleEdit') : t('portfolio.form.portfolio.titleAdd')}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className={label}>Name</label>
-          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="e.g. Banorte NTEDIG" className={inputClass} />
+          <label className={label}>{t('portfolio.form.portfolio.name')}</label>
+          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder={t('portfolio.form.portfolio.namePlaceholder')} className={inputClass} />
         </div>
         <div>
-          <label className={label}>Type</label>
-          <input type="text" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} required placeholder="e.g. NTEDIG, 28DIAS" className={inputClass} />
+          <label className={label}>{t('portfolio.form.portfolio.type')}</label>
+          <input type="text" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} required placeholder={t('portfolio.form.portfolio.typePlaceholder')} className={inputClass} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={label}>APY (%)</label>
+            <label className={label}>{t('portfolio.form.portfolio.apy')}</label>
             <input type="number" min="0" step="0.01" value={form.apy} onChange={(e) => setForm({ ...form, apy: e.target.value })} required placeholder="10.5" className={inputClass} />
           </div>
           <div>
-            <label className={label}>Balance (MXN)</label>
+            <label className={label}>{t('portfolio.form.portfolio.balanceMxn')}</label>
             <input type="number" min="0" step="0.01" value={form.balance} onChange={(e) => setForm({ ...form, balance: e.target.value })} required placeholder="0.00" className={inputClass} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={label}>Updated Date</label>
+            <label className={label}>{t('portfolio.form.portfolio.updatedDate')}</label>
             <input type="date" value={form.updatedDate} onChange={(e) => setForm({ ...form, updatedDate: e.target.value })} required className={inputClass} />
           </div>
           <div>
-            <label className={label}>Renews Date</label>
+            <label className={label}>{t('portfolio.form.portfolio.renewsDate')}</label>
             <input type="date" value={form.renewsDate} onChange={(e) => setForm({ ...form, renewsDate: e.target.value })} required className={inputClass} />
           </div>
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className={cancelBtn}>Cancel</button>
-          <button type="submit" className={submitBtn}>{portfolio ? 'Save Changes' : 'Add Portfolio'}</button>
+          <button type="button" onClick={onClose} className={cancelBtn}>{t('common.cancel')}</button>
+          <button type="submit" className={submitBtn}>{portfolio ? t('portfolio.form.portfolio.submitEdit') : t('portfolio.form.portfolio.submitAdd')}</button>
         </div>
       </form>
     </Modal>
