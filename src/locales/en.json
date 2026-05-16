@@ -308,8 +308,11 @@
     },
     "columns": {
       "category": "Category",
-      "budget": "Budget",
-      "actual": "Actual",
+      "monthlyBudget": "Monthly Budget",
+      "quarterlyBudget": "Quarterly Budget",
+      "annualBudget": "Annual Budget",
+      "received": "Received",
+      "spent": "Spent",
       "remaining": "Remaining"
     },
     "groups": {
@@ -351,10 +354,12 @@
       "footer": "Monthly · Enter to save · Esc to cancel"
     },
     "rollover": {
-      "fromYear": "Rollover from this year",
-      "fromMonth": "Rollover from last month",
-      "budget": "Budget",
-      "actual": "Actual",
+      "appliedTo": "Applied to {{period}}",
+      "fromPeriod": "From {{period}}",
+      "ytdSuffix": " (YTD)",
+      "baseBudget": "Base budget",
+      "effectiveBudget": "Effective budget",
+      "spent": "Spent",
       "remaining": "Remaining"
     }
   },

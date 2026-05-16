@@ -308,8 +308,11 @@
     },
     "columns": {
       "category": "Categoría",
-      "budget": "Presupuesto",
-      "actual": "Real",
+      "monthlyBudget": "Presupuesto mensual",
+      "quarterlyBudget": "Presupuesto trimestral",
+      "annualBudget": "Presupuesto anual",
+      "received": "Recibido",
+      "spent": "Gastado",
       "remaining": "Restante"
     },
     "groups": {
@@ -351,10 +354,12 @@
       "footer": "Mensual · Enter para guardar · Esc para cancelar"
     },
     "rollover": {
-      "fromYear": "Acumulado de este año",
-      "fromMonth": "Acumulado del mes pasado",
-      "budget": "Presupuesto",
-      "actual": "Real",
+      "appliedTo": "Aplicado a {{period}}",
+      "fromPeriod": "De {{period}}",
+      "ytdSuffix": " (YTD)",
+      "baseBudget": "Presupuesto base",
+      "effectiveBudget": "Presupuesto efectivo",
+      "spent": "Gastado",
       "remaining": "Restante"
     }
   },
