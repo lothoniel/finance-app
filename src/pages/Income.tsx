@@ -7,6 +7,7 @@ import AreaChart from '../components/charts/AreaChart'
 import BarChart from '../components/charts/BarChart'
 import LineChart from '../components/charts/LineChart'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import PaycheckForm from '../components/forms/PaycheckForm'
 import ManualTaxForm from '../components/forms/ManualTaxForm'
 import TransferForm from '../components/forms/TransferForm'
@@ -136,17 +137,26 @@ export default function Income() {
 
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
-        {[
-          { label: t('income.kpis.grossIncome'), value: formatMoneyCompact(grossIncome, currency), color: '#22c55e' },
-          { label: t('income.kpis.netIncome'), value: formatMoneyCompact(netIncome - totalTaxes, currency), sub: totalTaxes > 0 ? t('income.kpis.taxesLabel', { amount: formatMoneyCompact(totalTaxes, currency) }) : undefined, color: '#22c55e' },
-          { label: t('income.kpis.transfers'), value: formatMoneyCompact(totalReceived, currency), color: '#3b82f6' },
-        ].map((kpi) => (
-          <div key={kpi.label} className="flex-1 px-6 py-4">
+        {(() => {
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1 align-middle">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; sub?: string; color: string }> = [
+            { key: 'grossIncome', label: labelWithTip(t('income.kpis.grossIncome'), 'tooltips.income.grossIncome'), value: formatMoneyCompact(grossIncome, currency), color: '#22c55e' },
+            { key: 'netIncome', label: labelWithTip(t('income.kpis.netIncome'), 'tooltips.income.netIncome'), value: formatMoneyCompact(netIncome - totalTaxes, currency), sub: totalTaxes > 0 ? t('income.kpis.taxesLabel', { amount: formatMoneyCompact(totalTaxes, currency) }) : undefined, color: '#22c55e' },
+            { key: 'transfers', label: labelWithTip(t('income.kpis.transfers'), 'tooltips.income.transfers'), value: formatMoneyCompact(totalReceived, currency), color: '#3b82f6' },
+          ]
+          return tiles.map((kpi) => (
+          <div key={kpi.key} className="flex-1 px-6 py-4">
             <div className="text-[22px] font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
             <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
             {kpi.sub && <div className="text-[11px] text-[#9297a0] mt-0.5">{kpi.sub}</div>}
           </div>
-        ))}
+          ))
+        })()}
       </div>
 
       {/* Income Trend */}
@@ -186,7 +196,12 @@ export default function Income() {
           )}
           {rateChartData.length >= 2 && (
             <div className={`${CARD} p-5`}>
-              <div className={SECTION_LABEL}>{t('income.sections.rateChart')}</div>
+              <div className={SECTION_LABEL}>
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {t('income.sections.rateChart')}
+                  <InfoTooltip content={t('tooltips.income.rateChart')} />
+                </span>
+              </div>
               <LineChart
                 data={rateChartData}
                 lines={[{ key: 'Rate', color: '#3b82f6', name: t('income.chart.usdMxnRate') }]}
@@ -257,7 +272,12 @@ export default function Income() {
       {/* Manual Taxes */}
       <div className={`${CARD} mb-5`}>
         <div className="p-5 pb-0">
-          <div className={SECTION_LABEL}>{t('income.sections.manualTaxes')}</div>
+          <div className={SECTION_LABEL}>
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('income.sections.manualTaxes')}
+              <InfoTooltip content={t('tooltips.income.manualTaxes')} />
+            </span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">

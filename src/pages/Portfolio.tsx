@@ -5,6 +5,7 @@ import { useStore } from '../store'
 import Badge from '../components/ui/Badge'
 import DonutChart from '../components/charts/DonutChart'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import PortfolioForm from '../components/forms/PortfolioForm'
 import InvestmentMovementForm from '../components/forms/InvestmentMovementForm'
 import { formatMoney, formatMoneyCompact, formatDate } from '../lib/formatters'
@@ -107,18 +108,27 @@ export default function PortfolioPage() {
 
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
-        {[
-          { label: t('portfolio.kpis.totalValue'), value: formatMoneyCompact(totalNetWorth, currency), color: '#181d26' },
-          { label: t('portfolio.kpis.totalYield'), value: formatMoney(totalGains, currency), sub: t('portfolio.kpis.inSelectedPeriod'), color: totalGains >= 0 ? '#1a7a3c' : '#c0392b' },
-          { label: t('portfolio.kpis.totalDeposits'), value: formatMoney(totalDeposits, currency), sub: t('portfolio.kpis.inSelectedPeriod'), color: '#181d26' },
-          { label: t('portfolio.kpis.portfolios'), value: String(portfolios.length), color: '#181d26' },
-        ].map((kpi) => (
-          <div key={kpi.label} className="flex-1 px-6 py-4 min-w-0">
+        {(() => {
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1 align-middle">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; sub?: string; color: string }> = [
+            { key: 'totalValue', label: labelWithTip(t('portfolio.kpis.totalValue'), 'tooltips.portfolio.totalValue'), value: formatMoneyCompact(totalNetWorth, currency), color: '#181d26' },
+            { key: 'totalYield', label: labelWithTip(t('portfolio.kpis.totalYield'), 'tooltips.portfolio.totalYield'), value: formatMoney(totalGains, currency), sub: t('portfolio.kpis.inSelectedPeriod'), color: totalGains >= 0 ? '#1a7a3c' : '#c0392b' },
+            { key: 'totalDeposits', label: labelWithTip(t('portfolio.kpis.totalDeposits'), 'tooltips.portfolio.totalDeposits'), value: formatMoney(totalDeposits, currency), sub: t('portfolio.kpis.inSelectedPeriod'), color: '#181d26' },
+            { key: 'portfolios', label: t('portfolio.kpis.portfolios'), value: String(portfolios.length), color: '#181d26' },
+          ]
+          return tiles.map((kpi) => (
+          <div key={kpi.key} className="flex-1 px-6 py-4 min-w-0">
             <div className="text-[22px] font-bold dark:text-[#e8eaf0]" style={{ color: kpi.color }}>{kpi.value}</div>
             <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
             {'sub' in kpi && kpi.sub && <div className="text-[11px] text-[#9297a0] mt-0.5">{kpi.sub}</div>}
           </div>
-        ))}
+          ))
+        })()}
       </div>
 
       {/* Asset Allocation + Holdings */}
@@ -135,7 +145,12 @@ export default function PortfolioPage() {
 
         {/* Holdings */}
         <div className={`${CARD} p-5`}>
-          <p className={SECTION_LABEL}>{t('portfolio.sections.holdings')}</p>
+          <p className={SECTION_LABEL}>
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('portfolio.sections.holdings')}
+              <InfoTooltip content={t('tooltips.portfolio.holdings')} />
+            </span>
+          </p>
           {portfolios.length === 0 && (
             <p className="text-center py-8 text-[13px] text-[#41454d] dark:text-[#9297a0]">{t('portfolio.empty.noPortfoliosCta')}</p>
           )}
@@ -214,14 +229,22 @@ export default function PortfolioPage() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {[
+                  {([
                     { label: t('expenses.table.date'), align: 'text-left' },
                     { label: t('portfolio.table.portfolio'), align: 'text-left' },
                     { label: t('expenses.table.description'), align: 'text-left' },
-                    { label: t('portfolio.table.type'), align: 'text-left' },
+                    {
+                      label: (
+                        <span className="inline-flex items-center gap-1 align-middle">
+                          {t('portfolio.table.type')}
+                          <InfoTooltip content={t('tooltips.portfolio.movementTypes')} />
+                        </span>
+                      ),
+                      align: 'text-left',
+                    },
                     { label: t('expenses.table.amount'), align: 'text-right' },
                     { label: '', align: 'text-left' },
-                  ].map((h, i) => (
+                  ] as Array<{ label: React.ReactNode; align: string }>).map((h, i) => (
                     <th key={i} className={`text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2 px-4 ${h.align}`}>{h.label}</th>
                   ))}
                 </tr>

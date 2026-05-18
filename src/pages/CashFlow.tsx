@@ -7,6 +7,7 @@ import { useStore } from '../store'
 import AreaChart from '../components/charts/AreaChart'
 import BarChart from '../components/charts/BarChart'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMoney, formatMoneyCompact, formatShortMonth, formatMonthYear } from '../lib/formatters'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
@@ -288,17 +289,26 @@ export default function CashFlow() {
 
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
-        {[
-          { label: t('cashFlow.kpis.income'), value: formatMoneyCompact(totalIncome, currency), color: '#22c55e' },
-          { label: t('cashFlow.kpis.expenses'), value: formatMoneyCompact(totalExpenses, currency), color: '#ef4444' },
-          { label: t('cashFlow.kpis.totalSavings'), value: formatMoneyCompact(totalSavings, currency), color: totalSavings >= 0 ? '#22c55e' : '#ef4444' },
-          { label: t('cashFlow.kpis.savingsRate'), value: `${savingsRate.toFixed(1)}%`, color: '#22c55e' },
-        ].map((kpi) => (
-          <div key={kpi.label} className="flex-1 px-6 py-4">
-            <div className="text-[22px] font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
-            <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
-          </div>
-        ))}
+        {(() => {
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1 align-middle">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; color: string }> = [
+            { key: 'income', label: labelWithTip(t('cashFlow.kpis.income'), 'tooltips.cashFlow.income'), value: formatMoneyCompact(totalIncome, currency), color: '#22c55e' },
+            { key: 'expenses', label: labelWithTip(t('cashFlow.kpis.expenses'), 'tooltips.cashFlow.expenses'), value: formatMoneyCompact(totalExpenses, currency), color: '#ef4444' },
+            { key: 'totalSavings', label: labelWithTip(t('cashFlow.kpis.totalSavings'), 'tooltips.cashFlow.totalSavings'), value: formatMoneyCompact(totalSavings, currency), color: totalSavings >= 0 ? '#22c55e' : '#ef4444' },
+            { key: 'savingsRate', label: labelWithTip(t('cashFlow.kpis.savingsRate'), 'tooltips.cashFlow.savingsRate'), value: `${savingsRate.toFixed(1)}%`, color: '#22c55e' },
+          ]
+          return tiles.map((kpi) => (
+            <div key={kpi.key} className="flex-1 px-6 py-4">
+              <div className="text-[22px] font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+              <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
+            </div>
+          ))
+        })()}
       </div>
 
       {/* Bar Chart view */}
@@ -399,7 +409,12 @@ export default function CashFlow() {
           {/* Sankey */}
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>{t('cashFlow.sankey.title')}</div>
+              <div className={SECTION_LABEL}>
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {t('cashFlow.sankey.title')}
+                  <InfoTooltip content={t('tooltips.cashFlow.sankeyOverview')} />
+                </span>
+              </div>
               <div ref={sankeyRef} className="w-full overflow-hidden">
                 {sankeyData.nodes.length > 0 ? (
                   <Sankey
@@ -428,13 +443,21 @@ export default function CashFlow() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    {[
+                    {([
                       { label: t('cashFlow.analysis.month'), align: 'text-left' },
                       { label: t('cashFlow.comparison.metrics.income'), align: 'text-right' },
                       { label: t('cashFlow.comparison.metrics.expenses'), align: 'text-right' },
                       { label: t('cashFlow.comparison.metrics.debt'), align: 'text-right' },
-                      { label: t('cashFlow.analysis.net'), align: 'text-right' },
-                    ].map((h, i) => (
+                      {
+                        label: (
+                          <span className="inline-flex items-center gap-1 align-middle">
+                            {t('cashFlow.analysis.net')}
+                            <InfoTooltip content={t('tooltips.cashFlow.netColumn')} />
+                          </span>
+                        ),
+                        align: 'text-right',
+                      },
+                    ] as Array<{ label: React.ReactNode; align: string }>).map((h, i) => (
                       <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.align}`}>{h.label}</th>
                     ))}
                   </tr>
@@ -489,12 +512,20 @@ export default function CashFlow() {
             <table className="w-full">
               <thead>
                 <tr>
-                  {[
+                  {([
                     { label: t('cashFlow.comparison.metric'), align: 'text-left' },
                     { label: labelA, align: 'text-right' },
                     { label: labelB, align: 'text-right' },
-                    { label: t('cashFlow.comparison.variance'), align: 'text-right' },
-                  ].map((h, i) => (
+                    {
+                      label: (
+                        <span className="inline-flex items-center gap-1 align-middle">
+                          {t('cashFlow.comparison.variance')}
+                          <InfoTooltip content={t('tooltips.cashFlow.variance')} />
+                        </span>
+                      ),
+                      align: 'text-right',
+                    },
+                  ] as Array<{ label: React.ReactNode; align: string }>).map((h, i) => (
                     <th key={i} className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.align}`}>{h.label}</th>
                   ))}
                 </tr>
@@ -523,7 +554,12 @@ export default function CashFlow() {
           <div className="bg-[#fffbeb] border border-[#f59e0b]/40 rounded-[8px] p-4 mb-5 flex gap-3">
             <Lightbulb className="w-4 h-4 text-[#c8912a] shrink-0 mt-0.5" />
             <div>
-              <p className="text-[11px] font-semibold uppercase text-[#c8912a] tracking-[0.4px] mb-1">{t('cashFlow.comparison.quickInsight')}</p>
+              <p className="text-[11px] font-semibold uppercase text-[#c8912a] tracking-[0.4px] mb-1">
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {t('cashFlow.comparison.quickInsight')}
+                  <InfoTooltip content={t('tooltips.cashFlow.quickInsight')} />
+                </span>
+              </p>
               <p className="text-[13px] text-[#333840]">{insight}</p>
             </div>
           </div>

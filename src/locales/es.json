@@ -67,7 +67,11 @@
       "language": "Idioma",
       "languageHint": "Elige el idioma para la interfaz de la aplicación.",
       "currency": "Visualización de Moneda",
-      "currencyHint": "Cambia el símbolo de moneda y el formato de números. Los importes guardados no cambian."
+      "currencyHint": "Cambia el símbolo de moneda y el formato de números. Los importes guardados no cambian.",
+      "helpTooltips": "Tooltips de Ayuda",
+      "helpTooltipsHint": "Muestra pequeños iconos ℹ junto a las etiquetas con explicaciones. Ocúltalos cuando ya conozcas la app.",
+      "helpTooltipsOn": "Activados",
+      "helpTooltipsOff": "Ocultos"
     },
     "users": {
       "user1": "Usuario 1",
@@ -202,6 +206,112 @@
       "paycheck": "Nómina",
       "paid": "Pagado",
       "next30Days": "Próximos 30 días: {{amount}}"
+    }
+  },
+  "tooltips": {
+    "dashboard": {
+      "netFlow": "Ingresos menos pagos de deuda menos depósitos a inversiones. El dinero que realmente queda en tu cuenta del periodo. Los cargos a tarjeta de crédito se cuentan aparte en Gastos.",
+      "savingsRate": "El Flujo Neto como porcentaje del Ingreso. Usa la misma fórmula: (Ingreso − Deuda − Inversiones) ÷ Ingreso.",
+      "income": "Nóminas más transferencias recibidas en el periodo. No incluye ganancias de inversión.",
+      "expenses": "Cargos a tarjeta de crédito y gastos en efectivo del periodo. Solo informativo — no reduce directamente el Flujo Neto. La salida real es la Deuda Pagada cuando pagas la tarjeta.",
+      "debtPaid": "Dinero enviado a tarjetas de crédito en el periodo. Esta es la salida real de tu banco.",
+      "spendingTrends": "Top 7 categorías de gasto en la ventana: últimos 7 meses si ves mensual, 3 meses por trimestre, 12 meses por año.",
+      "snapshotNetWorth": "Activos (inversiones) menos pasivos (saldo de hipoteca) al final del periodo seleccionado.",
+      "snapshotMortgage": "Saldo de hipoteca más reciente al final del periodo. Disminuye conforme registras pagos.",
+      "snapshotDebtPaid": "Total de pagos a deuda durante el periodo. Mismo valor que el KPI de Deuda Pagada.",
+      "insightsDebtAlert": "Marca cuando los pagos de deuda superan el 36% de los ingresos — la regla común para una carga de deuda saludable.",
+      "debtRatioDonut": "Pagos de deuda ÷ Ingreso del periodo. Se vuelve rojo arriba de 36%.",
+      "recurringPaidPill": "Aparece cuando un gasto de este mes coincide con el nombre del recurrente (sin distinguir mayúsculas). No coincide si editaste la descripción."
+    },
+    "cashFlow": {
+      "income": "Nóminas más transferencias recibidas en el periodo. No incluye ganancias de inversión.",
+      "expenses": "Cargos a tarjeta de crédito y gastos en efectivo del periodo. Informativo — no se resta del Ahorro Total. La salida real ocurre cuando pagas la tarjeta (Deuda).",
+      "totalSavings": "Ingresos − Deuda − Inversiones. El modelo de flujo: resta las salidas reales del banco (pagos de deuda + depósitos a inversión), no los cargos a tarjeta.",
+      "savingsRate": "Ahorro Total ÷ Ingresos × 100. Misma fórmula que la Tasa de Ahorro del Dashboard.",
+      "sankeyOverview": "Nómina y Transferencias entran por la izquierda al Ingreso. A la derecha, el Ingreso se divide en Ahorro (efectivo restante), Deuda (pagos a tarjeta que salen del banco) e Inversiones (depósitos).",
+      "netColumn": "Ingresos − Deuda del periodo de la fila. Modelo de flujo — no resta gastos (los cargos a tarjeta se cuentan aparte).",
+      "variance": "Periodo B − Periodo A. Positivo significa que la métrica subió. El color indica si eso es favorable (verde) o desfavorable (rojo) para cada métrica.",
+      "quickInsight": "Frase auto-generada que destaca la métrica que más cambió entre el Periodo A y el Periodo B."
+    },
+    "reports": {
+      "totalIncome": "Nóminas más transferencias recibidas en el periodo. No incluye ganancias de inversión.",
+      "expenses": "Cargos a tarjeta de crédito y gastos en efectivo del periodo. Informativo — no se resta del Flujo de Efectivo Neto. La salida real ocurre cuando pagas la tarjeta (Deuda).",
+      "netCashFlow": "Ingresos − Deuda − Inversiones. Modelo de flujo: resta las salidas reales del banco, no los cargos a tarjeta.",
+      "savingsRate": "Flujo de Efectivo Neto ÷ Ingresos × 100. Misma fórmula que en Cash Flow y Dashboard.",
+      "sankeyOverview": "Nómina y Transferencias entran por la izquierda al Ingreso. A la derecha, el Ingreso se divide en Ahorro (efectivo restante), Deuda (pagos a tarjeta que salen del banco) e Inversiones (depósitos).",
+      "netColumn": "Ingresos − Deuda del periodo de la fila. Modelo de flujo — no resta gastos (los cargos a tarjeta se cuentan aparte).",
+      "spendingByCategory": "Desglose en dona de los gastos del periodo seleccionado. El valor central es el total de todas las categorías mostradas.",
+      "incomeVsOutflow": "Aquí \"Salida\" significa solo pagos de deuda — el dinero real que sale del banco. Los cargos a tarjeta (Gastos) se cuentan aparte y no se incluyen."
+    },
+    "budget": {
+      "totalBudget": "Suma de todos los presupuestos por categoría, escalada al periodo seleccionado (mensual × 3 para trimestral, × 12 para anual).",
+      "remaining": "Presupuesto Total − Gastado Total. Se detiene en cero — si te pasaste, el valor aquí es cero y el contador Excedido sube.",
+      "incomeSection": "Presupuestos para nóminas y transferencias. Haz clic en cualquier valor para fijar un objetivo mensual manual; si lo dejas vacío, la app usa el promedio de los últimos 6 meses.",
+      "incomeReceived": "Ingresos reales de nómina y transferencias recibidos en el periodo seleccionado.",
+      "incomeRemaining": "Ingresos usan polaridad invertida: rojo cuando AÚN no has recibido el monto objetivo, verde cuando recibiste de más. Lo opuesto a Restante en gastos.",
+      "expensesSection": "Presupuestos por categoría vs gasto real. Las categorías con ícono ↻ tienen acumulación activada — el presupuesto no usado del mes anterior o del año en curso se acumula y aumenta el presupuesto efectivo del periodo actual.",
+      "expensesBudget": "Los presupuestos por categoría se guardan mensuales y se escalan al periodo seleccionado. La vista trimestral muestra mensual × 3; la anual mensual × 12.",
+      "expensesRemaining": "Presupuesto − Gastado. Verde cuando estás bajo presupuesto, rojo cuando lo excediste."
+    },
+    "debt": {
+      "paidThisPeriod": "Suma de los pagos a deuda registrados en el periodo seleccionado. Es dinero real que sale del banco — mismo valor que el KPI Deuda Pagada del Dashboard.",
+      "remainingDebt": "Gastos totales históricos menos pagos totales históricos (no se filtra por periodo). Un saldo aproximado de lo que aún debes en todas las tarjetas.",
+      "debtRatio": "Pagado en el Periodo ÷ Ingreso del mismo periodo × 100. El Dashboard genera una Alerta de Deuda cuando supera el 36%.",
+      "topCard": "La tarjeta que recibió el mayor monto de pagos en el periodo seleccionado.",
+      "cardBalances": "Saldo corriente por tarjeta: cargos totales históricos en la tarjeta menos pagos totales históricos. Se actualiza cuando agregas gastos o registras pagos."
+    },
+    "portfolio": {
+      "totalValue": "Suma del saldo actual de cada portafolio. Histórico, no filtrado por periodo — esta es tu posición de inversión neta hoy.",
+      "totalYield": "Suma de movimientos GAIN dentro del periodo seleccionado. Los rendimientos reales que ganaste (interés, dividendos, apreciación marcada como ganancia).",
+      "totalDeposits": "Suma de movimientos DEPOSIT dentro del periodo seleccionado. Dinero nuevo que aportaste a tus cuentas de inversión.",
+      "holdings": "Cada portafolio con su saldo actual y Retorno %. Retorno % = ganancias acumuladas ÷ (depósitos acumulados + transferencias entrantes). Los retiros no reducen la base.",
+      "movementTypes": "DEPOSIT = dinero nuevo. GAIN = rendimientos ganados (interés, apreciación). WITHDRAWAL = dinero retirado. TRANSFER = saldo movido entre portafolios (no cambia el Valor Total)."
+    },
+    "mortgage": {
+      "projectedPayoff": "Fecha estimada de liquidación calculada amortizando el saldo actual con el pago contractual de Capital + Intereses. NO asume pagos extra futuros.",
+      "timeSaved": "Meses que has eliminado del calendario original de amortización pagando capital extra. Compara tu trayectoria real con el calendario contractual.",
+      "interestSaved": "Intereses acumulados evitados gracias a los pagos extra a capital — dinero que se habría acumulado en el calendario original y ya no se cobrará.",
+      "extraCapital": "Suma de cada monto de Capital Extra que has registrado en los pagos. Va solo a capital — reduce el préstamo más rápido sin tocar el pago contractual de Capital + Intereses.",
+      "minPayment": "Valor de pago mínimo almacenado en tu config. Nota: las proyecciones (Liquidación Proyectada, Tiempo Ahorrado, Intereses Ahorrados) usan el Capital + Intereses contractual del préstamo, que puede diferir ligeramente de este valor.",
+      "balanceTrajectory": "Calendario Original = saldo si solo pagaras el Capital + Intereses contractual. Saldo Actual = tu trayectoria real incluyendo pagos extra a capital. La diferencia entre los dos es el efecto de tus pagos extra.",
+      "simulator": "Herramienta hipotética: ingresa un depósito único de capital extra para ver cómo acortaría el préstamo, cambiaría la fecha de liquidación y reduciría los intereses totales pagados."
+    },
+    "netWorth": {
+      "netWorth": "Activos Totales − Pasivos Totales. Foto de tu posición financiera ahora mismo (no se filtra por periodo).",
+      "totalAssets": "Suma del saldo actual de cada portafolio. La app actualmente solo modela los portafolios de inversión como activos — el efectivo bancario no se incluye.",
+      "totalLiabilities": "Por ahora solo incluye el saldo actual de la hipoteca. La deuda de tarjetas de crédito se rastrea por separado en la página de Deuda y no se cuenta aquí.",
+      "paidOff": "Parte del capital original de la hipoteca que ya has pagado. (Capital Original − Saldo Actual) ÷ Capital Original.",
+      "allocation": "Participación de cada portafolio en los Activos Totales. Ayuda a ver si una posición está dominando tu patrimonio."
+    },
+    "sharedBalance": {
+      "totalShared": "Suma de cada gasto compartido registrado desde la liquidación de saldo cero más reciente (o histórico si no hay liquidación registrada). Los gastos personales se excluyen.",
+      "splitRatio": "El porcentaje de división por defecto desde Ajustes → División de Gastos Compartidos. Cada gasto individual puede tener su propio ratio que sobrescribe el valor por defecto al momento de capturarlo.",
+      "netSettlement": "Saldo actual que se deben entre usuarios por gastos compartidos. Empieza desde la última vez que el saldo llegó a cero (no el último pago) — los pagos parciales mantienen visibles los gastos acumulados hasta que liquides por completo.",
+      "sharedSinceLast": "Cada gasto compartido y entrega de efectivo desde la liquidación de saldo cero más reciente. Los pagos parciales NO reinician esta lista — solo una liquidación que lleve el saldo a cero lo hace."
+    },
+    "income": {
+      "grossIncome": "Suma de los montos brutos de las nóminas del periodo (antes de retenciones). Usa el monto neto (MXN) como respaldo cuando una nómina no tiene un valor bruto registrado.",
+      "netIncome": "Suma de los montos netos de las nóminas menos cualquier entrada de impuesto manual del mismo periodo. Es el dinero real que llegó a tu cuenta.",
+      "transfers": "Todas las transferencias recibidas en el periodo (aportaciones al hogar, ingresos por renta, regalos, etc.) — todo ingreso que no sea una nómina.",
+      "rateChart": "Tipo de cambio USD/MXN a lo largo del tiempo. Se calcula automáticamente cuando capturas una nómina con monto en USD y MXN.",
+      "manualTaxes": "Entradas únicas de impuestos fuera de la retención de la nómina (pago provisional trimestral, ajustes de fin de año, etc.). Se restan del bruto para calcular el Ingreso Neto."
+    },
+    "expenses": {
+      "total": "Suma de cada cargo a tarjeta de crédito y en efectivo del periodo. Solo informativo — para ver lo que realmente sale del banco mira Deuda Pagada (cuando pagas la tarjeta).",
+      "typeColumn": "Compartido = gasto dividido entre usuarios según la Proporción de División (de Ajustes, o un valor por-gasto). Personal = corresponde solo a quien lo pagó.",
+      "categoryBudgets": "Vista rápida de presupuestos por categoría vs gasto real del periodo seleccionado. Para acumulación y objetivos manuales de ingreso, edita en la página de Presupuesto."
+    },
+    "transactions": {
+      "totalEntries": "Conteo de cada transacción en el periodo: nóminas, transferencias recibidas, gastos y pagos de deuda combinados.",
+      "typeColumn": "Nómina = sueldo recibido. Transferencia = ingreso no salarial (hogar, renta, etc.). Gasto = un cargo que hiciste. Deuda = un pago que enviaste a una tarjeta de crédito."
+    },
+    "forms": {
+      "expenseSubCategory": "Sub-agrupación de texto libre dentro de la categoría principal (ej. \"Whole Foods\" dentro de Despensa). Las sugerencias provienen de las sub-categorías que ya usaste en la misma categoría.",
+      "expensePaidBy": "Qué usuario pagó este gasto. Afecta el balance compartido cuando el gasto está marcado como Compartido.",
+      "expenseShared": "Cuando está activado, el gasto se divide entre los usuarios usando la Proporción de División por defecto de Ajustes (puede sobrescribirse por gasto vía el flujo de Balance Compartido). Sin activar = gasto personal, solo lo asume quien lo pagó.",
+      "investmentType": "DEPOSIT agrega dinero nuevo. GAIN registra rendimientos ganados. WITHDRAWAL retira dinero. TRANSFER mueve saldo a otro portafolio (pide destino — no cambia el Valor Total).",
+      "mortgageExtraCapital": "Pago a capital adicional al Capital + Intereses contractual. Reduce el saldo más rápido, acorta la fecha de liquidación y reduce los intereses totales pagados. Se calcula automáticamente cuando tu pago total supera el Capital + Intereses contractual.",
+      "settlementAmount": "Se pre-llena con el saldo neto actual para que un pago completo deje el ledger en cero y arranque una nueva ventana de \"Desde Última Liquidación\". Ingresa un valor menor para un pago parcial (el ledger no se reinicia)."
     }
   },
   "periodSelector": {

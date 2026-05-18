@@ -7,6 +7,7 @@ import DonutChart from '../components/charts/DonutChart'
 import ExpenseForm from '../components/forms/ExpenseForm'
 import ScreenshotImportModal from '../components/forms/ScreenshotImportModal'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import { formatMoney, formatMoneyCompact, formatDate } from '../lib/formatters'
 import { sortByDateDesc } from '../lib/filters'
 import { PERIOD_SCALE } from '../lib/constants'
@@ -142,17 +143,26 @@ export default function Expenses() {
 
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
-        {[
-          { label: t('expenses.kpis.total'), value: formatMoneyCompact(total, currency), color: '#ef4444' },
-          { label: t('expenses.kpis.topCategory'), value: topCategory.name, color: '#181d26' },
-          { label: t('expenses.kpis.topAmount'), value: formatMoneyCompact(topCategory.total, currency), color: '#ef4444' },
-          { label: t('expenses.kpis.activeCategories'), value: t('expenses.kpis.activeCount', { count: activeCategories }), color: '#22c55e' },
-        ].map((kpi) => (
-          <div key={kpi.label} className="flex-1 px-6 py-4">
+        {(() => {
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1 align-middle">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; color: string }> = [
+            { key: 'total', label: labelWithTip(t('expenses.kpis.total'), 'tooltips.expenses.total'), value: formatMoneyCompact(total, currency), color: '#ef4444' },
+            { key: 'topCategory', label: t('expenses.kpis.topCategory'), value: topCategory.name, color: '#181d26' },
+            { key: 'topAmount', label: t('expenses.kpis.topAmount'), value: formatMoneyCompact(topCategory.total, currency), color: '#ef4444' },
+            { key: 'activeCategories', label: t('expenses.kpis.activeCategories'), value: t('expenses.kpis.activeCount', { count: activeCategories }), color: '#22c55e' },
+          ]
+          return tiles.map((kpi) => (
+          <div key={kpi.key} className="flex-1 px-6 py-4">
             <div className="text-[22px] font-bold dark:text-[#e8eaf0]" style={{ color: kpi.color }}>{kpi.value}</div>
             <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
           </div>
-        ))}
+          ))
+        })()}
       </div>
 
       {/* Charts */}
@@ -203,7 +213,12 @@ export default function Expenses() {
       {budgetCats.length > 0 && (
         <div className={`${CARD} mb-5`}>
           <div className="p-5">
-            <div className={SECTION_LABEL}>{t('expenses.sections.categoryBudgets')}</div>
+            <div className={SECTION_LABEL}>
+              <span className="inline-flex items-center gap-1 align-middle">
+                {t('expenses.sections.categoryBudgets')}
+                <InfoTooltip content={t('tooltips.expenses.categoryBudgets')} />
+              </span>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               {budgetCats.map((c) => {
                 const actual = catTotals[c.id] ?? 0
@@ -311,14 +326,22 @@ export default function Expenses() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    {[
-                      { key: 'date', label: t('expenses.table.date') },
-                      { key: 'category', label: t('expenses.table.category') },
-                      { key: 'description', label: t('expenses.table.description') },
-                      { key: 'type', label: t('expenses.table.type') },
-                      { key: 'amount', label: t('expenses.table.amount') },
-                      { key: 'actions', label: '' },
-                    ].map((h) => (
+                    {([
+                      { key: 'date', label: t('expenses.table.date') as React.ReactNode },
+                      { key: 'category', label: t('expenses.table.category') as React.ReactNode },
+                      { key: 'description', label: t('expenses.table.description') as React.ReactNode },
+                      {
+                        key: 'type',
+                        label: (
+                          <span className="inline-flex items-center gap-1 align-middle">
+                            {t('expenses.table.type')}
+                            <InfoTooltip content={t('tooltips.expenses.typeColumn')} />
+                          </span>
+                        ) as React.ReactNode,
+                      },
+                      { key: 'amount', label: t('expenses.table.amount') as React.ReactNode },
+                      { key: 'actions', label: '' as React.ReactNode },
+                    ]).map((h) => (
                       <th
                         key={h.key}
                         className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-4 ${h.key === 'amount' ? 'text-right' : 'text-left'}`}

@@ -3,6 +3,7 @@ import { Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import { usePeriodFilter } from '../hooks/usePeriodFilter'
 import { sortByDateDesc } from '../lib/filters'
 import { formatDate, formatMoneyCompact } from '../lib/formatters'
@@ -146,7 +147,12 @@ export default function Transactions() {
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-6 overflow-x-auto`}>
         <div className="flex-1 min-w-[120px] px-5 py-4">
           <div className="text-[22px] font-bold leading-tight text-[#181d26] dark:text-[#e8eaf0]">{periodFiltered.length}</div>
-          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('transactions.kpis.totalEntries')}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('transactions.kpis.totalEntries')}
+              <InfoTooltip content={t('tooltips.transactions.totalEntries')} />
+            </span>
+          </div>
         </div>
         <div className="flex-1 min-w-[120px] px-5 py-4">
           <div className="text-[22px] font-bold leading-tight" style={{ color: '#16a34a' }}>{formatMoneyCompact(totalIncome, currency)}</div>
@@ -204,11 +210,19 @@ export default function Transactions() {
             <thead>
               <tr>
                 {[
-                  { key: 'date', label: t('expenses.table.date') },
-                  { key: 'description', label: t('expenses.table.description') },
-                  { key: 'category', label: t('expenses.table.category') },
-                  { key: 'type', label: t('expenses.table.type') },
-                  { key: 'amount', label: t('expenses.table.amount') },
+                  { key: 'date', label: t('expenses.table.date') as React.ReactNode },
+                  { key: 'description', label: t('expenses.table.description') as React.ReactNode },
+                  { key: 'category', label: t('expenses.table.category') as React.ReactNode },
+                  {
+                    key: 'type',
+                    label: (
+                      <span className="inline-flex items-center gap-1 align-middle">
+                        {t('expenses.table.type')}
+                        <InfoTooltip content={t('tooltips.transactions.typeColumn')} />
+                      </span>
+                    ) as React.ReactNode,
+                  },
+                  { key: 'amount', label: t('expenses.table.amount') as React.ReactNode },
                 ].map((h) => (
                   <th
                     key={h.key}

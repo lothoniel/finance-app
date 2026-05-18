@@ -168,4 +168,5 @@ export interface AppSettings {
   language: Language
   currencyDisplay: CurrencyDisplay
   paycheckMonthlyBudget?: number // monthly target; falls back to 6-month average when undefined
+  showHelpTooltips?: boolean // when undefined or true, help tooltips render; false hides them globally
 }

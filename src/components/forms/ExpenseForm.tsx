@@ -2,6 +2,7 @@ import { generateId } from '../../lib/id'
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../ui/Modal'
+import InfoTooltip from '../ui/InfoTooltip'
 import { useStore } from '../../store'
 import type { Expense, RecurringExpense } from '../../store/types'
 import { today } from '../../lib/formatters'
@@ -161,14 +162,24 @@ export default function ExpenseForm({ open, onClose, expense, editRecurring }: E
         {!isEditRecurring && (
           <>
             <div>
-              <label className={label}>{t('expenses.form.subCategory')} <span className="text-[#41454d] font-normal">{t('expenses.form.optional')}</span></label>
+              <label className={label}>
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {t('expenses.form.subCategory')} <span className="text-[#41454d] font-normal">{t('expenses.form.optional')}</span>
+                  <InfoTooltip content={t('tooltips.forms.expenseSubCategory')} />
+                </span>
+              </label>
               <input type="text" list="subcategory-suggestions" value={form.subCategory} onChange={(e) => setForm({ ...form, subCategory: e.target.value })} placeholder={t('expenses.form.subCategoryPlaceholder')} className={inputClass} />
               <datalist id="subcategory-suggestions">
                 {subCategorySuggestions.map((s) => <option key={s} value={s} />)}
               </datalist>
             </div>
             <div>
-              <label className={label}>{t('expenses.form.paidBy')}</label>
+              <label className={label}>
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {t('expenses.form.paidBy')}
+                  <InfoTooltip content={t('tooltips.forms.expensePaidBy')} />
+                </span>
+              </label>
               <select value={form.paidBy} onChange={(e) => setForm({ ...form, paidBy: e.target.value as 'user1' | 'user2' })} className={inputClass}>
                 <option value="user1">{user1Name}</option>
                 <option value="user2">{user2Name}</option>
@@ -177,6 +188,7 @@ export default function ExpenseForm({ open, onClose, expense, editRecurring }: E
             <div className="flex items-center gap-3">
               <input id="shared-cb" type="checkbox" checked={form.shared} onChange={(e) => setForm({ ...form, shared: e.target.checked })} className="w-4 h-4 rounded border-[#e8e8e8] accent-[#181d26]" />
               <label htmlFor="shared-cb" className="text-[13px] text-[#333840]">{t('expenses.form.sharedExpense')}</label>
+              <InfoTooltip content={t('tooltips.forms.expenseShared')} />
             </div>
           </>
         )}

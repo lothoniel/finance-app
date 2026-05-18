@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import AreaChart from '../components/charts/AreaChart'
 import DebtPaymentForm from '../components/forms/DebtPaymentForm'
 import { filterByPeriod, sortByDateDesc } from '../lib/filters'
@@ -74,12 +75,19 @@ export default function DebtPaymentPage() {
     }))
   }, [debtPayments, language])
 
-  const kpis = [
-    { label: t('debt.kpis.paidThisPeriod'), value: formatMoneyCompact(totalPaid, currency), color: '#2e7d65' },
-    { label: t('debt.kpis.remainingDebt'), value: formatMoneyCompact(remainingDebt, currency), color: '#c0392b' },
-    { label: t('debt.kpis.debtRatio'), value: `${debtRatio.toFixed(1)}%`, color: '#c8912a' },
-    { label: t('debt.kpis.payments'), value: String(paymentCount), sub: t('debt.kpis.inSelectedPeriod'), color: undefined },
-    ...(topCard ? [{ label: t('debt.kpis.topCard'), value: topCard.name, sub: formatMoneyCompact(topCard.amount, currency), color: undefined }] : []),
+  const labelWithTip = (text: string, tipKey: string) => (
+    <span className="inline-flex items-center gap-1 align-middle">
+      {text}
+      <InfoTooltip content={t(tipKey)} />
+    </span>
+  )
+
+  const kpis: Array<{ key: string; label: React.ReactNode; value: string; sub?: string; color: string | undefined }> = [
+    { key: 'paidThisPeriod', label: labelWithTip(t('debt.kpis.paidThisPeriod'), 'tooltips.debt.paidThisPeriod'), value: formatMoneyCompact(totalPaid, currency), color: '#2e7d65' },
+    { key: 'remainingDebt', label: labelWithTip(t('debt.kpis.remainingDebt'), 'tooltips.debt.remainingDebt'), value: formatMoneyCompact(remainingDebt, currency), color: '#c0392b' },
+    { key: 'debtRatio', label: labelWithTip(t('debt.kpis.debtRatio'), 'tooltips.debt.debtRatio'), value: `${debtRatio.toFixed(1)}%`, color: '#c8912a' },
+    { key: 'payments', label: t('debt.kpis.payments'), value: String(paymentCount), sub: t('debt.kpis.inSelectedPeriod'), color: undefined },
+    ...(topCard ? [{ key: 'topCard', label: labelWithTip(t('debt.kpis.topCard'), 'tooltips.debt.topCard'), value: topCard.name, sub: formatMoneyCompact(topCard.amount, currency), color: undefined }] : []),
   ]
 
   return (
@@ -101,7 +109,7 @@ export default function DebtPaymentPage() {
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-6 overflow-x-auto`}>
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="flex-1 min-w-[120px] px-5 py-4">
+          <div key={kpi.key} className="flex-1 min-w-[120px] px-5 py-4">
             {kpi.color ? (
               <div className="text-[22px] font-bold leading-tight" style={{ color: kpi.color }}>{kpi.value}</div>
             ) : (
@@ -116,7 +124,12 @@ export default function DebtPaymentPage() {
       {/* Card Balances */}
       {creditCards.length > 0 && (
         <div className="mb-6">
-          <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('debt.sections.cardBalances')}</p>
+          <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('debt.sections.cardBalances')}
+              <InfoTooltip content={t('tooltips.debt.cardBalances')} />
+            </span>
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {creditCards.map((card) => {
               const total = periodFiltered.filter((d) => d.card === card.name).reduce((s, d) => s + d.amount, 0)

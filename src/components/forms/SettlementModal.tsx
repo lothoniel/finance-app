@@ -5,6 +5,7 @@ import { useStore } from '../../store'
 import { formatMoney } from '../../lib/formatters'
 import { inputClass } from '../../lib/styles'
 import Modal from '../ui/Modal'
+import InfoTooltip from '../ui/InfoTooltip'
 
 interface Props {
   open: boolean
@@ -55,7 +56,12 @@ export default function SettlementModal({ open, onClose, netSettlement, creditor
           </select>
         </div>
         <div>
-          <label className={label}>{t('sharedBalance.settlementForm.amountMxn')}</label>
+          <label className={label}>
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('sharedBalance.settlementForm.amountMxn')}
+              <InfoTooltip content={t('tooltips.forms.settlementAmount')} />
+            </span>
+          </label>
           <input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required placeholder={formatMoney(netSettlement, currency)} className={inputClass} />
         </div>
         <div>

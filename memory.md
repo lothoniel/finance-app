@@ -155,3 +155,29 @@ Active development. No backend. Design system overhaul in progress across all pa
 - **Remaining i18n surface**: **none in user-facing UI.** The only `formatMXN*` callers left are inside `src/lib/formatters.ts` (definitions + `formatMoney` dispatch) and `src/__tests__/lib/formatters.test.ts`.
 - **Tests**: `src/__tests__/lib/formatters.test.ts` covers `formatMoneyCompact` (MXN/USD) and Spanish-locale `formatDate`/`formatShortMonth`. 51/51 passing as of Phase 4.
 - **Plan file**: `~/.claude/plans/i-want-to-implement-misty-wombat.md` holds the Phase 2 plan; Phases 3/4 followed the same pattern (incremental, one PR per page) without rewriting the plan file.
+
+## Features Added (2026-05-18) — Help Tooltips Rollout (12 PRs, 73 tooltips)
+- **Goal**: discoverable hover/tap explanations on computed values + concept terms + form fields for a brand-new user; global toggle in Settings hides them once a user is familiar.
+- **New component**: `src/components/ui/InfoTooltip.tsx`. Renders a Lucide `Info` icon (`w-3.5 h-3.5`); popover uses `createPortal(document.body)` + `position: fixed` + measured `getBoundingClientRect()` with horizontal clamp. Auto-handles viewport edges. `whitespace-normal` + `text-left` + `normal-case` + `tracking-normal` reset inherited styles from uppercase parent labels. Opens on hover (desktop) AND click (mobile), closes on `mouseleave` / outside-click (pointerdown) / Escape.
+- **Why portal**: ancestor `overflow-hidden` on cards (e.g. Budget left column) was clipping the popover. Portal escapes all ancestor clipping. Two-phase render avoids the initial-position flash (popover mounts hidden via `visibility: hidden` until `useLayoutEffect` measures and sets coords).
+- **Store**: `AppSettings.showHelpTooltips?: boolean` (optional, missing = `true`). No migration body (mirrors `paycheckMonthlyBudget` pattern). Read with `?? true` everywhere. No version bump needed.
+- **Settings UI**: third row in the Preferences section (next to Language/Currency segmented controls) with On/Off buttons → `updateSettings({ showHelpTooltips })`.
+- **Layout gotcha (learned in PR1, applied across all PRs)**: NEVER apply `inline-flex` directly to a `<p>` — it turns the element inline-level and silently drops `mb-*` margins (Upcoming Recurring title bug). Always nest a `<span className="inline-flex items-center gap-1 align-middle">` inside the `<p>`. Same rule for `<th>` cells.
+- **KPI strip pattern**: when the page maps over an array to render KPIs, refactored to an IIFE: declare `labelWithTip(text, tipKey)` helper, build a tiles array with `label: React.ReactNode`, then `return tiles.map(...)`. Switched `key` from `kpi.label` (no longer a stable string) to a dedicated `key: 'totalBudget' | …` field.
+- **Section title pattern**: existing `<button>`-wrapping section toggles (Budget's Income section) had to be restructured to `<div>` containing toggle `<button>` + sibling `<InfoTooltip>` to avoid nested-button HTML. Expenses section already used this pattern.
+- **Right-aligned `<th>` cells**: tooltip icon sits at the right edge after the label — `inline-flex items-center gap-1` on the wrapping span keeps the icon vertically aligned without affecting `text-right`.
+- **Sankey nodes (Reports + CashFlow)**: SVG `<text>` doesn't accept React component children — used a **single overview tooltip** on the Sankey section title that explains the 3-layer structure (Paycheck + Transfers → Income → Savings/Debt/Investments) instead of per-node tooltips.
+- **i18n namespace**: `tooltips.<page>.<concept>` mirroring page key namespaces (`tooltips.dashboard.*`, `tooltips.cashFlow.*`, `tooltips.reports.*`, `tooltips.budget.*`, `tooltips.debt.*`, `tooltips.portfolio.*`, `tooltips.mortgage.*`, `tooltips.netWorth.*`, `tooltips.sharedBalance.*`, `tooltips.income.*`, `tooltips.expenses.*`, `tooltips.transactions.*`, `tooltips.forms.*`). All keys land in en + es in the same PR.
+- **Per-page tooltip counts**: Dashboard 12 · CashFlow 8 · Reports 8 · Budget 8 · DebtPayment 5 · Portfolio 5 · Mortgage 7 · NetWorth 5 · SharedBalance 4 · Income 5 · Expenses 3 · Transactions 2 · Forms sweep 6 (ExpenseForm 3 + InvestmentMovementForm + MortgagePaymentForm + SettlementModal). Total: **73**.
+- **Notable copy decisions** (where the tooltip flags a known-confusing thing, not just a label):
+  - Dashboard Net Flow / Snapshot rows: spell out the Cash Flow Model (Income − Debt − Investments, NOT minus Expenses).
+  - Budget Income Remaining: explicit polarity inversion callout (red = not yet received, green = over-received).
+  - DebtPayment Remaining Debt: explicitly flags it's **all-time, not period-filtered** (the rest of the page IS period-filtered).
+  - Mortgage Min Payment: cites the contractual-P+I vs stored-value caveat; projections use contractual.
+  - SharedBalance Net Settlement + Shared Since Last: explicitly says partial payments do NOT reset; only a zero-balance settlement does.
+  - Reports Income vs Outflow: "Outflow" here = debt payments only, not Expenses (Cash Flow Model again).
+  - Portfolio Holdings: spells out Return % = gains ÷ (deposits + transfers in); withdrawals don't reduce the basis.
+- **SplitRatioModal skipped** in forms sweep: its three options (`following` / `current` / `allTime`) already render description text inline, so an ℹ would have been redundant.
+- **What is NOT covered**: P3 items like dashboard recent-activity legend, individual income/expense category icons, transaction filter pills, and CashFlow Period A/B selectors (labels are self-explanatory).
+- **Plan file**: `~/.claude/plans/the-app-is-pretty-serene-hearth.md` — captures the locked decisions, PR1 details (now shipped), and the per-page queue.
+- **Verification**: every PR clean `npm run build` + `npm run lint` (no new errors; pre-existing lint warnings on some pages remain untouched) + `npm run test` 59/59 passing throughout.

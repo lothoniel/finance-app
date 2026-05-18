@@ -284,6 +284,21 @@ export default function Settings() {
                   ))}
                 </div>
               </div>
+              <div>
+                <label className={modalLabel}>{t('settings.preferences.helpTooltips')}</label>
+                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mb-2">{t('settings.preferences.helpTooltipsHint')}</p>
+                <div className="flex bg-[#f0f2f5] dark:bg-[#252b3b] rounded-[8px] p-0.5 gap-0.5">
+                  {([true, false] as const).map((on) => (
+                    <button
+                      key={String(on)}
+                      onClick={() => updateSettings({ showHelpTooltips: on })}
+                      className={segBtn((settings.showHelpTooltips ?? true) === on)}
+                    >
+                      {t(on ? 'settings.preferences.helpTooltipsOn' : 'settings.preferences.helpTooltipsOff')}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

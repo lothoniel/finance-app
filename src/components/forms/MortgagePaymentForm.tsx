@@ -2,6 +2,7 @@ import { generateId } from '../../lib/id'
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../ui/Modal'
+import InfoTooltip from '../ui/InfoTooltip'
 import { useStore } from '../../store'
 import type { MortgagePayment } from '../../store/types'
 import { today, formatMoney } from '../../lib/formatters'
@@ -94,7 +95,12 @@ export default function MortgagePaymentForm({ open, onClose, payment }: Props) {
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className={label.replace('mb-1', '')}>{t('mortgage.form.payment.extraCapitalMxn')}</label>
+            <label className={label.replace('mb-1', '')}>
+              <span className="inline-flex items-center gap-1 align-middle">
+                {t('mortgage.form.payment.extraCapitalMxn')}
+                <InfoTooltip content={t('tooltips.forms.mortgageExtraCapital')} />
+              </span>
+            </label>
             <div className="flex items-center gap-2">
               <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-[4px] ${isAuto ? 'bg-[#eef8f4] text-[#2e7d65]' : 'bg-[#fdf6e3] text-[#c8912a]'}`}>
                 {isAuto ? t('mortgage.form.payment.auto') : t('mortgage.form.payment.manual')}

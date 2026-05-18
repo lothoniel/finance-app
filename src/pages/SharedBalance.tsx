@@ -7,6 +7,7 @@ import { useStore } from '../store'
 import Modal from '../components/ui/Modal'
 import SettlementModal from '../components/forms/SettlementModal'
 import DonutChart from '../components/charts/DonutChart'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import { formatMoney, formatMoneyCompact, formatDate, today } from '../lib/formatters'
 import { calculateSettlement } from '../lib/settlement'
 import { sortByDateAsc, sortByDateDesc } from '../lib/filters'
@@ -225,19 +226,34 @@ export default function SharedBalance() {
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
         <div className="flex-1 px-6 py-4">
           <div className="text-[22px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(settlement.totalShared, currency)}</div>
-          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('sharedBalance.kpis.totalShared')}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('sharedBalance.kpis.totalShared')}
+              <InfoTooltip content={t('tooltips.sharedBalance.totalShared')} />
+            </span>
+          </div>
           <div className="text-[11px] text-[#9297a0] mt-0.5">{lastSettlementDate ? t('sharedBalance.kpis.since', { date: formatDate(lastSettlementDate, language) }) : t('sharedBalance.kpis.allTime')}</div>
         </div>
         <div className="flex-1 px-6 py-4">
           <div className="text-[22px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{Math.round(splitRatio * 100)}/{Math.round((1 - splitRatio) * 100)}</div>
-          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('sharedBalance.kpis.splitRatio')}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('sharedBalance.kpis.splitRatio')}
+              <InfoTooltip content={t('tooltips.sharedBalance.splitRatio')} />
+            </span>
+          </div>
           <div className="text-[11px] text-[#9297a0] mt-0.5">{user1Name} / {user2Name}</div>
         </div>
         <div className="flex-1 px-6 py-4">
           <div className="text-[22px] font-bold" style={{ color: settlement.creditor === 'even' ? '#1a7a3c' : '#c0392b' }}>
             {formatMoney(settlement.netSettlement, currency)}
           </div>
-          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('sharedBalance.kpis.netSettlement')}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('sharedBalance.kpis.netSettlement')}
+              <InfoTooltip content={t('tooltips.sharedBalance.netSettlement')} />
+            </span>
+          </div>
           <div className="text-[11px] text-[#9297a0] mt-0.5">{netLabel}</div>
         </div>
       </div>
@@ -317,7 +333,10 @@ export default function SharedBalance() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">
-            {t('sharedBalance.sections.sharedSinceLast')}
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('sharedBalance.sections.sharedSinceLast')}
+              <InfoTooltip content={t('tooltips.sharedBalance.sharedSinceLast')} />
+            </span>
             {recentShared.length > 0 && (
               <span className="ml-1.5 text-[12px] font-normal text-[#9297a0]">
                 ({displayedShared.length}{displayedShared.length !== recentShared.length ? `/${recentShared.length}` : ''})

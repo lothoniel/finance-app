@@ -7,6 +7,7 @@ import AreaChart from '../components/charts/AreaChart'
 import DonutChart from '../components/charts/DonutChart'
 import StackedBarChart from '../components/charts/StackedBarChart'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import { filterByPeriod, getMonthsInRange, type PeriodMode, type PeriodValue } from '../lib/filters'
 import { formatMoneyCompact, formatShortMonth, formatMonthYear } from '../lib/formatters'
 import type { CurrencyDisplay } from '../store/types'
@@ -353,17 +354,26 @@ export default function Reports() {
 
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
-        {[
-          { label: t('reports.kpis.totalIncome'), value: formatMoneyCompact(kpiIncome, currency), color: '#22c55e' },
-          { label: t('reports.kpis.expenses'), value: formatMoneyCompact(kpiExpenses, currency), color: '#ef4444' },
-          { label: t('reports.kpis.netCashFlow'), value: formatMoneyCompact(kpiSavings, currency), color: kpiSavings >= 0 ? '#22c55e' : '#ef4444' },
-          { label: t('reports.kpis.savingsRate'), value: `${kpiSavingsRate.toFixed(1)}%`, color: '#22c55e' },
-        ].map(kpi => (
-          <div key={kpi.label} className="flex-1 px-6 py-4">
-            <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mb-1">{kpi.label}</div>
-            <div className="text-[22px] font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
-          </div>
-        ))}
+        {(() => {
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1 align-middle">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; color: string }> = [
+            { key: 'totalIncome', label: labelWithTip(t('reports.kpis.totalIncome'), 'tooltips.reports.totalIncome'), value: formatMoneyCompact(kpiIncome, currency), color: '#22c55e' },
+            { key: 'expenses', label: labelWithTip(t('reports.kpis.expenses'), 'tooltips.reports.expenses'), value: formatMoneyCompact(kpiExpenses, currency), color: '#ef4444' },
+            { key: 'netCashFlow', label: labelWithTip(t('reports.kpis.netCashFlow'), 'tooltips.reports.netCashFlow'), value: formatMoneyCompact(kpiSavings, currency), color: kpiSavings >= 0 ? '#22c55e' : '#ef4444' },
+            { key: 'savingsRate', label: labelWithTip(t('reports.kpis.savingsRate'), 'tooltips.reports.savingsRate'), value: `${kpiSavingsRate.toFixed(1)}%`, color: '#22c55e' },
+          ]
+          return tiles.map(kpi => (
+            <div key={kpi.key} className="flex-1 px-6 py-4">
+              <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mb-1">{kpi.label}</div>
+              <div className="text-[22px] font-bold" style={{ color: kpi.color }}>{kpi.value}</div>
+            </div>
+          ))
+        })()}
       </div>
 
       {/* Tabs */}
@@ -388,7 +398,12 @@ export default function Reports() {
         <div className="space-y-5">
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.cashFlow'))}</div>
+              <div className={SECTION_LABEL}>
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {sectionTitle(t('reports.sections.cashFlow'))}
+                  <InfoTooltip content={t('tooltips.reports.sankeyOverview')} />
+                </span>
+              </div>
               <div ref={sankeyRef} className="w-full overflow-hidden">
                 {sankeyData.nodes.length > 0 ? (
                   <Sankey
@@ -435,14 +450,19 @@ export default function Reports() {
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-[#e8e8e8] dark:border-[#2d3347]">
-                    {[
+                    {([
                       t('reports.table.period'),
                       t('reports.table.income'),
                       t('reports.table.expenses'),
                       t('reports.table.debtPayments'),
-                      t('reports.table.net'),
+                      (
+                        <span className="inline-flex items-center gap-1 align-middle">
+                          {t('reports.table.net')}
+                          <InfoTooltip content={t('tooltips.reports.netColumn')} />
+                        </span>
+                      ),
                       t('reports.table.savingsRate'),
-                    ].map((col, i) => (
+                    ] as React.ReactNode[]).map((col, i) => (
                       <th key={i} className="text-left pb-2.5 pr-4 text-[11px] font-semibold text-[#9297a0] uppercase tracking-wide">
                         {col}
                       </th>
@@ -487,7 +507,12 @@ export default function Reports() {
           <div className="col-span-2 space-y-5">
             <div className={CARD}>
               <div className="p-5">
-                <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.spendingByCategory'))}</div>
+                <div className={SECTION_LABEL}>
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    {sectionTitle(t('reports.sections.spendingByCategory'))}
+                    <InfoTooltip content={t('tooltips.reports.spendingByCategory')} />
+                  </span>
+                </div>
                 {donutData.length > 0 ? (
                   <DonutChart
                     data={donutData}
@@ -574,7 +599,12 @@ export default function Reports() {
 
           <div className={CARD}>
             <div className="p-5">
-              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.incomeVsOutflow'))}</div>
+              <div className={SECTION_LABEL}>
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {sectionTitle(t('reports.sections.incomeVsOutflow'))}
+                  <InfoTooltip content={t('tooltips.reports.incomeVsOutflow')} />
+                </span>
+              </div>
               {outflowChartData.length > 0 ? (
                 <AreaChart
                   data={outflowChartData}

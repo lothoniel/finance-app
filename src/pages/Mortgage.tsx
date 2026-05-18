@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Users } from 'lucide-react'
 import { useStore } from '../store'
 import Tabs from '../components/ui/Tabs'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import AreaChart from '../components/charts/AreaChart'
 import MortgagePaymentForm from '../components/forms/MortgagePaymentForm'
 import MortgageContributionForm from '../components/forms/MortgageContributionForm'
@@ -190,20 +191,29 @@ export default function MortgagePage() {
 
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-6 overflow-x-auto`}>
-        {[
-          { label: t('mortgage.kpis.currentBalance'), value: formatMoney(currentBalance, currency), sub: t('mortgage.kpis.paidOffPct', { pct: paidOffPct }), color: '#c0392b' },
-          { label: t('mortgage.kpis.projectedPayoff'), value: addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, actualMonthsLeft, language), sub: t('mortgage.kpis.remaining', { duration: formatDuration(actualMonthsLeft) }), color: undefined },
-          { label: t('mortgage.kpis.timeSaved'), value: formatDuration(monthsSaved), sub: t('mortgage.kpis.vsMinPayments'), color: '#2e7d65' },
-          { label: t('mortgage.kpis.interestSaved'), value: formatMoneyCompact(interestSaved, currency), sub: undefined, color: '#2e7d65' },
-        ].map((kpi) => (
-          <div key={kpi.label} className="flex-1 min-w-[140px] px-5 py-4">
+        {(() => {
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1 align-middle">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; sub?: string; color: string | undefined }> = [
+            { key: 'currentBalance', label: t('mortgage.kpis.currentBalance'), value: formatMoney(currentBalance, currency), sub: t('mortgage.kpis.paidOffPct', { pct: paidOffPct }), color: '#c0392b' },
+            { key: 'projectedPayoff', label: labelWithTip(t('mortgage.kpis.projectedPayoff'), 'tooltips.mortgage.projectedPayoff'), value: addMonths(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`, actualMonthsLeft, language), sub: t('mortgage.kpis.remaining', { duration: formatDuration(actualMonthsLeft) }), color: undefined },
+            { key: 'timeSaved', label: labelWithTip(t('mortgage.kpis.timeSaved'), 'tooltips.mortgage.timeSaved'), value: formatDuration(monthsSaved), sub: t('mortgage.kpis.vsMinPayments'), color: '#2e7d65' },
+            { key: 'interestSaved', label: labelWithTip(t('mortgage.kpis.interestSaved'), 'tooltips.mortgage.interestSaved'), value: formatMoneyCompact(interestSaved, currency), sub: undefined, color: '#2e7d65' },
+          ]
+          return tiles.map((kpi) => (
+          <div key={kpi.key} className="flex-1 min-w-[140px] px-5 py-4">
             <div className={`text-[22px] font-bold leading-tight ${kpi.color ? '' : 'text-[#181d26] dark:text-[#e8eaf0]'}`} style={kpi.color ? { color: kpi.color } : undefined}>
               {kpi.value}
             </div>
             <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
             {kpi.sub && <div className="text-[11px] text-[#9297a0] mt-0.5">{kpi.sub}</div>}
           </div>
-        ))}
+          ))
+        })()}
       </div>
 
       <div className="mb-6">
@@ -219,22 +229,36 @@ export default function MortgagePage() {
         <div className="space-y-8">
           {/* KPI strip */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { label: t('mortgage.overview.principalReduced'), value: formatMoneyCompact(config.principal - currentBalance, currency), sub: t('mortgage.kpis.paidOffPct', { pct: paidOffPct }) },
-              { label: t('mortgage.overview.extraCapital'), value: formatMoneyCompact(totalExtraCapital, currency), sub: t('mortgage.overview.extraDeposits', { count: payments.filter(p => p.extraCapital > 0).length }) },
-              { label: t('mortgage.overview.minPayment'), value: formatMoney(config.minimumPayment, currency), sub: t('mortgage.overview.monthly') },
-            ].map(({ label, value, sub }) => (
-              <div key={label} className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-4">
-                <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">{label}</p>
-                <p className="text-[22px] font-normal text-[#181d26] dark:text-[#e8eaf0]">{value}</p>
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-0.5">{sub}</p>
-              </div>
-            ))}
+            {(() => {
+              const labelWithTip = (text: string, tipKey: string) => (
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {text}
+                  <InfoTooltip content={t(tipKey)} />
+                </span>
+              )
+              const rows: Array<{ key: string; label: React.ReactNode; value: string; sub: string }> = [
+                { key: 'principalReduced', label: t('mortgage.overview.principalReduced'), value: formatMoneyCompact(config.principal - currentBalance, currency), sub: t('mortgage.kpis.paidOffPct', { pct: paidOffPct }) },
+                { key: 'extraCapital', label: labelWithTip(t('mortgage.overview.extraCapital'), 'tooltips.mortgage.extraCapital'), value: formatMoneyCompact(totalExtraCapital, currency), sub: t('mortgage.overview.extraDeposits', { count: payments.filter(p => p.extraCapital > 0).length }) },
+                { key: 'minPayment', label: labelWithTip(t('mortgage.overview.minPayment'), 'tooltips.mortgage.minPayment'), value: formatMoney(config.minimumPayment, currency), sub: t('mortgage.overview.monthly') },
+              ]
+              return rows.map(({ key, label, value, sub }) => (
+                <div key={key} className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-4">
+                  <p className="text-[11px] font-semibold uppercase text-[#41454d] dark:text-[#9297a0] mb-1">{label}</p>
+                  <p className="text-[22px] font-normal text-[#181d26] dark:text-[#e8eaf0]">{value}</p>
+                  <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-0.5">{sub}</p>
+                </div>
+              ))
+            })()}
           </div>
 
           {/* Balance chart */}
           <div>
-            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('mortgage.chart.title')}</p>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">
+              <span className="inline-flex items-center gap-1 align-middle">
+                {t('mortgage.chart.title')}
+                <InfoTooltip content={t('tooltips.mortgage.balanceTrajectory')} />
+              </span>
+            </p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
               {chartFiltered.length > 1 ? (
                 <AreaChart
@@ -259,7 +283,12 @@ export default function MortgagePage() {
 
           {/* Simulator */}
           <div>
-            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('mortgage.simulator.title')}</p>
+            <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">
+              <span className="inline-flex items-center gap-1 align-middle">
+                {t('mortgage.simulator.title')}
+                <InfoTooltip content={t('tooltips.mortgage.simulator')} />
+              </span>
+            </p>
             <div className="bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px] p-5">
               <div className="flex items-center gap-3 mb-4 flex-wrap">
                 <span className="text-[13px] text-[#41454d] dark:text-[#9297a0] whitespace-nowrap">{t('mortgage.simulator.prefix')}</span>

@@ -8,6 +8,7 @@ import { filterByPeriod, type PeriodMode, type PeriodValue } from '../lib/filter
 import { formatMoneyCompact } from '../lib/formatters'
 import { renderIcon } from '../lib/iconRenderer'
 import PeriodSelector from '../components/ui/PeriodSelector'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import { PERIOD_SCALE } from '../lib/constants'
 import type { Expense, CurrencyDisplay, Paycheck, Transfer } from '../store/types'
 
@@ -655,17 +656,26 @@ export default function Budget() {
 
       {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {[
-          { key: 'totalBudget', label: t('budget.kpis.totalBudget'), value: formatMoneyCompact(totalExpenseBudget, currency), color: 'text-[#181d26] dark:text-[#e8eaf0]' },
-          { key: 'totalSpent', label: t('budget.kpis.totalSpent'), value: formatMoneyCompact(totalExpenseActual, currency), color: totalExpenseActual > totalExpenseBudget ? 'text-[#c0392b]' : 'text-[#181d26] dark:text-[#e8eaf0]' },
-          { key: 'overBudget', label: t('budget.kpis.overBudget'), value: t('budget.kpis.overCount', { count: overBudgetCount }), color: overBudgetCount > 0 ? 'text-[#c0392b]' : 'text-[#181d26] dark:text-[#e8eaf0]' },
-          { key: 'remaining', label: t('budget.kpis.remaining'), value: formatMoneyCompact(Math.max(totalExpenseBudget - totalExpenseActual, 0), currency), color: totalExpenseBudget - totalExpenseActual < 0 ? 'text-[#c0392b]' : 'text-[#27ae60]' },
-        ].map(({ key, label, value, color }) => (
-          <div key={key} className={`${CARD} p-5`}>
-            <div className={`text-[22px] font-bold ${color}`}>{value}</div>
-            <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] uppercase tracking-wide mt-1">{label}</div>
-          </div>
-        ))}
+        {(() => {
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1 align-middle">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; color: string }> = [
+            { key: 'totalBudget', label: labelWithTip(t('budget.kpis.totalBudget'), 'tooltips.budget.totalBudget'), value: formatMoneyCompact(totalExpenseBudget, currency), color: 'text-[#181d26] dark:text-[#e8eaf0]' },
+            { key: 'totalSpent', label: t('budget.kpis.totalSpent'), value: formatMoneyCompact(totalExpenseActual, currency), color: totalExpenseActual > totalExpenseBudget ? 'text-[#c0392b]' : 'text-[#181d26] dark:text-[#e8eaf0]' },
+            { key: 'overBudget', label: t('budget.kpis.overBudget'), value: t('budget.kpis.overCount', { count: overBudgetCount }), color: overBudgetCount > 0 ? 'text-[#c0392b]' : 'text-[#181d26] dark:text-[#e8eaf0]' },
+            { key: 'remaining', label: labelWithTip(t('budget.kpis.remaining'), 'tooltips.budget.remaining'), value: formatMoneyCompact(Math.max(totalExpenseBudget - totalExpenseActual, 0), currency), color: totalExpenseBudget - totalExpenseActual < 0 ? 'text-[#c0392b]' : 'text-[#27ae60]' },
+          ]
+          return tiles.map(({ key, label, value, color }) => (
+            <div key={key} className={`${CARD} p-5`}>
+              <div className={`text-[22px] font-bold ${color}`}>{value}</div>
+              <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] uppercase tracking-wide mt-1">{label}</div>
+            </div>
+          ))
+        })()}
       </div>
 
       {/* Two-column layout */}
@@ -673,23 +683,36 @@ export default function Budget() {
         {/* Left: main table */}
         <div className={`flex-1 min-w-0 ${CARD} overflow-hidden`}>
           {/* ── Income section ── */}
-          <button
-            className={`${rowBase} w-full hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] border-b border-[#f0f2f5] dark:border-[#2d3347]`}
-            onClick={() => setIncomeOpen(o => !o)}
-          >
-            {incomeOpen
-              ? <ChevronDown className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />
-              : <ChevronRight className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />}
-            <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] text-left">{t('budget.groups.income')}</span>
-          </button>
+          <div className={`${rowBase} hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] border-b border-[#f0f2f5] dark:border-[#2d3347]`}>
+            <button
+              className="flex items-center gap-3 flex-1 min-w-0 text-left"
+              onClick={() => setIncomeOpen(o => !o)}
+            >
+              {incomeOpen
+                ? <ChevronDown className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />
+                : <ChevronRight className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />}
+              <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] text-left">{t('budget.groups.income')}</span>
+            </button>
+            <InfoTooltip content={t('tooltips.budget.incomeSection')} />
+          </div>
 
           {incomeOpen && (
             <>
               <div className="flex items-center gap-3 px-5 py-2 border-b border-[#f0f2f5] dark:border-[#2d3347] bg-[#fafbfc] dark:bg-[#1a1f2c]">
                 <div className="flex-1 text-[10px] text-[#9297a0] uppercase tracking-wide">{t('budget.columns.category')}</div>
                 <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>{budgetColLabel}</div>
-                <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>{t('budget.columns.received')}</div>
-                <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>{t('budget.columns.remaining')}</div>
+                <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    {t('budget.columns.received')}
+                    <InfoTooltip content={t('tooltips.budget.incomeReceived')} />
+                  </span>
+                </div>
+                <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    {t('budget.columns.remaining')}
+                    <InfoTooltip content={t('tooltips.budget.incomeRemaining')} />
+                  </span>
+                </div>
               </div>
               <div className={`${rowBase} border-b border-[#f0f2f5] dark:border-[#2d3347]`}>
                 <div className="w-3.5 flex-shrink-0" />
@@ -766,6 +789,7 @@ export default function Budget() {
                 : <ChevronRight className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />}
               <span className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">{t('budget.groups.expenses')}</span>
             </button>
+            <InfoTooltip content={t('tooltips.budget.expensesSection')} />
             <div className="flex bg-[#f0f2f5] dark:bg-[#252b3b] rounded-full p-0.5 gap-0.5 flex-shrink-0">
               {(['category', 'type'] as const).map(m => (
                 <button key={m} onClick={() => setGroupByMode(m)}
@@ -784,9 +808,19 @@ export default function Budget() {
             <>
               <div className="flex items-center gap-3 px-5 py-2 border-b border-[#f0f2f5] dark:border-[#2d3347] bg-[#fafbfc] dark:bg-[#1a1f2c]">
                 <div className="flex-1 text-[10px] text-[#9297a0] uppercase tracking-wide">{t('budget.columns.category')}</div>
-                <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>{budgetColLabel}</div>
+                <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    {budgetColLabel}
+                    <InfoTooltip content={t('tooltips.budget.expensesBudget')} />
+                  </span>
+                </div>
                 <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>{t('budget.columns.spent')}</div>
-                <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>{t('budget.columns.remaining')}</div>
+                <div className={`${COL} text-[10px] text-[#9297a0] uppercase tracking-wide`}>
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    {t('budget.columns.remaining')}
+                    <InfoTooltip content={t('tooltips.budget.expensesRemaining')} />
+                  </span>
+                </div>
               </div>
               {groupOrder.map(group => {
                 const cats = expenseGroups[group] ?? []

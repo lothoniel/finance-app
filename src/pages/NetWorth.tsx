@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import DonutChart from '../components/charts/DonutChart'
+import InfoTooltip from '../components/ui/InfoTooltip'
 import { sortByDateDesc } from '../lib/filters'
 import { formatMoney, formatMoneyCompact } from '../lib/formatters'
 
@@ -43,16 +44,25 @@ export default function NetWorth() {
 
       {/* KPI Strip */}
       <div className={`${CARD} flex divide-x divide-[#e8e8e8] dark:divide-[#2d3347] mb-5`}>
-        {[
-          { key: 'netWorth', label: t('netWorth.kpis.netWorth'), value: formatMoneyCompact(netWorth, currency), color: netWorth >= 0 ? '#1a7a3c' : '#c0392b' },
-          { key: 'totalAssets', label: t('netWorth.kpis.totalAssets'), value: formatMoneyCompact(totalAssets, currency), color: '#181d26' },
-          { key: 'totalLiabilities', label: t('netWorth.kpis.totalLiabilities'), value: formatMoneyCompact(totalLiabilities, currency), color: '#c0392b' },
-        ].map((kpi) => (
+        {(() => {
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1 align-middle">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; color: string }> = [
+            { key: 'netWorth', label: labelWithTip(t('netWorth.kpis.netWorth'), 'tooltips.netWorth.netWorth'), value: formatMoneyCompact(netWorth, currency), color: netWorth >= 0 ? '#1a7a3c' : '#c0392b' },
+            { key: 'totalAssets', label: labelWithTip(t('netWorth.kpis.totalAssets'), 'tooltips.netWorth.totalAssets'), value: formatMoneyCompact(totalAssets, currency), color: '#181d26' },
+            { key: 'totalLiabilities', label: labelWithTip(t('netWorth.kpis.totalLiabilities'), 'tooltips.netWorth.totalLiabilities'), value: formatMoneyCompact(totalLiabilities, currency), color: '#c0392b' },
+          ]
+          return tiles.map((kpi) => (
           <div key={kpi.key} className="flex-1 px-6 py-4 min-w-0">
             <div className="text-[22px] font-bold dark:text-[#e8eaf0]" style={{ color: kpi.color }}>{kpi.value}</div>
             <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{kpi.label}</div>
           </div>
-        ))}
+          ))
+        })()}
       </div>
 
       {/* Assets + Liabilities */}
@@ -89,7 +99,12 @@ export default function NetWorth() {
                 <p className="text-[14px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mt-0.5">{formatMoney(mortgageConfig.minimumPayment, currency)}</p>
               </div>
               <div>
-                <p className="text-[11px] text-[#9297a0] uppercase font-semibold tracking-wider">{t('netWorth.liabilities.paidOff')}</p>
+                <p className="text-[11px] text-[#9297a0] uppercase font-semibold tracking-wider">
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    {t('netWorth.liabilities.paidOff')}
+                    <InfoTooltip content={t('tooltips.netWorth.paidOff')} />
+                  </span>
+                </p>
                 <p className="text-[14px] font-semibold text-[#1a7a3c] mt-0.5">{paidOffPct.toFixed(1)}%</p>
               </div>
               <div>
@@ -128,13 +143,21 @@ export default function NetWorth() {
           <table className="w-full">
             <thead>
               <tr>
-                {[
-                  { key: 'name', label: t('netWorth.table.name') },
-                  { key: 'type', label: t('netWorth.table.type') },
-                  { key: 'apy', label: t('netWorth.table.apy') },
-                  { key: 'balance', label: t('netWorth.table.balance') },
-                  { key: 'allocation', label: t('netWorth.table.allocation') },
-                ].map((h, i) => (
+                {([
+                  { key: 'name', label: t('netWorth.table.name') as React.ReactNode },
+                  { key: 'type', label: t('netWorth.table.type') as React.ReactNode },
+                  { key: 'apy', label: t('netWorth.table.apy') as React.ReactNode },
+                  { key: 'balance', label: t('netWorth.table.balance') as React.ReactNode },
+                  {
+                    key: 'allocation',
+                    label: (
+                      <span className="inline-flex items-center gap-1 align-middle">
+                        {t('netWorth.table.allocation')}
+                        <InfoTooltip content={t('tooltips.netWorth.allocation')} />
+                      </span>
+                    ) as React.ReactNode,
+                  },
+                ]).map((h, i) => (
                   <th
                     key={h.key}
                     className={`text-[11px] font-semibold uppercase text-[#9297a0] border-b border-[#e8e8e8] dark:border-[#2d3347] py-2.5 px-5 ${i >= 2 ? 'text-right' : 'text-left'}`}

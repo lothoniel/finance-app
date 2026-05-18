@@ -7,6 +7,7 @@ import { filterByPeriod, sortByDateDesc, type PeriodMode, type PeriodValue } fro
 import { formatMoneyCompact, formatShortMonth, formatDate } from '../lib/formatters'
 import { PERIOD_SCALE } from '../lib/constants'
 import StackedBarChart from '../components/charts/StackedBarChart'
+import InfoTooltip from '../components/ui/InfoTooltip'
 
 function currentMonth(): PeriodValue {
   const now = new Date()
@@ -105,7 +106,7 @@ function SnapshotRow({
   favorable,
   t,
 }: {
-  label: string
+  label: React.ReactNode
   value: string
   valueColor?: string
   pct: number | null
@@ -114,7 +115,7 @@ function SnapshotRow({
 }) {
   return (
     <div className="flex items-center justify-between py-2 first:pt-0 last:pb-0">
-      <span className="text-[13px] text-[#41454d] dark:text-[#9297a0]">{label}</span>
+      <span className="text-[13px] text-[#41454d] dark:text-[#9297a0] inline-flex items-center gap-1">{label}</span>
       <div className="flex flex-col items-end gap-0.5">
         <span
           className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]"
@@ -526,10 +527,16 @@ export default function Dashboard() {
       <div className="flex items-center gap-6 flex-wrap mb-8">
         {(() => {
           const netFlowColor = periodNetFlow >= 0 ? '#16a34a' : '#dc2626'
-          const tiles: Array<{ key: string; label: string; value: string; color?: string; extra?: React.ReactNode }> = [
+          const labelWithTip = (text: string, tipKey: string) => (
+            <span className="inline-flex items-center gap-1">
+              {text}
+              <InfoTooltip content={t(tipKey)} />
+            </span>
+          )
+          const tiles: Array<{ key: string; label: React.ReactNode; value: string; color?: string; extra?: React.ReactNode }> = [
             {
               key: 'netFlow',
-              label: t('dashboard.kpis.netFlow'),
+              label: labelWithTip(t('dashboard.kpis.netFlow'), 'tooltips.dashboard.netFlow'),
               value: formatMoneyCompact(periodNetFlow, currency),
               color: netFlowColor,
               extra: (
@@ -547,10 +554,10 @@ export default function Dashboard() {
                 </>
               ),
             },
-            { key: 'income', label: t('dashboard.kpis.income'), value: formatMoneyCompact(periodIncome, currency) },
-            { key: 'expenses', label: t('dashboard.kpis.expenses'), value: formatMoneyCompact(periodExpenses, currency), color: '#dc2626' },
-            { key: 'debtPaid', label: t('dashboard.kpis.debtPaid'), value: formatMoneyCompact(periodDebt, currency), color: '#ea580c' },
-            { key: 'savingsRate', label: t('dashboard.kpis.savingsRate'), value: `${periodSavingsRate.toFixed(1)}%` },
+            { key: 'income', label: labelWithTip(t('dashboard.kpis.income'), 'tooltips.dashboard.income'), value: formatMoneyCompact(periodIncome, currency) },
+            { key: 'expenses', label: labelWithTip(t('dashboard.kpis.expenses'), 'tooltips.dashboard.expenses'), value: formatMoneyCompact(periodExpenses, currency), color: '#dc2626' },
+            { key: 'debtPaid', label: labelWithTip(t('dashboard.kpis.debtPaid'), 'tooltips.dashboard.debtPaid'), value: formatMoneyCompact(periodDebt, currency), color: '#ea580c' },
+            { key: 'savingsRate', label: labelWithTip(t('dashboard.kpis.savingsRate'), 'tooltips.dashboard.savingsRate'), value: `${periodSavingsRate.toFixed(1)}%` },
           ]
           return tiles.map(({ key, label, value, color, extra }, i, arr) => (
             <div key={key} className="flex items-center gap-6">
@@ -581,7 +588,12 @@ export default function Dashboard() {
 
           {/* Spending Trends */}
           <div>
-            <SectionTitle>{t('dashboard.trends.title')}</SectionTitle>
+            <SectionTitle>
+              <span className="inline-flex items-center gap-1">
+                {t('dashboard.trends.title')}
+                <InfoTooltip content={t('tooltips.dashboard.spendingTrends')} />
+              </span>
+            </SectionTitle>
             <div className={`${CARD} p-5`}>
               <p className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">
                 {chartTitle}
@@ -776,7 +788,10 @@ export default function Dashboard() {
                 style={{ borderLeft: '3px solid #c8912a', backgroundColor: '#fffbef' }}
               >
                 <p className="text-[11px] font-semibold uppercase tracking-[0.4px] mb-1" style={{ color: '#c8912a' }}>
-                  {t('dashboard.insights.debtAlertLabel')}
+                  <span className="inline-flex items-center gap-1 align-middle">
+                    {t('dashboard.insights.debtAlertLabel')}
+                    <InfoTooltip content={t('tooltips.dashboard.insightsDebtAlert')} />
+                  </span>
                 </p>
                 <p className="text-[13px] text-[#333840] leading-relaxed">
                   {t('dashboard.insights.debtAlertBody', { rate: debtToIncomeRaw.toFixed(1) })}
@@ -798,7 +813,10 @@ export default function Dashboard() {
             {/* Net Worth — focal row */}
             <div className="mb-4 pb-4 border-b border-[#e8e8e8] dark:border-[#2d3347]">
               <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0]">
-                {t('dashboard.snapshot.netWorth')}
+                <span className="inline-flex items-center gap-1 align-middle">
+                  {t('dashboard.snapshot.netWorth')}
+                  <InfoTooltip content={t('tooltips.dashboard.snapshotNetWorth')} />
+                </span>
               </p>
               <div className="flex items-baseline justify-between mt-1">
                 <p className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">
@@ -829,7 +847,10 @@ export default function Dashboard() {
             </p>
             <div className="divide-y divide-[#e8e8e8] dark:divide-[#2d3347] mb-4">
               <SnapshotRow
-                label={t('dashboard.snapshot.mortgage')}
+                label={<>
+                  {t('dashboard.snapshot.mortgage')}
+                  <InfoTooltip content={t('tooltips.dashboard.snapshotMortgage')} />
+                </>}
                 value={`-${formatMoneyCompact(currentMortgageBalance, currency)}`}
                 valueColor="#c0392b"
                 pct={pctDelta(currentMortgageBalance, prevMortgageBalance)}
@@ -844,7 +865,10 @@ export default function Dashboard() {
             </p>
             <div className="divide-y divide-[#e8e8e8] dark:divide-[#2d3347]">
               <SnapshotRow
-                label={t('dashboard.snapshot.debtPaid')}
+                label={<>
+                  {t('dashboard.snapshot.debtPaid')}
+                  <InfoTooltip content={t('tooltips.dashboard.snapshotDebtPaid')} />
+                </>}
                 value={`-${formatMoneyCompact(periodDebt, currency)}`}
                 valueColor="#c0392b"
                 pct={pctDelta(periodDebt, prevPeriodDebt)}
@@ -857,7 +881,10 @@ export default function Dashboard() {
           {/* Debt Ratio donut + sparkline */}
           <div className={`${CARD} p-5`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
-              {t('dashboard.debtRatio.title')}
+              <span className="inline-flex items-center gap-1 align-middle">
+                {t('dashboard.debtRatio.title')}
+                <InfoTooltip content={t('tooltips.dashboard.debtRatioDonut')} />
+              </span>
             </p>
             <div className="flex flex-col items-center">
               <svg width="80" height="80" viewBox="0 0 80 80">
@@ -902,7 +929,10 @@ export default function Dashboard() {
           {/* Upcoming Recurring */}
           <div className={`${CARD} p-5`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-1">
-              {t('dashboard.recurring.title')}
+              <span className="inline-flex items-center gap-1 align-middle">
+                {t('dashboard.recurring.title')}
+                <InfoTooltip content={t('tooltips.dashboard.recurringPaidPill')} />
+              </span>
             </p>
             {upcomingRecurring.length === 0 ? (
               <p className="text-[13px] text-[#9297a0] mt-3">{t('dashboard.recurring.empty')}</p>

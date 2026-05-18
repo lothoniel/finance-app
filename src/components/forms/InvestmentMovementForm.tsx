@@ -2,6 +2,7 @@ import { generateId } from '../../lib/id'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../ui/Modal'
+import InfoTooltip from '../ui/InfoTooltip'
 import { useStore } from '../../store'
 import type { InvestmentMovement } from '../../store/types'
 import { today } from '../../lib/formatters'
@@ -159,7 +160,12 @@ export default function InvestmentMovementForm({ open, onClose, movement }: Inve
           <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder={t('portfolio.form.movement.descriptionPlaceholder')} className={inputClass} />
         </div>
         <div>
-          <label className={label}>{t('portfolio.form.movement.typeLabel')}</label>
+          <label className={label}>
+            <span className="inline-flex items-center gap-1 align-middle">
+              {t('portfolio.form.movement.typeLabel')}
+              <InfoTooltip content={t('tooltips.forms.investmentType')} />
+            </span>
+          </label>
           <select
             value={form.type}
             onChange={(e) => {

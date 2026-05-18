@@ -67,7 +67,11 @@
       "language": "Language",
       "languageHint": "Choose the language for the app interface.",
       "currency": "Currency Display",
-      "currencyHint": "Switches the currency symbol and number formatting. Stored amounts are unchanged."
+      "currencyHint": "Switches the currency symbol and number formatting. Stored amounts are unchanged.",
+      "helpTooltips": "Help Tooltips",
+      "helpTooltipsHint": "Show small ℹ icons next to labels with explanations. Hide them once you're familiar with the app.",
+      "helpTooltipsOn": "On",
+      "helpTooltipsOff": "Off"
     },
     "users": {
       "user1": "User 1",
@@ -202,6 +206,112 @@
       "paycheck": "Paycheck",
       "paid": "Paid",
       "next30Days": "Next 30 days: {{amount}}"
+    }
+  },
+  "tooltips": {
+    "dashboard": {
+      "netFlow": "Income minus debt payments minus investment deposits. The actual cash left in your bank accounts for the period. Credit-card charges are tracked separately under Expenses.",
+      "savingsRate": "Net Flow as a percentage of Income. Uses the same cash-flow formula: (Income − Debt − Investments) ÷ Income.",
+      "income": "Paychecks plus transfers received in the period. Does not include investment gains.",
+      "expenses": "Credit-card charges and cash spending in the period. Informational only — does not reduce Net Flow directly. The real outflow is the Debt Paid when you pay the card.",
+      "debtPaid": "Money sent to credit cards in the period. This is the real cash leaving your bank.",
+      "spendingTrends": "Top 7 spending categories across the window: last 7 months when viewing monthly, 3 months for a quarter, 12 months for a year.",
+      "snapshotNetWorth": "Assets (investments) minus liabilities (mortgage balance) at the end of the selected period.",
+      "snapshotMortgage": "Most recent mortgage balance on or before the end of the selected period. Decreases as payments are recorded.",
+      "snapshotDebtPaid": "Total debt payments during the selected period. Same value as the Debt Paid KPI.",
+      "insightsDebtAlert": "Flags when debt payments exceed 36% of income — the common rule of thumb for a healthy debt load.",
+      "debtRatioDonut": "Debt payments ÷ Income for the selected period. Turns red above 36%.",
+      "recurringPaidPill": "Shown when an expense this month matches the recurring template's name (case-insensitive). Won't match if you edited the description."
+    },
+    "cashFlow": {
+      "income": "Paychecks plus transfers received in the selected period. Does not include investment gains.",
+      "expenses": "Credit-card and cash charges in the period. Informational — not subtracted from Total Savings. The real outflow happens when you pay the card (Debt).",
+      "totalSavings": "Income − Debt − Investments. The Cash Flow Model: subtracts actual bank outflows (debt payments + investment deposits), not credit-card charges.",
+      "savingsRate": "Total Savings ÷ Income × 100. Same formula as the Dashboard's Savings Rate.",
+      "sankeyOverview": "Paycheck and Transfers flow in from the left into Income. On the right, Income splits into Savings (cash left), Debt (card payments leaving your bank), and Investments (deposits).",
+      "netColumn": "Income − Debt for the row's period. Cash Flow Model — does not subtract expenses (credit-card charges are tracked separately).",
+      "variance": "Period B − Period A. Positive means the metric went up. Color encodes whether that's favorable (green) or unfavorable (red) for each metric.",
+      "quickInsight": "Auto-generated sentence highlighting the metric that moved the most between Period A and Period B."
+    },
+    "reports": {
+      "totalIncome": "Paychecks plus transfers received in the selected period. Does not include investment gains.",
+      "expenses": "Credit-card and cash charges in the period. Informational — not subtracted from Net Cash Flow. The real outflow happens when you pay the card (Debt).",
+      "netCashFlow": "Income − Debt − Investments. Cash Flow Model: subtracts actual bank outflows, not credit-card charges.",
+      "savingsRate": "Net Cash Flow ÷ Income × 100. Same formula as the Cash Flow page and the Dashboard.",
+      "sankeyOverview": "Paycheck and Transfers flow in from the left into Income. On the right, Income splits into Savings (cash left), Debt (card payments leaving your bank), and Investments (deposits).",
+      "netColumn": "Income − Debt for the row's period. Cash Flow Model — does not subtract expenses (credit-card charges are tracked separately).",
+      "spendingByCategory": "Donut breakdown of expenses for the selected period. The center value is the total of all categories shown.",
+      "incomeVsOutflow": "\"Outflow\" here means debt payments only — the real cash leaving your bank. Credit-card charges (Expenses) are tracked separately and aren't included."
+    },
+    "budget": {
+      "totalBudget": "Sum of all category budgets, scaled to the selected period (monthly × 3 for quarterly, × 12 for yearly).",
+      "remaining": "Total Budget − Total Spent. Stops at zero — if you're over budget the value here is zero and the Over Budget count rises.",
+      "incomeSection": "Budgets for paychecks and transfers. Click any value to set a manual monthly target; if you leave it empty, the app uses your 6-month average instead.",
+      "incomeReceived": "Actual paycheck income and transfers received in the selected period.",
+      "incomeRemaining": "Income uses inverted polarity: red when you have NOT yet received the targeted amount, green when you over-received. Opposite of how expense Remaining works.",
+      "expensesSection": "Category budgets vs actual spending. Categories with a ↻ icon have rollover enabled — unused budget from a prior month or YTD carries forward and increases the effective budget for the current period.",
+      "expensesBudget": "Category budgets are stored monthly and scaled to the selected period. Quarterly view shows monthly × 3; yearly shows monthly × 12.",
+      "expensesRemaining": "Budget − Spent. Green when under budget, red when over."
+    },
+    "debt": {
+      "paidThisPeriod": "Sum of debt payments recorded in the selected period. This is real cash leaving your bank — same value used in Dashboard's Debt Paid KPI.",
+      "remainingDebt": "All-time total expenses minus all-time payments (not filtered by period). A rough running balance of how much you still owe across all cards.",
+      "debtRatio": "Paid This Period ÷ Income for the same period × 100. The Dashboard flags this as a Debt Alert when it climbs above 36%.",
+      "topCard": "The card that received the largest payment total in the selected period.",
+      "cardBalances": "Running balance per card: all-time charges on the card minus all-time payments. Updates as you add expenses and record payments."
+    },
+    "portfolio": {
+      "totalValue": "Sum of every portfolio's current balance. All-time, not filtered by period — this is your net investment position right now.",
+      "totalYield": "Sum of GAIN movements within the selected period. The actual returns you earned (interest, dividends, appreciation marked as gain).",
+      "totalDeposits": "Sum of DEPOSIT movements within the selected period. New money you added to your investment accounts.",
+      "holdings": "Each portfolio with its current balance and Return %. Return % = cumulative gains ÷ (cumulative deposits + transfers in). Withdrawals don't reduce the basis.",
+      "movementTypes": "DEPOSIT = new money in. GAIN = returns earned (interest, appreciation). WITHDRAWAL = money out. TRANSFER = balance moved between portfolios (no net change to Total Value)."
+    },
+    "mortgage": {
+      "projectedPayoff": "Estimated payoff date computed by amortizing the current balance at the contractual Principal + Interest payment. Does NOT assume any future extra payments.",
+      "timeSaved": "Months you've shaved off the original amortization schedule by paying extra principal. Compares your actual trajectory against the contractual schedule.",
+      "interestSaved": "Cumulative interest avoided thanks to extra principal payments — money that would have accrued on the original schedule but no longer does.",
+      "extraCapital": "Sum of every Extra Capital amount you've recorded on payments. This is principal-only — it pays the loan down faster without touching the contractual P+I.",
+      "minPayment": "The minimum payment value stored in your config. Note: projections (Projected Payoff, Time Saved, Interest Saved) use the contractual Principal + Interest from your loan terms, which may differ slightly from this stored value.",
+      "balanceTrajectory": "Original Schedule = balance trajectory if you only paid the contractual P+I. Actual Balance = your real trajectory including any extra principal payments. The gap between them is what your extras are doing.",
+      "simulator": "What-if tool: enter a one-time extra principal deposit to see how it would shorten the loan, change the payoff date, and reduce total interest paid."
+    },
+    "netWorth": {
+      "netWorth": "Total Assets − Total Liabilities. Snapshot of your financial position right now (not period-filtered).",
+      "totalAssets": "Sum of every portfolio's current balance. The app currently only tracks investment portfolios as assets — bank cash is not modeled.",
+      "totalLiabilities": "Currently just your current mortgage balance. Credit-card debt is tracked separately on the Debt page and is not included here.",
+      "paidOff": "Share of the original mortgage principal you've paid down. (Original Principal − Current Balance) ÷ Original Principal.",
+      "allocation": "Each portfolio's share of Total Assets. Helps you see whether one position is dominating your net worth."
+    },
+    "sharedBalance": {
+      "totalShared": "Sum of every shared expense recorded since the most recent zero-balance settlement (or all-time if no settlement is on file). Personal expenses are excluded.",
+      "splitRatio": "The default split percentage from Settings → Shared Expenses Split. Individual expenses can override this with their own ratio at entry time, which then takes precedence over the default.",
+      "netSettlement": "The current balance owed between users for shared expenses. Starts fresh from the last time the balance was zero (not the last payment) — partial payments keep accumulated expenses visible until you fully settle.",
+      "sharedSinceLast": "Every shared expense and cash entry since the most recent zero-balance settlement. Partial payments do NOT reset this list — only a settlement that brings the balance to zero does."
+    },
+    "income": {
+      "grossIncome": "Sum of paycheck gross amounts in the period (before taxes withheld). Falls back to the net (MXN) amount when a paycheck doesn't record a gross value.",
+      "netIncome": "Sum of paycheck net amounts minus any manual tax entries in the same period. This is the actual take-home you saw hit your account.",
+      "transfers": "All transfers received in the period (household contributions, rental income, gifts, etc.) — every income source that isn't a paycheck.",
+      "rateChart": "USD/MXN exchange rate tracked over time. Auto-calculated whenever you enter a paycheck with both USD and MXN amounts.",
+      "manualTaxes": "One-off tax entries outside of paycheck withholding (quarterly estimated tax, year-end balances, etc.). Subtracted from gross to compute Net Income."
+    },
+    "expenses": {
+      "total": "Sum of every credit-card and cash charge in the period. Informational only — for what actually leaves your bank look at Debt Paid (when you pay the card).",
+      "typeColumn": "Shared = expense split between users using the Split Ratio (from Settings, or a per-expense override). Personal = belongs only to whoever paid it.",
+      "categoryBudgets": "Quick view of category budgets vs actual spending in the selected period. For rollover settings and manual income targets, edit on the Budget page."
+    },
+    "transactions": {
+      "totalEntries": "Count of every transaction in the period: paychecks, transfers received, expenses, and debt payments combined.",
+      "typeColumn": "Paycheck = salary received. Transfer = non-salary income (household, rental, etc.). Expense = a charge you made. Debt = a payment you sent to a credit card."
+    },
+    "forms": {
+      "expenseSubCategory": "Free-text sub-grouping under the main category (e.g. \"Whole Foods\" under Groceries). Suggestions come from sub-categories you've used before on the same category.",
+      "expensePaidBy": "Which user paid for this expense upfront. Affects the shared-balance ledger when the expense is marked Shared.",
+      "expenseShared": "When checked, the expense is split between users using the default Split Ratio from Settings (which can be overridden per-expense via the Shared Balance flow). Unchecked = personal expense, only the payer is on the hook.",
+      "investmentType": "DEPOSIT adds new money. GAIN records earned returns. WITHDRAWAL removes money. TRANSFER moves balance to another portfolio (asks for a destination — no net change to Total Value).",
+      "mortgageExtraCapital": "Principal-only payment on top of the contractual Principal + Interest. Reduces the loan balance faster, shortens the payoff date, and lowers total interest paid. Auto-computed when your total payment exceeds the contractual P+I.",
+      "settlementAmount": "Pre-filled with the current net balance so a full payment zeroes out the ledger and starts a fresh \"Since Last Settlement\" window. Enter a smaller value for a partial payment (the ledger won't reset)."
     }
   },
   "periodSelector": {
