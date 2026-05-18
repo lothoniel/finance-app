@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { addMonths, parseISO } from 'date-fns'
+import { addMonths, parseISO, endOfMonth, differenceInDays } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
@@ -23,6 +23,37 @@ function last7Months(): PeriodValue[] {
   return months
 }
 
+function shiftPeriodBack(mode: PeriodMode, v: PeriodValue): PeriodValue {
+  if (mode === 'year') return { year: (v.year ?? new Date().getFullYear()) - 1 }
+  if (mode === 'quarter') {
+    const y = v.year ?? new Date().getFullYear()
+    const q = v.quarter ?? 1
+    return q === 1 ? { year: y - 1, quarter: 4 } : { year: y, quarter: q - 1 }
+  }
+  const y = v.year ?? new Date().getFullYear()
+  const m = v.month ?? 1
+  return m === 1 ? { year: y - 1, month: 12 } : { year: y, month: m - 1 }
+}
+
+// Last day of the previous period (inclusive). Used to snapshot point-in-time balances.
+function prevPeriodEnd(mode: PeriodMode, v: PeriodValue): Date {
+  if (mode === 'year') {
+    const y = v.year ?? new Date().getFullYear()
+    return new Date(y - 1, 11, 31)
+  }
+  if (mode === 'quarter') {
+    const y = v.year ?? new Date().getFullYear()
+    const q = v.quarter ?? 1
+    const prevQ = q === 1 ? 4 : q - 1
+    const prevQYear = q === 1 ? y - 1 : y
+    const lastMonth = prevQ * 3
+    return new Date(prevQYear, lastMonth, 0) // day 0 of next month = last day of lastMonth
+  }
+  const y = v.year ?? new Date().getFullYear()
+  const m = v.month ?? 1
+  return new Date(y, m - 1, 0) // day 0 of selected month = last day of previous month
+}
+
 function Sparkline({ values, color }: { values: number[]; color: string }) {
   const max = Math.max(...values, 1)
   return (
@@ -38,6 +69,61 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
           }}
         />
       ))}
+    </div>
+  )
+}
+
+type Favorable = 'up' | 'down' | 'neutral'
+
+function DeltaPill({
+  pct,
+  favorable,
+  t,
+}: {
+  pct: number | null
+  favorable: Favorable
+  t: (key: string, opts?: Record<string, unknown>) => string
+}) {
+  if (pct === null || !isFinite(pct)) return null
+  const rounded = Math.abs(pct) < 0.05 ? 0 : pct
+  const arrow = rounded > 0 ? '↑' : rounded < 0 ? '↓' : '→'
+  let color = '#9297a0'
+  if (favorable === 'up') color = rounded > 0 ? '#1a7a3c' : rounded < 0 ? '#c0392b' : '#9297a0'
+  else if (favorable === 'down') color = rounded < 0 ? '#1a7a3c' : rounded > 0 ? '#c0392b' : '#9297a0'
+  return (
+    <span className="text-[11px] font-medium whitespace-nowrap" style={{ color }}>
+      {t('dashboard.snapshot.momDelta', { arrow, pct: Math.abs(rounded).toFixed(1) })}
+    </span>
+  )
+}
+
+function SnapshotRow({
+  label,
+  value,
+  valueColor,
+  pct,
+  favorable,
+  t,
+}: {
+  label: string
+  value: string
+  valueColor?: string
+  pct: number | null
+  favorable: Favorable
+  t: (key: string, opts?: Record<string, unknown>) => string
+}) {
+  return (
+    <div className="flex items-center justify-between py-2 first:pt-0 last:pb-0">
+      <span className="text-[13px] text-[#41454d] dark:text-[#9297a0]">{label}</span>
+      <div className="flex flex-col items-end gap-0.5">
+        <span
+          className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]"
+          style={valueColor ? { color: valueColor } : undefined}
+        >
+          {value}
+        </span>
+        <DeltaPill pct={pct} favorable={favorable} t={t} />
+      </div>
     </div>
   )
 }
@@ -132,11 +218,23 @@ export default function Dashboard() {
   const periodInvestDeposits = filteredInvestments
     .filter(m => m.type === 'DEPOSIT')
     .reduce((s, m) => s + m.amount, 0)
-  const periodNetFlow = periodIncome - periodExpenses - periodDebt
+  const periodNetFlow = periodIncome - periodDebt - periodInvestDeposits
   const periodSavingsRate =
     periodIncome > 0
       ? Math.min(100, Math.max(0, ((periodIncome - periodDebt - periodInvestDeposits) / periodIncome) * 100))
       : 0
+
+  // MTD pace: only when viewing the current month
+  const mtdPace = useMemo(() => {
+    if (activeTab !== 'month') return null
+    const now = new Date()
+    if (periodValue.year !== now.getFullYear() || periodValue.month !== now.getMonth() + 1) return null
+    const daysElapsed = now.getDate()
+    if (daysElapsed === 0) return null
+    const totalDays = endOfMonth(now).getDate()
+    const projected = (periodNetFlow / daysElapsed) * totalDays
+    return { daysElapsed, totalDays, projected }
+  }, [activeTab, periodValue, periodNetFlow])
 
   const totalPortfolioBalance = portfolios.reduce((s, p) => s + p.balance, 0)
 
@@ -149,17 +247,57 @@ export default function Dashboard() {
   const debtToIncomeRaw =
     periodIncome > 0 ? (periodDebt / periodIncome) * 100 : 0
 
+  // Snapshot prev-period values for delta indicators
+  const prevPeriodValue = useMemo(() => shiftPeriodBack(activeTab, periodValue), [activeTab, periodValue])
+  const prevEnd = useMemo(() => prevPeriodEnd(activeTab, periodValue), [activeTab, periodValue])
+  const prevEndIso = prevEnd.toISOString().slice(0, 10)
+
+  const prevInvestments = useMemo(() => {
+    // Current total minus net change since prevEnd.
+    const netChange = investmentMovements
+      .filter((m) => m.date > prevEndIso)
+      .reduce((s, m) => {
+        if (m.type === 'DEPOSIT' || m.type === 'GAIN') return s + m.amount
+        if (m.type === 'WITHDRAWAL') return s - m.amount
+        return s
+      }, 0)
+    return totalPortfolioBalance - netChange
+  }, [investmentMovements, totalPortfolioBalance, prevEndIso])
+
+  const prevMortgageBalance = useMemo(() => {
+    const before = mortgagePayments.filter((p) => p.date <= prevEndIso)
+    if (before.length === 0) return mortgageConfig.principal
+    return sortByDateDesc(before)[0].balanceAfter
+  }, [mortgagePayments, mortgageConfig, prevEndIso])
+
+  const prevPeriodDebt = useMemo(
+    () => filterByPeriod(debtPayments, activeTab, prevPeriodValue).reduce((s, d) => s + d.amount, 0),
+    [debtPayments, activeTab, prevPeriodValue],
+  )
+
+  const prevNetWorth = prevInvestments - prevMortgageBalance
+
+  function pctDelta(current: number, prev: number): number | null {
+    if (prev === 0) return null
+    return ((current - prev) / Math.abs(prev)) * 100
+  }
+
   // 7-month sparklines
   const sevenMonths = useMemo(() => last7Months(), [])
 
-  const investmentSparkline = useMemo(
+  const netFlowSparkline = useMemo(
     () =>
-      sevenMonths.map(({ year, month }) =>
-        filterByPeriod(investmentMovements, 'month', { year, month })
-          .filter((m) => m.type === 'GAIN')
+      sevenMonths.map(({ year, month }) => {
+        const inc =
+          filterByPeriod(paychecks, 'month', { year, month }).reduce((s, p) => s + p.mxnAmount, 0) +
+          filterByPeriod(transfers, 'month', { year, month }).reduce((s, t) => s + t.amount, 0)
+        const debt = filterByPeriod(debtPayments, 'month', { year, month }).reduce((s, d) => s + d.amount, 0)
+        const inv = filterByPeriod(investmentMovements, 'month', { year, month })
+          .filter((m) => m.type === 'DEPOSIT')
           .reduce((s, m) => s + m.amount, 0)
-      ),
-    [sevenMonths, investmentMovements]
+        return Math.max(0, inc - debt - inv)
+      }),
+    [sevenMonths, paychecks, transfers, debtPayments, investmentMovements]
   )
 
   const debtRatioSparkline = useMemo(
@@ -178,16 +316,42 @@ export default function Dashboard() {
   )
 
   const upcomingRecurring = useMemo(() => {
+    const now = new Date()
+    const curMonth = now.getMonth()
+    const curYear = now.getFullYear()
     return recurringExpenses
       .filter((r) => r.status === 'active')
-      .map((r) => ({
-        name: r.name,
-        amount: r.amount,
-        nextDate: addMonths(parseISO(r.lastDate), FREQ_MONTHS[r.frequency] ?? 1),
-      }))
+      .map((r) => {
+        const normalizedName = r.name.toLowerCase().trim()
+        const matches = expenses.filter((e) => {
+          if (e.description.toLowerCase().trim() !== normalizedName) return false
+          const d = parseISO(e.date)
+          return d.getMonth() === curMonth && d.getFullYear() === curYear
+        })
+        const paidDate = matches
+          .map((e) => e.date)
+          .sort()
+          .pop()
+        return {
+          id: r.id,
+          name: r.name,
+          amount: r.amount,
+          nextDate: addMonths(parseISO(r.lastDate), FREQ_MONTHS[r.frequency] ?? 1),
+          paidThisMonth: matches.length > 0,
+          paidDate,
+        }
+      })
       .sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime())
       .slice(0, 5)
-  }, [recurringExpenses])
+  }, [recurringExpenses, expenses])
+
+  const next30DaysTotal = useMemo(() => {
+    const now = new Date()
+    return upcomingRecurring.reduce((s, r) => {
+      const days = differenceInDays(r.nextDate, now)
+      return days >= 0 && days <= 30 ? s + r.amount : s
+    }, 0)
+  }, [upcomingRecurring])
 
   // Period-filtered category totals (Spending Breakdown + Insights)
   const categoryTotals = useMemo(() => {
@@ -330,10 +494,11 @@ export default function Dashboard() {
     categoryTotals[0] ? ((categoryTotals[0][1] / (periodExpenses || 1)) * 100).toFixed(0) : '0'
   const periodLabel = t(`dashboard.periods.${activeTab === 'month' ? 'month' : activeTab === 'quarter' ? 'quarter' : 'year'}`)
 
-  // Savings Rate SVG donut (r=28, circumference ≈ 175.9)
+  // Debt Ratio SVG donut (r=28, circumference ≈ 175.9)
   const RADIUS = 28
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS
-  const savingsDash = Math.min(periodSavingsRate / 100, 1) * CIRCUMFERENCE
+  const debtDash = Math.min(Math.max(debtToIncomeRaw / 100, 0), 1) * CIRCUMFERENCE
+  const debtRatioColor = debtToIncomeRaw > 36 ? '#c0392b' : '#2e7d65'
 
   return (
     <div>
@@ -359,62 +524,60 @@ export default function Dashboard() {
 
       {/* KPI strip */}
       <div className="flex items-center gap-6 flex-wrap mb-8">
-        {[
-          { label: t('dashboard.kpis.netFlow'), value: formatMoneyCompact(periodNetFlow, currency), color: periodNetFlow >= 0 ? '#16a34a' : '#dc2626' },
-          { label: t('dashboard.kpis.income'), value: formatMoneyCompact(periodIncome, currency), color: undefined },
-          { label: t('dashboard.kpis.expenses'), value: formatMoneyCompact(periodExpenses, currency), color: '#dc2626' },
-          { label: t('dashboard.kpis.debtPaid'), value: formatMoneyCompact(periodDebt, currency), color: '#ea580c' },
-          { label: t('dashboard.kpis.savingsRate'), value: `${periodSavingsRate.toFixed(1)}%`, color: undefined },
-        ].map(({ label, value, color }, i, arr) => (
-          <div key={label} className="flex items-center gap-6">
-            <div>
-              <p
-                className="text-[26px] font-semibold leading-tight"
-                style={{ color: color ?? undefined }}
-                // neutral items fall through to inherited text color via className
-              >
-                <span className={!color ? 'text-[#181d26] dark:text-[#e8eaf0]' : ''}>{value}</span>
-              </p>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mt-0.5">
-                {label}
-              </p>
+        {(() => {
+          const netFlowColor = periodNetFlow >= 0 ? '#16a34a' : '#dc2626'
+          const tiles: Array<{ key: string; label: string; value: string; color?: string; extra?: React.ReactNode }> = [
+            {
+              key: 'netFlow',
+              label: t('dashboard.kpis.netFlow'),
+              value: formatMoneyCompact(periodNetFlow, currency),
+              color: netFlowColor,
+              extra: (
+                <>
+                  <Sparkline values={netFlowSparkline} color={netFlowColor} />
+                  {mtdPace && (
+                    <p className="text-[11px] text-[#41454d] dark:text-[#9297a0] mt-1.5">
+                      {t('dashboard.kpis.netFlowPace', {
+                        day: mtdPace.daysElapsed,
+                        total: mtdPace.totalDays,
+                        projected: formatMoneyCompact(mtdPace.projected, currency),
+                      })}
+                    </p>
+                  )}
+                </>
+              ),
+            },
+            { key: 'income', label: t('dashboard.kpis.income'), value: formatMoneyCompact(periodIncome, currency) },
+            { key: 'expenses', label: t('dashboard.kpis.expenses'), value: formatMoneyCompact(periodExpenses, currency), color: '#dc2626' },
+            { key: 'debtPaid', label: t('dashboard.kpis.debtPaid'), value: formatMoneyCompact(periodDebt, currency), color: '#ea580c' },
+            { key: 'savingsRate', label: t('dashboard.kpis.savingsRate'), value: `${periodSavingsRate.toFixed(1)}%` },
+          ]
+          return tiles.map(({ key, label, value, color, extra }, i, arr) => (
+            <div key={key} className="flex items-center gap-6">
+              <div>
+                <p
+                  className="text-[26px] font-semibold leading-tight"
+                  style={{ color: color ?? undefined }}
+                >
+                  <span className={!color ? 'text-[#181d26] dark:text-[#e8eaf0]' : ''}>{value}</span>
+                </p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mt-0.5">
+                  {label}
+                </p>
+                {extra}
+              </div>
+              {i < arr.length - 1 && (
+                <div className="w-px h-10 bg-[#e8e8e8] dark:bg-[#2d3347] flex-shrink-0" />
+              )}
             </div>
-            {i < arr.length - 1 && (
-              <div className="w-px h-10 bg-[#e8e8e8] dark:bg-[#2d3347] flex-shrink-0" />
-            )}
-          </div>
-        ))}
+          ))
+        })()}
       </div>
 
       {/* 2-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6 items-start">
         {/* Left column */}
         <div className="space-y-8 min-w-0">
-
-          {/* Portfolio & Wealth */}
-          <div>
-            <SectionTitle>{t('dashboard.portfolio.title')}</SectionTitle>
-            <div className={`${CARD} grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#e8e8e8] dark:divide-[#2d3347]`}>
-              <div className="p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">{t('dashboard.portfolio.netWorth')}</p>
-                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMoneyCompact(netWorth, currency)}</p>
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">{t('dashboard.portfolio.netWorthHint')}</p>
-                <Sparkline values={investmentSparkline} color="#2e7d65" />
-              </div>
-              <div className="p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">{t('dashboard.portfolio.investments')}</p>
-                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{formatMoneyCompact(totalPortfolioBalance, currency)}</p>
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">{t('dashboard.portfolio.investmentsHint')}</p>
-                <Sparkline values={investmentSparkline} color="#2e7d65" />
-              </div>
-              <div className="p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-2">{t('dashboard.portfolio.debtRatio')}</p>
-                <p className="text-[20px] font-normal text-[#181d26] dark:text-[#e8eaf0] leading-tight">{debtToIncomeRaw.toFixed(1)}%</p>
-                <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-1">{t('dashboard.portfolio.debtRatioHint')}</p>
-                <Sparkline values={debtRatioSparkline} color="#aa2d00" />
-              </div>
-            </div>
-          </div>
 
           {/* Spending Trends */}
           <div>
@@ -631,30 +794,70 @@ export default function Dashboard() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
               {t('dashboard.snapshot.title')}
             </p>
+
+            {/* Net Worth — focal row */}
+            <div className="mb-4 pb-4 border-b border-[#e8e8e8] dark:border-[#2d3347]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0]">
+                {t('dashboard.snapshot.netWorth')}
+              </p>
+              <div className="flex items-baseline justify-between mt-1">
+                <p className="text-[20px] font-semibold text-[#181d26] dark:text-[#e8eaf0]">
+                  {formatMoneyCompact(netWorth, currency)}
+                </p>
+                <DeltaPill pct={pctDelta(netWorth, prevNetWorth)} favorable="up" t={t} />
+              </div>
+            </div>
+
+            {/* Assets */}
+            <p className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[#9297a0] mb-2">
+              {t('dashboard.snapshot.assets')}
+            </p>
+            <div className="divide-y divide-[#e8e8e8] dark:divide-[#2d3347] mb-4">
+              <SnapshotRow
+                label={t('dashboard.snapshot.investments')}
+                value={formatMoneyCompact(totalPortfolioBalance, currency)}
+                valueColor="#2e7d65"
+                pct={pctDelta(totalPortfolioBalance, prevInvestments)}
+                favorable="up"
+                t={t}
+              />
+            </div>
+
+            {/* Liabilities */}
+            <p className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[#9297a0] mb-2">
+              {t('dashboard.snapshot.liabilities')}
+            </p>
+            <div className="divide-y divide-[#e8e8e8] dark:divide-[#2d3347] mb-4">
+              <SnapshotRow
+                label={t('dashboard.snapshot.mortgage')}
+                value={`-${formatMoneyCompact(currentMortgageBalance, currency)}`}
+                valueColor="#c0392b"
+                pct={pctDelta(currentMortgageBalance, prevMortgageBalance)}
+                favorable="down"
+                t={t}
+              />
+            </div>
+
+            {/* This period */}
+            <p className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[#9297a0] mb-2">
+              {t('dashboard.snapshot.thisPeriod', { period: periodLabel })}
+            </p>
             <div className="divide-y divide-[#e8e8e8] dark:divide-[#2d3347]">
-              {[
-                { label: t('dashboard.snapshot.netWorth'), value: formatMoneyCompact(netWorth, currency), color: '#2e7d65' },
-                { label: t('dashboard.snapshot.investments'), value: formatMoneyCompact(totalPortfolioBalance, currency), color: '#2e7d65' },
-                { label: t('dashboard.snapshot.cash'), value: '—', color: undefined },
-                { label: t('dashboard.snapshot.totalDebt'), value: `-${formatMoneyCompact(periodDebt, currency)}`, color: '#c0392b' },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                  <span className="text-[13px] text-[#41454d] dark:text-[#9297a0]">{label}</span>
-                  <span
-                    className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]"
-                    style={color ? { color } : undefined}
-                  >
-                    {value}
-                  </span>
-                </div>
-              ))}
+              <SnapshotRow
+                label={t('dashboard.snapshot.debtPaid')}
+                value={`-${formatMoneyCompact(periodDebt, currency)}`}
+                valueColor="#c0392b"
+                pct={pctDelta(periodDebt, prevPeriodDebt)}
+                favorable="neutral"
+                t={t}
+              />
             </div>
           </div>
 
-          {/* Savings Rate donut */}
+          {/* Debt Ratio donut + sparkline */}
           <div className={`${CARD} p-5`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
-              {t('dashboard.savings.title')}
+              {t('dashboard.debtRatio.title')}
             </p>
             <div className="flex flex-col items-center">
               <svg width="80" height="80" viewBox="0 0 80 80">
@@ -672,10 +875,10 @@ export default function Dashboard() {
                   cy="40"
                   r={RADIUS}
                   fill="none"
-                  stroke="#2e7d65"
+                  stroke={debtRatioColor}
                   strokeWidth="8"
                   strokeLinecap="round"
-                  strokeDasharray={`${savingsDash} ${CIRCUMFERENCE}`}
+                  strokeDasharray={`${debtDash} ${CIRCUMFERENCE}`}
                   transform="rotate(-90 40 40)"
                 />
                 <text
@@ -686,33 +889,62 @@ export default function Dashboard() {
                   fontWeight="600"
                   fill="#181d26"
                 >
-                  {periodSavingsRate.toFixed(0)}%
+                  {debtToIncomeRaw.toFixed(0)}%
                 </text>
               </svg>
               <p className="text-[12px] text-[#41454d] dark:text-[#9297a0] mt-2 text-center">
-                {t('dashboard.savings.ofIncome')}
+                {t('dashboard.debtRatio.subtitle')}
               </p>
+              <Sparkline values={debtRatioSparkline} color="#aa2d00" />
             </div>
           </div>
 
           {/* Upcoming Recurring */}
           <div className={`${CARD} p-5`}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-[#41454d] dark:text-[#9297a0] mb-1">
               {t('dashboard.recurring.title')}
             </p>
             {upcomingRecurring.length === 0 ? (
-              <p className="text-[13px] text-[#9297a0]">{t('dashboard.recurring.empty')}</p>
+              <p className="text-[13px] text-[#9297a0] mt-3">{t('dashboard.recurring.empty')}</p>
             ) : (
-              <div className="space-y-2.5">
-                {upcomingRecurring.map(({ name, amount }) => (
-                  <div key={name} className="flex items-center justify-between">
-                    <span className="text-[13px] text-[#333840] dark:text-[#c4c8d0]">{name}</span>
-                    <span className="text-[13px] font-medium" style={{ color: '#aa2d00' }}>
-                      {formatMoneyCompact(amount, currency)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <>
+                {next30DaysTotal > 0 && (
+                  <p className="text-[11px] text-[#41454d] dark:text-[#9297a0] mb-3">
+                    {t('dashboard.recurring.next30Days', { amount: formatMoneyCompact(next30DaysTotal, currency) })}
+                  </p>
+                )}
+                <div className="space-y-2.5">
+                  {upcomingRecurring.map(({ id, name, amount, nextDate, paidThisMonth, paidDate }) => (
+                    <div key={id} className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] text-[#333840] dark:text-[#c4c8d0] truncate">{name}</span>
+                          {paidThisMonth && (
+                            <span
+                              className="text-[9px] font-semibold uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[4px]"
+                              style={{ color: '#1a7a3c', backgroundColor: '#e6f4ec' }}
+                            >
+                              {t('dashboard.recurring.paid')}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-[#9297a0]">
+                          {formatDate(
+                            paidThisMonth && paidDate ? paidDate : nextDate.toISOString().slice(0, 10),
+                            language,
+                          )}
+                        </span>
+                      </div>
+                      <span
+                        className="text-[13px] font-medium whitespace-nowrap"
+                        style={{ color: paidThisMonth ? '#9297a0' : '#aa2d00' }}
+                      >
+                        {formatMoneyCompact(amount, currency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>

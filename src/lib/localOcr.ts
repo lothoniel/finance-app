@@ -13,7 +13,6 @@ export interface ExtractedTransaction {
 
 export interface ExtractionResult {
   transactions: ExtractedTransaction[]
-  debugLines: string[]
   excludedCredits: number
 }
 
@@ -306,7 +305,6 @@ export async function extractTransactionsFromScreenshots(
   onProgress?: (msg: string) => void,
 ): Promise<ExtractionResult> {
   const all: ExtractedTransaction[] = []
-  const allDebugLines: string[] = []
   let excludedCredits = 0
 
   for (let i = 0; i < images.length; i++) {
@@ -318,7 +316,6 @@ export async function extractTransactionsFromScreenshots(
     )
 
     const rawLines = text.split('\n').map((l) => l.trim()).filter(Boolean)
-    allDebugLines.push(...rawLines)
 
     const { transactions, excludedCredits: excluded } = parseLinesForBank(rawLines, bank)
     excludedCredits += excluded
@@ -331,5 +328,5 @@ export async function extractTransactionsFromScreenshots(
     }
   }
 
-  return { transactions: all, debugLines: allDebugLines, excludedCredits }
+  return { transactions: all, excludedCredits }
 }

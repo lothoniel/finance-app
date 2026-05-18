@@ -144,19 +144,15 @@
     },
     "kpis": {
       "netFlow": "Flujo Neto",
+      "netFlowPace": "Día {{day}} de {{total}} · proyectado {{projected}}",
       "income": "Ingresos",
       "expenses": "Gastos",
       "debtPaid": "Deuda Pagada",
       "savingsRate": "Tasa de Ahorro"
     },
-    "portfolio": {
-      "title": "Patrimonio e Inversiones",
-      "netWorth": "Patrimonio",
-      "netWorthHint": "Activos – pasivos",
-      "investments": "Inversiones",
-      "investmentsHint": "Portafolio total",
-      "debtRatio": "Razón de Deuda",
-      "debtRatioHint": "Deuda sobre ingresos"
+    "debtRatio": {
+      "title": "Ratio de Deuda",
+      "subtitle": "Deuda / ingresos"
     },
     "trends": {
       "title": "Tendencias de Gasto",
@@ -193,17 +189,19 @@
       "title": "Resumen Financiero",
       "netWorth": "Patrimonio",
       "investments": "Inversiones",
-      "cash": "Efectivo",
-      "totalDebt": "Deuda Total"
-    },
-    "savings": {
-      "title": "Tasa de Ahorro",
-      "ofIncome": "de los ingresos conservados"
+      "assets": "Activos",
+      "liabilities": "Pasivos",
+      "mortgage": "Hipoteca",
+      "thisPeriod": "Este {{period}}",
+      "debtPaid": "Deuda Pagada",
+      "momDelta": "{{arrow}} {{pct}}%"
     },
     "recurring": {
       "title": "Recurrentes Próximos",
       "empty": "Sin gastos recurrentes.",
-      "paycheck": "Nómina"
+      "paycheck": "Nómina",
+      "paid": "Pagado",
+      "next30Days": "Próximos 30 días: {{amount}}"
     }
   },
   "periodSelector": {
@@ -912,7 +910,7 @@
     "error": {
       "selectOne": "Selecciona al menos una captura.",
       "unknown": "Error desconocido",
-      "noTransactions": "No se encontraron transacciones. Prueba con el otro banco. OCR leyó: \"{{preview}}\""
+      "noTransactions": "No se encontraron transacciones. Prueba con el otro banco."
     },
     "review": {
       "foundOne": "{{count}} transacción encontrada",
@@ -921,8 +919,7 @@
       "none": "Ninguna",
       "duplicateBanner": "Posible duplicado — ya existe una con la misma fecha y monto",
       "creditsExcludedOne": "{{count}} abono/pago excluido (regístralo en Pagos de Deuda)",
-      "creditsExcludedOther": "{{count}} abonos/pagos excluidos (regístralos en Pagos de Deuda)",
-      "ocrDebugSummary": "Ver salida OCR ({{count}} líneas)"
+      "creditsExcludedOther": "{{count}} abonos/pagos excluidos (regístralos en Pagos de Deuda)"
     },
     "done": {
       "noneAddedTitle": "No se agregaron gastos",

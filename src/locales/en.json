@@ -144,19 +144,15 @@
     },
     "kpis": {
       "netFlow": "Net Flow",
+      "netFlowPace": "Day {{day}} of {{total}} · projected {{projected}}",
       "income": "Income",
       "expenses": "Expenses",
       "debtPaid": "Debt Paid",
       "savingsRate": "Savings Rate"
     },
-    "portfolio": {
-      "title": "Portfolio & Wealth",
-      "netWorth": "Net Worth",
-      "netWorthHint": "Assets – liabilities",
-      "investments": "Investments",
-      "investmentsHint": "Total portfolio",
-      "debtRatio": "Debt Ratio",
-      "debtRatioHint": "Debt-to-income"
+    "debtRatio": {
+      "title": "Debt Ratio",
+      "subtitle": "Debt / income"
     },
     "trends": {
       "title": "Spending Trends",
@@ -193,17 +189,19 @@
       "title": "Financial Snapshot",
       "netWorth": "Net Worth",
       "investments": "Investments",
-      "cash": "Cash",
-      "totalDebt": "Total Debt"
-    },
-    "savings": {
-      "title": "Savings Rate",
-      "ofIncome": "of income retained"
+      "assets": "Assets",
+      "liabilities": "Liabilities",
+      "mortgage": "Mortgage",
+      "thisPeriod": "This {{period}}",
+      "debtPaid": "Debt Paid",
+      "momDelta": "{{arrow}} {{pct}}%"
     },
     "recurring": {
       "title": "Upcoming Recurring",
       "empty": "No recurring expenses set.",
-      "paycheck": "Paycheck"
+      "paycheck": "Paycheck",
+      "paid": "Paid",
+      "next30Days": "Next 30 days: {{amount}}"
     }
   },
   "periodSelector": {
@@ -912,7 +910,7 @@
     "error": {
       "selectOne": "Select at least one screenshot.",
       "unknown": "Unknown error",
-      "noTransactions": "No transactions found. Try the other bank. OCR read: \"{{preview}}\""
+      "noTransactions": "No transactions found. Try the other bank."
     },
     "review": {
       "foundOne": "{{count}} transaction found",
@@ -921,8 +919,7 @@
       "none": "None",
       "duplicateBanner": "Possible duplicate — same date & amount already exists",
       "creditsExcludedOne": "{{count}} payment/credit excluded (track those on Debt Payments)",
-      "creditsExcludedOther": "{{count}} payments/credits excluded (track those on Debt Payments)",
-      "ocrDebugSummary": "View OCR output ({{count}} lines)"
+      "creditsExcludedOther": "{{count}} payments/credits excluded (track those on Debt Payments)"
     },
     "done": {
       "noneAddedTitle": "No expenses added",

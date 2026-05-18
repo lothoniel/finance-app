@@ -53,7 +53,6 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
   const [activeImage, setActiveImage] = useState(0)
   const [addedCount, setAddedCount] = useState(0)
   const [excludedCredits, setExcludedCredits] = useState(0)
-  const [debugLines, setDebugLines] = useState<string[]>([])
 
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -75,7 +74,6 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
     setActiveImage(0)
     setAddedCount(0)
     setExcludedCredits(0)
-    setDebugLines([])
     setProgressMsg('')
   }
 
@@ -168,7 +166,7 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
     setProgressMsg('')
     setStep('loading')
     try {
-      const { transactions, debugLines: dbg, excludedCredits: excluded } = await extractTransactionsFromScreenshots(
+      const { transactions, excludedCredits: excluded } = await extractTransactionsFromScreenshots(
         images.map((img) => ({ base64: img.base64, mediaType: img.mediaType })),
         bank,
         categories,
@@ -176,11 +174,9 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
       )
 
       setExcludedCredits(excluded)
-      setDebugLines(dbg)
 
       if (transactions.length === 0) {
-        const preview = dbg.slice(0, 15).join(' | ')
-        setError(t('screenshotImport.error.noTransactions', { preview }))
+        setError(t('screenshotImport.error.noTransactions'))
         setStep('upload')
         return
       }
@@ -285,22 +281,10 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
           )}
 
           {error && (
-            <div className="space-y-1">
-              <p className="flex items-start gap-2 text-sm text-red-500">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                {error}
-              </p>
-              {debugLines.length > 0 && (
-                <details className="text-[11px] text-[#41454d] dark:text-[#9297a0]">
-                  <summary className="cursor-pointer hover:text-[#181d26] dark:hover:text-[#e8eaf0]">
-                    {t('screenshotImport.review.ocrDebugSummary', { count: debugLines.length })}
-                  </summary>
-                  <pre className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono text-[10px] bg-[#f8fafc] dark:bg-[#1a1f2c] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] p-2">
-                    {debugLines.join('\n')}
-                  </pre>
-                </details>
-              )}
-            </div>
+            <p className="flex items-start gap-2 text-sm text-red-500">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              {error}
+            </p>
           )}
 
           <div className="flex gap-3 pt-2">
@@ -459,17 +443,6 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                 </div>
               ))}
             </div>
-
-            {debugLines.length > 0 && (
-              <details className="text-[11px] text-[#41454d] dark:text-[#9297a0]">
-                <summary className="cursor-pointer hover:text-[#181d26] dark:hover:text-[#e8eaf0]">
-                  {t('screenshotImport.review.ocrDebugSummary', { count: debugLines.length })}
-                </summary>
-                <pre className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono text-[10px] bg-[#f8fafc] dark:bg-[#1a1f2c] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] p-2">
-                  {debugLines.join('\n')}
-                </pre>
-              </details>
-            )}
 
             <div className="flex gap-3 pt-1 border-t border-[#e8e8e8]">
               <button onClick={addEmptyRow}

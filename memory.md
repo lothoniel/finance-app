@@ -19,6 +19,7 @@ Active development. No backend. Design system overhaul in progress across all pa
 - **Cash Flow Model** — see dedicated section below
 - **Category budgets stored as monthly amounts** — `SCALE = { month: 1, quarter: 3, year: 12 }` must be applied in any page that displays budgets with a period filter (Budget.tsx, Expenses.tsx, Dashboard.tsx all do this now)
 - **Dashboard `filterByPeriod` for quarter mode requires `periodValue.quarter`** — `handleTabChange` must set `{ year, quarter: Math.ceil(month/3) }` not `currentMonth()`, otherwise falls back to Q1
+- **Dashboard Net Flow uses Cash Flow Model** — `income − debt − investments`, NOT `income − expenses − debt`. Before 2026-05-18 it double-counted (CC charge subtracted as `expense` and again as `debt` when paid). Now aligned with CashFlow page + Reports.
 
 ## Cash Flow Model (established 2026-05-04)
 - **Expenses** = credit card charges (reference/informational only — not cash leaving bank)
@@ -63,6 +64,30 @@ Active development. No backend. Design system overhaul in progress across all pa
 - **Docker deployment**: app is containerized and served via nginx. `npm run deploy` rebuilds image and restarts container (HTTP, port 8080). LAN IP: `192.168.0.245` (may change with DHCP — check with `ipconfig getifaddr en0`). Access at `http://192.168.0.245:8080`.
 - **HTTPS deferred**: `npm run deploy:https` exists but requires `mkcert -install` (one-time Mac password prompt) + `mkcert -cert-file certs/cert.pem ...` first. nginx.conf is currently HTTP-only. HTTPS needed for SharedBalance share button (clipboard API). mkcert CA was created but not trusted in keychain yet — re-run `mkcert -install` and enter password.
 - **Scripts**: `deploy` = plain rebuild; `deploy:https` = rebuild with cert generation; `certs` = generate mkcert certs for current LAN IP + localhost.
+
+## Features Added (2026-05-18, late) — Dashboard de-duplication
+- **Portfolio & Wealth section dropped**: Net Worth and Investments tiles were duplicated with the (richer) Financial Snapshot; Debt Ratio moved to sidebar. The section header + 3-tile row are gone. Main column now starts with Spending Trends.
+- **Sidebar Savings Rate donut replaced with Debt Ratio donut + sparkline**: Savings Rate was already in the top KPI strip (redundant). New tile reuses the same SVG donut markup (RADIUS=28); color is `#c0392b` when `debtToIncomeRaw > 36` else `#2e7d65` (matches the existing Insights "Debt Alert" threshold). Subtitle "Debt / income", followed by the 7-month `debtRatioSparkline` (kept; `investmentSparkline` removed).
+- **i18n cleanup**: removed `dashboard.portfolio.*` (8 keys) and `dashboard.savings.{title,ofIncome}` (2 keys). Added `dashboard.debtRatio.{title,subtitle}` in en + es.
+
+## Features Added (2026-05-18, later) — Recurring paid date + Snapshot rework
+- **Recurring card paid date**: when `paidThisMonth` is true, the date string now shows the matched expense's `date` (most recent if multiple) instead of `nextDate`. Computed inside `upcomingRecurring` memo as `paidDate` field.
+- **Financial Snapshot fully restructured** in Dashboard right panel:
+  - Removed hardcoded `'—'` Cash row (and `dashboard.snapshot.cash` key).
+  - Replaced flat 4-row list with: Net Worth (focal, larger text), Assets subheader → Investments, Liabilities subheader → Mortgage (new row, uses `currentMortgageBalance`), This {period} subheader → Debt Paid (renamed from "Total Debt"; same value `periodDebt`).
+  - MoM delta indicator per row via new `DeltaPill` component: `↑/↓ X.X%`, color by favorability (Investments/NetWorth up=green; Mortgage down=green; Debt Paid neutral gray). Hidden when `prev === 0`.
+  - New `SnapshotRow` component for value + delta stacking.
+- **MoM helpers (Dashboard.tsx)**: top-level `shiftPeriodBack(mode, val)` and `prevPeriodEnd(mode, val)` compute previous-period values. `prevInvestments` derived from `totalPortfolioBalance` minus net change of `investmentMovements` after `prevEnd` (DEPOSIT+GAIN−WITHDRAWAL; TRANSFER ignored). `prevMortgageBalance` reads the latest `mortgagePayments` entry ≤ `prevEnd`, else `mortgageConfig.principal`. `prevPeriodDebt` uses `filterByPeriod(debtPayments, activeTab, prevPeriodValue)`. `pctDelta(c, p)` returns null when `p === 0` to suppress noise.
+- **i18n keys added**: `dashboard.snapshot.{assets,liabilities,mortgage,thisPeriod,debtPaid,momDelta}` (en + es). Removed: `dashboard.snapshot.{cash,totalDebt}`.
+
+## Features Added (2026-05-18) — Dashboard polish + OCR debug panel removed
+- **Dashboard Net Flow KPI fix**: was `income − expenses − debt` (double-counted CC charges); now `income − debt − investmentDeposits` to match Cash Flow Model. Same formula as `periodSavingsRate` on the same page.
+- **Net Flow sparkline**: 7-month mini-bar chart under the Net Flow KPI value, color = green when current period ≥ 0 else red. Reuses existing `<Sparkline>` component. Clamps months at 0 to avoid negative bar heights.
+- **MTD pace projection**: `Day X of N · projected $Y` shown under Net Flow value when `activeTab === 'month'` AND `periodValue` matches the current month. Disappears for past months, quarters, or years.
+- **Upcoming Recurring card upgrade**: each row now shows the next payment date (computed from `lastDate + frequency`) under the name and a green "Paid" pill when an expense in the current month has `description.toLowerCase().trim() === r.name.toLowerCase().trim()`. Amount color dims to `#9297a0` when paid. Card now shows a subheader "Next 30 days: $X" summing items whose `nextDate` is within 30 days.
+- **Paid-this-month detection caveat**: case-insensitive description == name match. False negative if user types a slightly different description (e.g., "Spotify Premium" vs recurring "Spotify"). No schema change — revisit with category+amount heuristic if false positives appear.
+- **Screenshot import debug panel removed**: `<details>` showing raw Tesseract output deleted from both Review step and upload-error banner in `ScreenshotImportModal.tsx`. `debugLines` removed from `ExtractionResult` interface in `localOcr.ts`. `noTransactions` i18n message simplified (dropped `{{preview}}` interp). Dead key `screenshotImport.review.ocrDebugSummary` removed from en + es.
+- **i18n keys added**: `dashboard.kpis.netFlowPace`, `dashboard.recurring.paid`, `dashboard.recurring.next30Days`.
 
 ## Features Added (2026-05-17) — Screenshot import: multi-bank + real-OCR parsing
 - **Bank dropdown in ScreenshotImportModal**: Banamex / Banorte. No auto-detect. Default Banamex.
