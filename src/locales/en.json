@@ -351,6 +351,10 @@
       "monthlyBudgetPlaceholder": "Monthly budget",
       "footer": "Monthly · Enter to save · Esc to cancel"
     },
+    "incomePopover": {
+      "receivedLastMonth": "Received last month",
+      "clear": "Clear (use average)"
+    },
     "rollover": {
       "appliedTo": "Applied to {{period}}",
       "fromPeriod": "From {{period}}",
@@ -933,7 +937,8 @@
     "kpis": {
       "totalEntries": "TOTAL ENTRIES",
       "income": "INCOME",
-      "expenses": "EXPENSES"
+      "expenses": "EXPENSES",
+      "debtPaid": "DEBT PAID"
     },
     "searchPlaceholder": "Search by name, category...",
     "filters": {

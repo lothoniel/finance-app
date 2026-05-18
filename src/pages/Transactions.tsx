@@ -126,7 +126,11 @@ export default function Transactions() {
     [periodFiltered]
   )
   const totalExpenses = useMemo(
-    () => periodFiltered.filter((r) => r.type !== 'income').reduce((s, r) => s + r.amount, 0),
+    () => periodFiltered.filter((r) => r.type === 'shared' || r.type === 'personal').reduce((s, r) => s + r.amount, 0),
+    [periodFiltered]
+  )
+  const totalDebt = useMemo(
+    () => periodFiltered.filter((r) => r.type === 'debt').reduce((s, r) => s + r.amount, 0),
     [periodFiltered]
   )
 
@@ -151,6 +155,10 @@ export default function Transactions() {
         <div className="flex-1 min-w-[120px] px-5 py-4">
           <div className="text-[22px] font-bold leading-tight" style={{ color: '#ef4444' }}>{formatMoneyCompact(totalExpenses, currency)}</div>
           <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('transactions.kpis.expenses')}</div>
+        </div>
+        <div className="flex-1 min-w-[120px] px-5 py-4">
+          <div className="text-[22px] font-bold leading-tight" style={{ color: '#d97706' }}>{formatMoneyCompact(totalDebt, currency)}</div>
+          <div className="text-[11px] font-semibold tracking-wider text-[#9297a0] mt-0.5">{t('transactions.kpis.debtPaid')}</div>
         </div>
       </div>
 

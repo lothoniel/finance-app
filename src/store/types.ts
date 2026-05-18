@@ -99,6 +99,7 @@ export interface TransferCategory {
   name: string
   icon: string
   color: string
+  budget?: number // monthly amount; falls back to 6-month average when undefined
 }
 
 export interface MortgageConfig {
@@ -166,4 +167,5 @@ export interface AppSettings {
   sidebarConfig?: SidebarConfig
   language: Language
   currencyDisplay: CurrencyDisplay
+  paycheckMonthlyBudget?: number // monthly target; falls back to 6-month average when undefined
 }

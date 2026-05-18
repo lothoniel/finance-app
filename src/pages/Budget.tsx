@@ -9,7 +9,7 @@ import { formatMoneyCompact } from '../lib/formatters'
 import { renderIcon } from '../lib/iconRenderer'
 import PeriodSelector from '../components/ui/PeriodSelector'
 import { PERIOD_SCALE } from '../lib/constants'
-import type { Expense, CurrencyDisplay } from '../store/types'
+import type { Expense, CurrencyDisplay, Paycheck, Transfer } from '../store/types'
 
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const COL = 'w-24 text-right flex-shrink-0'
@@ -77,6 +77,14 @@ function RemainingCell({
 interface PopoverState {
   catId: string
   catName: string
+  currentBudget: number | undefined
+  anchor: DOMRect
+}
+
+interface IncomePopoverState {
+  kind: 'paycheck' | 'transfer'
+  categoryName: string // 'Paychecks' label or transfer category name; display only
+  transferKey?: string // the actual TransferCategory.name when kind === 'transfer'
   currentBudget: number | undefined
   anchor: DOMRect
 }
@@ -216,6 +224,152 @@ function BudgetPopover({
   )
 }
 
+// ── Income popover ────────────────────────────────────────────────────────────
+
+function IncomePopover({
+  state,
+  paychecks,
+  transfers,
+  language,
+  currency,
+  onSave,
+  onClose,
+}: {
+  state: IncomePopoverState
+  paychecks: Paycheck[]
+  transfers: Transfer[]
+  language: 'en' | 'es'
+  currency: CurrencyDisplay
+  onSave: (monthly: number | undefined) => void
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const ref = useRef<HTMLDivElement>(null)
+  const [value, setValue] = useState(state.currentBudget?.toString() ?? '')
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null)
+
+  const historyMonths = useMemo(() => {
+    const now = new Date()
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+      const label = format(d, 'MMM', language === 'es' ? { locale: esLocale } : undefined).toUpperCase()
+      return { year: d.getFullYear(), month: d.getMonth() + 1, label }
+    })
+  }, [language])
+
+  const monthlyReceived = useMemo(() =>
+    historyMonths.map(({ year, month }) => {
+      if (state.kind === 'paycheck') {
+        return filterByPeriod(paychecks, 'month', { year, month })
+          .reduce((s, p) => s + p.mxnAmount, 0)
+      }
+      return filterByPeriod(transfers, 'month', { year, month })
+        .filter(tr => tr.category === state.transferKey)
+        .reduce((s, tr) => s + tr.amount, 0)
+    }), [historyMonths, paychecks, transfers, state.kind, state.transferKey])
+
+  const receivedLastMonth = monthlyReceived[4] ?? 0
+  const monthlyAvg = monthlyReceived.reduce((s, v) => s + v, 0) / 6
+  const maxBar = Math.max(...monthlyReceived, 1)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  function handleSave() {
+    const num = value.trim() ? parseFloat(value) : undefined
+    onSave(num)
+  }
+
+  const popoverHeight = 300
+  const { anchor } = state
+  const spaceBelow = window.innerHeight - anchor.bottom
+  const top = spaceBelow > popoverHeight + 16 ? anchor.bottom + 8 : anchor.top - popoverHeight - 8
+  const right = Math.max(window.innerWidth - anchor.right, 8)
+
+  return (
+    <div
+      ref={ref}
+      style={{ position: 'fixed', top, right, width: 280, zIndex: 50 }}
+      className={`${CARD} shadow-xl p-4`}
+    >
+      <div className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-3">{t('budget.popover.history')}</div>
+
+      <div className="flex gap-6 mb-4">
+        <div>
+          <div className="text-[16px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(receivedLastMonth, currency)}</div>
+          <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] mt-0.5">{t('budget.incomePopover.receivedLastMonth')}</div>
+        </div>
+        <div>
+          <div className="text-[16px] font-bold text-[#181d26] dark:text-[#e8eaf0]">{formatMoneyCompact(monthlyAvg, currency)}</div>
+          <div className="text-[11px] text-[#41454d] dark:text-[#9297a0] mt-0.5">{t('budget.popover.monthlyAverage')}</div>
+        </div>
+      </div>
+
+      <div className="relative">
+        {hoveredBar !== null && (
+          <div className="absolute -top-6 left-0 right-0 flex justify-center pointer-events-none">
+            <span className="text-[11px] font-semibold text-[#181d26] dark:text-[#e8eaf0] bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded px-1.5 py-0.5 shadow-sm">
+              {formatMoneyCompact(monthlyReceived[hoveredBar], currency)}
+            </span>
+          </div>
+        )}
+        <div className="flex items-end gap-1 h-14 mb-1">
+          {monthlyReceived.map((v, i) => (
+            <div
+              key={i}
+              className="flex-1 flex flex-col justify-end h-full cursor-default"
+              onMouseEnter={() => setHoveredBar(i)}
+              onMouseLeave={() => setHoveredBar(null)}
+            >
+              <div
+                className="rounded-sm w-full transition-opacity"
+                style={{
+                  height: `${Math.max((v / maxBar) * 100, v > 0 ? 4 : 0)}%`,
+                  backgroundColor: '#16a34a',
+                  opacity: hoveredBar === i ? 1 : 0.5 + (i / 5) * 0.5,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex gap-1 mb-4">
+        {historyMonths.map(({ label }, i) => (
+          <div key={i} className={`flex-1 text-center text-[10px] ${hoveredBar === i ? 'text-[#181d26] dark:text-[#e8eaf0] font-medium' : 'text-[#9297a0] dark:text-[#6b7280]'}`}>{label}</div>
+        ))}
+      </div>
+
+      <input
+        autoFocus
+        type="number" min="0" step="1"
+        value={value}
+        placeholder={t('budget.popover.monthlyBudgetPlaceholder')}
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose() }}
+        className="w-full border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] px-3 py-2 text-[13px] text-right text-[#181d26] dark:text-[#e8eaf0] bg-white dark:bg-[#1e2330] focus:outline-none focus:border-[#181d26] dark:focus:border-[#e8eaf0]"
+      />
+      <div className="flex items-center justify-between mt-1">
+        {state.currentBudget !== undefined ? (
+          <button
+            type="button"
+            onClick={() => onSave(undefined)}
+            className="text-[10px] text-[#41454d] dark:text-[#9297a0] hover:text-[#181d26] dark:hover:text-[#e8eaf0] underline"
+          >
+            {t('budget.incomePopover.clear')}
+          </button>
+        ) : <span />}
+        <div className="text-[10px] text-[#9297a0]">{t('budget.popover.footer')}</div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function Budget() {
@@ -228,6 +382,7 @@ export default function Budget() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [showUnbudgeted, setShowUnbudgeted] = useState(false)
   const [popover, setPopover] = useState<PopoverState | null>(null)
+  const [incomePopover, setIncomePopover] = useState<IncomePopoverState | null>(null)
   const [rolloverTooltip, setRolloverTooltip] = useState<{
     catName: string; rollover: number; budget: number; actual: number; remaining: number
     x: number; y: number
@@ -242,6 +397,7 @@ export default function Budget() {
   const categories = useStore(s => s.settings.expenseCategories)
   const language = useStore(s => s.settings.language)
   const currency = useStore(s => s.settings.currencyDisplay)
+  const paycheckMonthlyBudgetSetting = useStore(s => s.settings.paycheckMonthlyBudget)
   const updateSettings = useStore(s => s.updateSettings)
 
   const GROUP_KEYS: Record<string, string> = {
@@ -285,7 +441,7 @@ export default function Budget() {
   const filteredPaychecks = useMemo(() => filterByPeriod(paychecks, periodMode, periodValue), [paychecks, periodMode, periodValue])
   const filteredTransfers = useMemo(() => filterByPeriod(transfers, periodMode, periodValue), [transfers, periodMode, periodValue])
 
-  const priorMonths = useMemo(() => getPriorMonths(periodMode, periodValue, 3), [periodMode, periodValue])
+  const priorMonths = useMemo(() => getPriorMonths(periodMode, periodValue, 6), [periodMode, periodValue])
 
   const actualPaychecks = useMemo(() =>
     filteredPaychecks.reduce((s, p) => s + p.mxnAmount, 0), [filteredPaychecks])
@@ -316,9 +472,18 @@ export default function Budget() {
     return avg
   }, [transfers, priorMonths])
 
-  const paycheckBudget = paycheckMonthlyAvg * scale
+  const paycheckMonthly = paycheckMonthlyBudgetSetting ?? paycheckMonthlyAvg
+  const paycheckBudget = paycheckMonthly * scale
+  const paycheckIsManual = paycheckMonthlyBudgetSetting !== undefined
+
   const transferBudgetByCategory = Object.fromEntries(
-    transferCategories.map(tc => [tc.name, (transferMonthlyAvgByCategory[tc.name] ?? 0) * scale])
+    transferCategories.map(tc => {
+      const monthly = tc.budget ?? (transferMonthlyAvgByCategory[tc.name] ?? 0)
+      return [tc.name, monthly * scale]
+    })
+  )
+  const transferIsManualByName = Object.fromEntries(
+    transferCategories.map(tc => [tc.name, tc.budget !== undefined])
   )
   const totalIncomeBudget = paycheckBudget + Object.values(transferBudgetByCategory).reduce((s, v) => s + v, 0)
   const totalIncomeActual = actualPaychecks + Object.values(actualTransfersByCategory).reduce((s, v) => s + v, 0)
@@ -422,6 +587,32 @@ export default function Budget() {
     setPopover(null)
   }
 
+  function openIncomePopover(
+    kind: 'paycheck' | 'transfer',
+    categoryName: string,
+    currentBudget: number | undefined,
+    e: React.MouseEvent,
+    transferKey?: string,
+  ) {
+    const anchor = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setIncomePopover({ kind, categoryName, transferKey, currentBudget, anchor })
+  }
+
+  function saveIncomeBudget(monthly: number | undefined) {
+    if (!incomePopover) return
+    if (incomePopover.kind === 'paycheck') {
+      updateSettings({ paycheckMonthlyBudget: monthly })
+    } else if (incomePopover.transferKey) {
+      const key = incomePopover.transferKey
+      updateSettings({
+        transferCategories: transferCategories.map(tc =>
+          tc.name === key ? { ...tc, budget: monthly } : tc
+        ),
+      })
+    }
+    setIncomePopover(null)
+  }
+
   const rowBase = 'flex items-center gap-3 px-5 py-2.5'
 
   const budgetColLabel = periodMode === 'year'
@@ -490,11 +681,6 @@ export default function Budget() {
               ? <ChevronDown className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />
               : <ChevronRight className="w-3.5 h-3.5 text-[#41454d] dark:text-[#9297a0] flex-shrink-0" />}
             <span className="flex-1 text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] text-left">{t('budget.groups.income')}</span>
-            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(totalIncomeBudget, currency)}</div>
-            <div className={`${COL} text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(totalIncomeActual, currency)}</div>
-            <div className={`${COL} text-[13px] font-semibold`}>
-              <RemainingCell remaining={totalIncomeBudget - totalIncomeActual} hasBudget={totalIncomeBudget > 0} currency={currency} kind="income" />
-            </div>
           </button>
 
           {incomeOpen && (
@@ -514,7 +700,15 @@ export default function Budget() {
                   <div className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{t('budget.groups.paychecks')}</div>
                   <ProgressBar actual={actualPaychecks} budget={paycheckBudget} />
                 </div>
-                <div className={`${COL} text-[13px] text-[#41454d] dark:text-[#9297a0]`}>{formatMoneyCompact(paycheckBudget, currency)}</div>
+                <div className={COL}>
+                  <button
+                    type="button"
+                    onClick={e => openIncomePopover('paycheck', t('budget.groups.paychecks'), paycheckMonthlyBudgetSetting, e)}
+                    className={`text-[13px] hover:underline ${paycheckIsManual ? 'text-[#181d26] dark:text-[#e8eaf0] font-medium' : 'text-[#41454d] dark:text-[#9297a0]'}`}
+                  >
+                    {formatMoneyCompact(paycheckBudget, currency)}
+                  </button>
+                </div>
                 <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(actualPaychecks, currency)}</div>
                 <div className={`${COL} text-[13px]`}>
                   <RemainingCell remaining={paycheckBudget - actualPaychecks} hasBudget={paycheckBudget > 0} currency={currency} kind="income" />
@@ -534,7 +728,15 @@ export default function Budget() {
                       <div className="text-[13px] text-[#181d26] dark:text-[#e8eaf0]">{tc.name}</div>
                       <ProgressBar actual={actual} budget={budget} />
                     </div>
-                    <div className={`${COL} text-[13px] text-[#41454d] dark:text-[#9297a0]`}>{budget > 0 ? formatMoneyCompact(budget, currency) : '—'}</div>
+                    <div className={COL}>
+                      <button
+                        type="button"
+                        onClick={e => openIncomePopover('transfer', tc.name, tc.budget, e, tc.name)}
+                        className={`text-[13px] hover:underline ${transferIsManualByName[tc.name] ? 'text-[#181d26] dark:text-[#e8eaf0] font-medium' : 'text-[#41454d] dark:text-[#9297a0]'}`}
+                      >
+                        {budget > 0 ? formatMoneyCompact(budget, currency) : '—'}
+                      </button>
+                    </div>
                     <div className={`${COL} text-[13px] text-[#181d26] dark:text-[#e8eaf0]`}>{formatMoneyCompact(actual, currency)}</div>
                     <div className={`${COL} text-[13px]`}>
                       <RemainingCell remaining={budget - actual} hasBudget={budget > 0} currency={currency} kind="income" />
@@ -594,7 +796,7 @@ export default function Budget() {
                 return (
                   <div key={group}>
                     <button
-                      className={`${rowBase} w-full hover:bg-[#f8fafc] dark:hover:bg-[#252b3b] border-b border-[#f0f2f5] dark:border-[#2d3347]`}
+                      className={`${rowBase} w-full bg-[#f8fafc] dark:bg-[#252b3b] border-b border-[#f0f2f5] dark:border-[#2d3347]`}
                       onClick={() => toggleGroup(group)}
                     >
                       {isOpen
@@ -839,6 +1041,19 @@ export default function Budget() {
           currency={currency}
           onSave={saveBudget}
           onClose={() => setPopover(null)}
+        />
+      )}
+
+      {/* Income edit popover */}
+      {incomePopover && (
+        <IncomePopover
+          state={incomePopover}
+          paychecks={paychecks}
+          transfers={transfers}
+          language={language}
+          currency={currency}
+          onSave={saveIncomeBudget}
+          onClose={() => setIncomePopover(null)}
         />
       )}
     </div>
