@@ -15,10 +15,14 @@ import type { CurrencyDisplay } from '../store/types'
 const CARD = 'bg-white dark:bg-[#1e2330] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[10px]'
 const SECTION_LABEL = 'text-[11px] font-semibold tracking-wider text-[#9297a0] uppercase mb-4'
 
-// index: 0=Paycheck, 1=Transfers, 2=Income(middle), 3=Savings, 4=Debt, 5=Investments
-const NODE_COLORS = ['#22c55e', '#3b82f6', '#0ea5e9', '#10b981', '#f97316', '#8b5cf6']
-const SOURCE_COLORS: Record<string, string> = { Paycheck: '#22c55e', Transfers: '#3b82f6' }
-const DEST_COLORS: Record<string, string> = { Savings: '#10b981', Debt: '#f97316', Investments: '#8b5cf6' }
+const NODE_COLORS_BY_NAME: Record<string, string> = {
+  Paycheck: '#22c55e',
+  Transfers: '#3b82f6',
+  Income: '#0ea5e9',
+  Savings: '#10b981',
+  Debt: '#f97316',
+  Investments: '#8b5cf6',
+}
 
 type ChartView = 'bar' | 'sankey'
 
@@ -33,7 +37,7 @@ const NODE_NAME_TO_KEY: Record<string, string> = {
 
 function makeSankeyNodeRenderer(t: (key: string) => string, currency: CurrencyDisplay) {
   return function SankeyNodeRenderer({ x, y, width, height, index, payload }: NodeProps) {
-    const color = NODE_COLORS[index % NODE_COLORS.length]
+    const color = NODE_COLORS_BY_NAME[payload.name] ?? '#9ca3af'
     const isSource = index <= 1
     const labelX = isSource ? x - 8 : x + width + 8
     const anchor = isSource ? 'end' : 'start'
@@ -53,10 +57,7 @@ function makeSankeyNodeRenderer(t: (key: string) => string, currency: CurrencyDi
 }
 
 function SankeyLinkRenderer({ sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth, payload }: LinkProps) {
-  const isSourceLink = payload.source.name in SOURCE_COLORS
-  const color = isSourceLink
-    ? (SOURCE_COLORS[payload.source.name] ?? '#9ca3af')
-    : (DEST_COLORS[payload.target.name] ?? '#9ca3af')
+  const color = NODE_COLORS_BY_NAME[payload.target.name] ?? '#9ca3af'
   return (
     <path
       d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
@@ -110,7 +111,7 @@ export default function CashFlow() {
     const observer = new ResizeObserver((entries) => setSankeyWidth(entries[0].contentRect.width))
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [chartView])
 
   const expenses = useStore((s) => s.expenses)
   const paychecks = useStore((s) => s.paychecks)
@@ -403,11 +404,11 @@ export default function CashFlow() {
                 {sankeyData.nodes.length > 0 ? (
                   <Sankey
                     width={sankeyWidth}
-                    height={320}
+                    height={340}
                     data={sankeyData}
                     nodeWidth={15}
                     nodePadding={14}
-                    margin={{ top: 10, right: 140, left: 110, bottom: 10 }}
+                    margin={{ top: 10, right: 130, left: 100, bottom: 10 }}
                     node={(props: NodeProps) => renderSankeyNode(props)}
                     link={(props: LinkProps) => <SankeyLinkRenderer {...props} />}
                   />

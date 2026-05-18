@@ -33,8 +33,9 @@ interface StackedBucketRow {
   [key: string]: string | number
 }
 
-const NODE_COLORS = ['#22c55e', '#3b82f6', '#10b981', '#ef4444', '#f97316', '#8b5cf6']
-const TARGET_COLORS: Record<string, string> = {
+const NODE_COLORS_BY_NAME: Record<string, string> = {
+  Paycheck: '#22c55e',
+  Transfers: '#3b82f6',
   Savings: '#10b981',
   Debt: '#f97316',
   Investments: '#8b5cf6',
@@ -54,7 +55,7 @@ const SANKEY_NODE_KEY: Record<string, string> = {
 
 function makeSankeyNodeRenderer(t: (k: string) => string, currency: CurrencyDisplay) {
   return function SankeyNodeRenderer({ x, y, width, height, index, payload }: NodeProps) {
-    const color = NODE_COLORS[index % NODE_COLORS.length]
+    const color = NODE_COLORS_BY_NAME[payload.name] ?? '#9ca3af'
     const isTarget = index >= 2
     const labelX = isTarget ? x + width + 8 : x - 8
     const anchor = isTarget ? 'start' : 'end'
@@ -74,7 +75,7 @@ function makeSankeyNodeRenderer(t: (k: string) => string, currency: CurrencyDisp
 }
 
 function SankeyLinkRenderer({ sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth, payload }: LinkProps) {
-  const color = TARGET_COLORS[payload.target.name] ?? '#9ca3af'
+  const color = NODE_COLORS_BY_NAME[payload.target.name] ?? '#9ca3af'
   return (
     <path
       d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
@@ -178,7 +179,7 @@ export default function Reports() {
     })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [tab])
 
   const expenses = useStore(s => s.expenses)
   const paychecks = useStore(s => s.paychecks)
@@ -482,25 +483,25 @@ export default function Reports() {
 
       {/* Spending Tab */}
       {tab === 'spending' && (
-        <div className="space-y-5">
-          <div className={CARD}>
-            <div className="p-5">
-              <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.spendingByCategory'))}</div>
-              {donutData.length > 0 ? (
-                <DonutChart
-                  data={donutData}
-                  centerLabel={t('reports.chart.donutCenter')}
-                  centerValue={formatMoneyCompact(kpiExpenses, currency)}
-                  height={220}
-                />
-              ) : (
-                <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('reports.empty.noExpenses')}</p>
-              )}
+        <div className="grid grid-cols-3 gap-5">
+          <div className="col-span-2 space-y-5">
+            <div className={CARD}>
+              <div className="p-5">
+                <div className={SECTION_LABEL}>{sectionTitle(t('reports.sections.spendingByCategory'))}</div>
+                {donutData.length > 0 ? (
+                  <DonutChart
+                    data={donutData}
+                    centerLabel={t('reports.chart.donutCenter')}
+                    centerValue={formatMoneyCompact(kpiExpenses, currency)}
+                    height={220}
+                  />
+                ) : (
+                  <p className="text-[13px] text-[#9297a0] py-8 text-center">{t('reports.empty.noExpenses')}</p>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-3 gap-5">
-            <div className={`${CARD} col-span-2`}>
+            <div className={CARD}>
               <div className="p-5">
                 <div className={SECTION_LABEL}>{mode === 'month' ? t('reports.stackedBy.week') : t('reports.stackedBy.month')}</div>
                 {stackedCategories.length > 0 ? (
@@ -515,35 +516,35 @@ export default function Reports() {
                 )}
               </div>
             </div>
+          </div>
 
-            <div className={CARD}>
-              <div className="p-5">
-                <div className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">
-                  {sectionTitle(t('reports.sections.byCategory'))}
-                </div>
-                {categoryTotals.length === 0 ? (
-                  <p className="text-[12px] text-[#9297a0]">{t('reports.empty.noExpenses')}</p>
-                ) : (
-                  <div className="space-y-3">
-                    {categoryTotals.map(cat => (
-                      <div key={cat.id}>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-                            <span className="text-[12px] text-[#374151] dark:text-[#9297a0] truncate">{cat.name}</span>
-                          </div>
-                          <span className="text-[12px] font-semibold text-[#181d26] dark:text-[#e8eaf0] ml-2 flex-shrink-0">
-                            {formatMoneyCompact(cat.total, currency)}
-                          </span>
-                        </div>
-                        <div className="h-1.5 bg-[#f4f5f7] dark:bg-[#252a38] rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${(cat.total / maxCatTotal) * 100}%`, backgroundColor: cat.color }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          <div className={CARD}>
+            <div className="p-5">
+              <div className="text-[13px] font-semibold text-[#181d26] dark:text-[#e8eaf0] mb-4">
+                {sectionTitle(t('reports.sections.byCategory'))}
               </div>
+              {categoryTotals.length === 0 ? (
+                <p className="text-[12px] text-[#9297a0]">{t('reports.empty.noExpenses')}</p>
+              ) : (
+                <div className="space-y-3">
+                  {categoryTotals.map(cat => (
+                    <div key={cat.id}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                          <span className="text-[12px] text-[#374151] dark:text-[#9297a0] truncate">{cat.name}</span>
+                        </div>
+                        <span className="text-[12px] font-semibold text-[#181d26] dark:text-[#e8eaf0] ml-2 flex-shrink-0">
+                          {formatMoneyCompact(cat.total, currency)}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-[#f4f5f7] dark:bg-[#252a38] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${(cat.total / maxCatTotal) * 100}%`, backgroundColor: cat.color }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
