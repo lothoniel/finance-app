@@ -888,6 +888,11 @@
   },
   "screenshotImport": {
     "title": "Import from Screenshot",
+    "bank": {
+      "label": "Bank",
+      "banamex": "Banamex",
+      "banorte": "Banorte"
+    },
     "dropzone": {
       "clickToSelect": "Click to select",
       "dragText": " or drag and drop screenshots",
@@ -907,14 +912,17 @@
     "error": {
       "selectOne": "Select at least one screenshot.",
       "unknown": "Unknown error",
-      "noTransactions": "No transactions found. OCR read: \"{{preview}}\""
+      "noTransactions": "No transactions found. Try the other bank. OCR read: \"{{preview}}\""
     },
     "review": {
       "foundOne": "{{count}} transaction found",
       "foundOther": "{{count}} transactions found",
       "selectAll": "Select all",
       "none": "None",
-      "duplicateBanner": "Possible duplicate — same date & amount already exists"
+      "duplicateBanner": "Possible duplicate — same date & amount already exists",
+      "creditsExcludedOne": "{{count}} payment/credit excluded (track those on Debt Payments)",
+      "creditsExcludedOther": "{{count}} payments/credits excluded (track those on Debt Payments)",
+      "ocrDebugSummary": "View OCR output ({{count}} lines)"
     },
     "done": {
       "noneAddedTitle": "No expenses added",

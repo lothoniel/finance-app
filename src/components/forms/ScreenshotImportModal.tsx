@@ -5,7 +5,7 @@ import Modal from '../ui/Modal'
 import { useStore } from '../../store'
 import { generateId } from '../../lib/id'
 import { today } from '../../lib/formatters'
-import { extractTransactionsFromScreenshots } from '../../lib/localOcr'
+import { extractTransactionsFromScreenshots, type Bank } from '../../lib/localOcr'
 import { inputClass, primaryBtn, secondaryBtn } from '../../lib/styles'
 import type { Expense } from '../../store/types'
 
@@ -45,12 +45,15 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
 
   const [step, setStep] = useState<Step>('upload')
   const [progressMsg, setProgressMsg] = useState('')
+  const [bank, setBank] = useState<Bank>('banamex')
   const [images, setImages] = useState<ImageFile[]>([])
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rows, setRows] = useState<ReviewRow[]>([])
   const [activeImage, setActiveImage] = useState(0)
   const [addedCount, setAddedCount] = useState(0)
+  const [excludedCredits, setExcludedCredits] = useState(0)
+  const [debugLines, setDebugLines] = useState<string[]>([])
 
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -71,6 +74,8 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
     setRows([])
     setActiveImage(0)
     setAddedCount(0)
+    setExcludedCredits(0)
+    setDebugLines([])
     setProgressMsg('')
   }
 
@@ -163,11 +168,15 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
     setProgressMsg('')
     setStep('loading')
     try {
-      const { transactions, debugLines: dbg } = await extractTransactionsFromScreenshots(
+      const { transactions, debugLines: dbg, excludedCredits: excluded } = await extractTransactionsFromScreenshots(
         images.map((img) => ({ base64: img.base64, mediaType: img.mediaType })),
+        bank,
         categories,
         setProgressMsg,
       )
+
+      setExcludedCredits(excluded)
+      setDebugLines(dbg)
 
       if (transactions.length === 0) {
         const preview = dbg.slice(0, 15).join(' | ')
@@ -225,6 +234,20 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
       {/* ── Upload ── */}
       {step === 'upload' && (
         <div className="space-y-4">
+          <div>
+            <label className="block text-[11px] font-medium text-[#41454d] dark:text-[#9297a0] mb-1.5 uppercase tracking-wide">
+              {t('screenshotImport.bank.label')}
+            </label>
+            <select
+              value={bank}
+              onChange={(e) => setBank(e.target.value as Bank)}
+              className={inputClass}
+            >
+              <option value="banamex">{t('screenshotImport.bank.banamex')}</option>
+              <option value="banorte">{t('screenshotImport.bank.banorte')}</option>
+            </select>
+          </div>
+
           <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
@@ -267,6 +290,16 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 {error}
               </p>
+              {debugLines.length > 0 && (
+                <details className="text-[11px] text-[#41454d] dark:text-[#9297a0]">
+                  <summary className="cursor-pointer hover:text-[#181d26] dark:hover:text-[#e8eaf0]">
+                    {t('screenshotImport.review.ocrDebugSummary', { count: debugLines.length })}
+                  </summary>
+                  <pre className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono text-[10px] bg-[#f8fafc] dark:bg-[#1a1f2c] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] p-2">
+                    {debugLines.join('\n')}
+                  </pre>
+                </details>
+              )}
             </div>
           )}
 
@@ -335,6 +368,14 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                 <button onClick={() => toggleAll(false)} className="hover:text-[#181d26]">{t('screenshotImport.review.none')}</button>
               </div>
             </div>
+
+            {excludedCredits > 0 && (
+              <p className="text-[11px] text-[#41454d] dark:text-[#9297a0]">
+                {excludedCredits === 1
+                  ? t('screenshotImport.review.creditsExcludedOne', { count: excludedCredits })
+                  : t('screenshotImport.review.creditsExcludedOther', { count: excludedCredits })}
+              </p>
+            )}
 
             <div className="overflow-y-auto flex-1 space-y-2 pr-1">
               {rows.map((row) => (
@@ -418,6 +459,17 @@ export default function ScreenshotImportModal({ open, onClose }: Props) {
                 </div>
               ))}
             </div>
+
+            {debugLines.length > 0 && (
+              <details className="text-[11px] text-[#41454d] dark:text-[#9297a0]">
+                <summary className="cursor-pointer hover:text-[#181d26] dark:hover:text-[#e8eaf0]">
+                  {t('screenshotImport.review.ocrDebugSummary', { count: debugLines.length })}
+                </summary>
+                <pre className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono text-[10px] bg-[#f8fafc] dark:bg-[#1a1f2c] border border-[#e8e8e8] dark:border-[#2d3347] rounded-[6px] p-2">
+                  {debugLines.join('\n')}
+                </pre>
+              </details>
+            )}
 
             <div className="flex gap-3 pt-1 border-t border-[#e8e8e8]">
               <button onClick={addEmptyRow}

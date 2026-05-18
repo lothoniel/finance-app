@@ -888,6 +888,11 @@
   },
   "screenshotImport": {
     "title": "Importar desde Captura",
+    "bank": {
+      "label": "Banco",
+      "banamex": "Banamex",
+      "banorte": "Banorte"
+    },
     "dropzone": {
       "clickToSelect": "Haz clic para seleccionar",
       "dragText": " o arrastra y suelta capturas",
@@ -907,14 +912,17 @@
     "error": {
       "selectOne": "Selecciona al menos una captura.",
       "unknown": "Error desconocido",
-      "noTransactions": "No se encontraron transacciones. OCR leyó: \"{{preview}}\""
+      "noTransactions": "No se encontraron transacciones. Prueba con el otro banco. OCR leyó: \"{{preview}}\""
     },
     "review": {
       "foundOne": "{{count}} transacción encontrada",
       "foundOther": "{{count}} transacciones encontradas",
       "selectAll": "Seleccionar todas",
       "none": "Ninguna",
-      "duplicateBanner": "Posible duplicado — ya existe una con la misma fecha y monto"
+      "duplicateBanner": "Posible duplicado — ya existe una con la misma fecha y monto",
+      "creditsExcludedOne": "{{count}} abono/pago excluido (regístralo en Pagos de Deuda)",
+      "creditsExcludedOther": "{{count}} abonos/pagos excluidos (regístralos en Pagos de Deuda)",
+      "ocrDebugSummary": "Ver salida OCR ({{count}} líneas)"
     },
     "done": {
       "noneAddedTitle": "No se agregaron gastos",
